@@ -25,6 +25,11 @@
   font-size: 20px;
 }
 
+.connection-label {
+  color: #758196;
+  font-size: 16px;
+}
+
 .character {
   width: 176px;
   height: 176px;
@@ -117,12 +122,12 @@
 }
 
 .action {
-  width: 112px;
+  width: 84px;
   height: 58px;
   border-radius: 29px;
   background-color: #263349;
   color: #e9eef6;
-  font-size: 19px;
+  font-size: 17px;
 }
 
 .primary {

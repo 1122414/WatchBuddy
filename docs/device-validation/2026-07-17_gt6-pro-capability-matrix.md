@@ -15,6 +15,9 @@
 | 活动通信 | 蓝牙统计显示华为运动健康 PhoneService 持续收发 | 设备链路处于活动状态 |
 | 手表屏幕 | 官方规格 466 × 466，圆形 | 表端只适配该分辨率 |
 | Android IDE | Android Studio 2026.1，内置 JDK 21 | 手机端开发工具可用 |
+| Android 工程配置 | AGP 9.2.0 / Gradle 9.4.1 配置成功 | 工程模型可解析 |
+| Wear Engine 依赖 | `com.huawei.hms:wearengine:5.0.0.300` 依赖树解析成功 | 手机 SDK 坐标有效 |
+| Lite Wearable SDK | 官方 5.0.2.306 已校验 SHA-256 并纳入第三方声明 | 表端 P2P SDK 来源可追溯 |
 
 ## 待验证能力
 
@@ -34,4 +37,5 @@
 
 采用 B 级路线作为工程基线：表端文字与快捷回复，手机端语音。只有表端录音和播放均通过真机验证，才切换到 A 级。
 
-当前缺少 DevEco Studio、HarmonyOS Lite Wearable SDK、华为开发者服务申请和真机签名，因此尚不能声称表端可安装。
+当前缺少 DevEco Studio、华为开发者服务申请和真机签名；Android SDK Platform 36 /
+Build-Tools 36 也因 License 尚未由用户接受而不能安装。因此仍不能声称 APK 或 HAP 可安装。

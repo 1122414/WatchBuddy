@@ -1,0 +1,2 @@
+*.bat text eol=crlf
+apps/watch-huawei/entry/src/main/js/MainAbility/common/sdk/litewearable/wearengine.js -text

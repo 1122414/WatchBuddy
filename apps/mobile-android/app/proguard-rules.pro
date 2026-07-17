@@ -1,0 +1,2 @@
+-keep class com.huawei.wearengine.** { *; }
+-dontwarn com.huawei.wearengine.**

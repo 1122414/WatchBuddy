@@ -1,0 +1,52 @@
+plugins {
+    id "com.android.application"
+}
+
+def huaweiAppId = System.getenv("WATCHBUDDY_HUAWEI_APP_ID") ?: "0"
+def localDebugStore = rootProject.file(".local/watchbuddy-debug.jks")
+
+android {
+    namespace "com.watchbuddy.mobile"
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.watchbuddy.mobile"
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName "0.1.0"
+        manifestPlaceholders = [HUAWEI_APP_ID: huaweiAppId]
+    }
+
+    signingConfigs {
+        if (localDebugStore.exists()) {
+            watchbuddyDebug {
+                storeFile localDebugStore
+                storePassword "android"
+                keyAlias "androiddebugkey"
+                keyPassword "android"
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            if (localDebugStore.exists()) {
+                signingConfig signingConfigs.watchbuddyDebug
+            }
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.huawei.hms:wearengine:5.0.0.300"
+}

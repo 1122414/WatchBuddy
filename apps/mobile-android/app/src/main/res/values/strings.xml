@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WatchBuddy</string>
+    <string name="title">WatchBuddy 调试台</string>
+    <string name="subtitle">GT 6 Pro · B 级路线</string>
+    <string name="status_not_ready">尚未连接 Wear Engine</string>
+    <string name="peer_package_hint">表端包名</string>
+    <string name="peer_fingerprint_hint">表端证书指纹</string>
+    <string name="save_peer">保存表端身份</string>
+    <string name="authorize">授权 Wear Engine</string>
+    <string name="refresh_devices">发现已配对设备</string>
+    <string name="send_demo">发送演示问候</string>
+    <string name="register_receiver">监听手表回复</string>
+    <string name="initiative_title">主动陪伴</string>
+    <string name="quiet_mode">安静模式（硬阻止主动消息）</string>
+    <string name="send_daily">日常问候</string>
+    <string name="send_random">随机关心</string>
+    <string name="send_follow_up">关系跟进</string>
+    <string name="schedule_demo">60 秒后主动找我</string>
+    <string name="initiative_reason_default">尚未运行主动策略</string>
+    <string name="voice_title">短语音（手机识别与播放）</string>
+    <string name="voice_start">开始说话</string>
+    <string name="voice_cancel">取消 / 停止播放</string>
+    <string name="voice_remember">把这段话记住</string>
+    <string name="voice_idle">只有点击后才会启用麦克风</string>
+    <string name="activity_title">真实活动采样</string>
+    <string name="activity_sample">采样 10 秒</string>
+    <string name="activity_nudge">根据这次状态关心我</string>
+    <string name="activity_idle">未采样；数据仅来自手机加速度计</string>
+    <string name="memory_title">本地记忆</string>
+    <string name="memory_view">查看 / 删除记忆</string>
+    <string name="memory_clear">全部清空</string>
+    <string name="memory_empty">当前没有记忆</string>
+    <string name="clear_log">清空日志</string>
+</resources>

@@ -31,7 +31,7 @@
 
 - [x] 建立可测试的协议、主动策略和记忆核心；
 - [x] 建立 466 × 466 Lite Wearable 工程；
-- [ ] 建立 Android 手机应用；
+- [x] 建立 Android 手机应用；
 - [ ] 端到端 ACK、幂等、过期和重试。
 
 ### 阶段 2：角色与主动交互
@@ -74,3 +74,14 @@
 - Wear Engine 和 Health Service Kit 需要在华为开发者后台申请；
 - 手机包名、表端包名、App ID 与签名指纹必须在后台保持一致；
 - 真机签名和服务申请材料不得提交到 Git。
+
+## 2026-07-17 实施记录
+
+- Android Gradle Plugin 9.2.0 / Gradle 9.4.1 配置阶段通过；
+- `com.huawei.hms:wearengine:5.0.0.300` 及其 AndroidX 依赖树解析通过；
+- Android Java 编译尚未开始：SDK Platform 36 与 Build-Tools 36 License 未由用户接受；
+- 表端已接入官方 Lite Wearable SDK 5.0.2.306，并记录文件哈希与第三方声明；
+- 双向协议的离线测试覆盖 ACK、重试、过期、重复、非法版本、超长消息和重复动作；
+- 手机端已实现主动策略、可解释原因、记忆控制、显式短语音、手机 TTS 与真实活动采样；
+- 上述手机/表端实现仍需 APK/HAP 构建和 GT 6 Pro 真机验证，未据此勾选端到端验收项；
+- 华为 DevEco 下载页需要用户本人登录；若触发实名认证或开发者协议，也必须由用户本人处理。

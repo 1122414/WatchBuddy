@@ -2,6 +2,7 @@
 .idea/
 .gradle/
 .hvigor/
+.local/
 node_modules/
 local.properties
 *.iml

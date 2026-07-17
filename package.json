@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test packages/companion-core/test/*.test.js"
+    "test": "node --test packages/companion-core/test/*.test.js apps/watch-huawei/test/*.test.js"
   },
   "engines": {
     "node": ">=22"

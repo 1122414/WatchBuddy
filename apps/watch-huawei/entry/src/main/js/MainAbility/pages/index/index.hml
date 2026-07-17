@@ -2,6 +2,7 @@
   <div class="status-row">
     <text class="status-dot">●</text>
     <text class="status-label">{{stateLabel}}</text>
+    <text class="connection-label"> · {{connectionLabel}}</text>
   </div>
 
   <div class="character {{characterClass}}" onclick="onCharacterTap">
@@ -22,7 +23,8 @@
   <div class="actions" if="{{messageVisible}}">
     <input class="action primary" type="button" value="{{actionOne}}" onclick="replyOne"></input>
     <input class="action" type="button" value="{{actionTwo}}" onclick="replyTwo"></input>
-    <input class="action quiet" type="button" value="{{actionThree}}" onclick="replyThree"></input>
+    <input class="action quiet" if="{{actionThree}}" type="button" value="{{actionThree}}" onclick="replyThree"></input>
+    <input class="action quiet" if="{{actionFour}}" type="button" value="{{actionFour}}" onclick="replyFour"></input>
   </div>
 
   <text class="hint" if="{{!messageVisible}}">轻点它，看看它在想什么</text>
