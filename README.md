@@ -72,6 +72,12 @@ docs/
 npm test
 ```
 
+检查 HAP 构建所需的本机工具链：
+
+```bash
+npm run doctor:watch
+```
+
 启动最小 WatchBuddy API：
 
 ```bash
