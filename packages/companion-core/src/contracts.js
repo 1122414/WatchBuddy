@@ -1,4 +1,9 @@
 export const SCHEMA_VERSION = 1;
+export const MESSAGE_TYPES = Object.freeze({
+  NUDGE: "COMPANION_NUDGE",
+  RESPONSE: "COMPANION_RESPONSE",
+  ACK: "DELIVERY_ACK"
+});
 
 export const INITIATIVE_SOURCES = Object.freeze([
   "daily_routine",
@@ -38,6 +43,9 @@ export function validateNudge(nudge, now = Date.now()) {
 
   if (nudge.schemaVersion !== SCHEMA_VERSION) {
     errors.push("schemaVersion 不受支持");
+  }
+  if (nudge.type !== MESSAGE_TYPES.NUDGE) {
+    errors.push("type 必须是 COMPANION_NUDGE");
   }
   if (typeof nudge.nudgeId !== "string" || nudge.nudgeId.length < 8) {
     errors.push("nudgeId 无效");
@@ -91,6 +99,9 @@ export function validateResponse(response, nudge, now = Date.now()) {
   if (response.schemaVersion !== SCHEMA_VERSION) {
     errors.push("schemaVersion 不受支持");
   }
+  if (response.type !== MESSAGE_TYPES.RESPONSE) {
+    errors.push("type 必须是 COMPANION_RESPONSE");
+  }
   if (!nudge || response.nudgeId !== nudge.nudgeId) {
     errors.push("nudgeId 不匹配");
   }
@@ -111,6 +122,7 @@ export function validateResponse(response, nudge, now = Date.now()) {
 export function createNudge(input) {
   const nudge = {
     schemaVersion: SCHEMA_VERSION,
+    type: MESSAGE_TYPES.NUDGE,
     nudgeId: input.nudgeId,
     source: input.source,
     intensity: input.intensity,
@@ -128,4 +140,20 @@ export function createNudge(input) {
   }
 
   return Object.freeze(nudge);
+}
+
+export function createResponse(input, nudge, now = input.respondedAt) {
+  const response = {
+    schemaVersion: SCHEMA_VERSION,
+    type: MESSAGE_TYPES.RESPONSE,
+    nudgeId: input.nudgeId,
+    actionId: input.actionId,
+    respondedAt: input.respondedAt,
+    responseLatencyMs: input.responseLatencyMs
+  };
+  const errors = validateResponse(response, nudge, now);
+  if (errors.length > 0) {
+    throw new TypeError(errors.join("; "));
+  }
+  return Object.freeze(response);
 }

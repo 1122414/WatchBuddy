@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   createNudge,
+  createResponse,
   SCHEMA_VERSION,
   validateNudge,
   validateResponse
@@ -42,9 +43,23 @@ test("拒绝过期消息的回复", () => {
   const nudge = validNudge();
   const response = {
     schemaVersion: SCHEMA_VERSION,
+    type: "COMPANION_RESPONSE",
     nudgeId: nudge.nudgeId,
     actionId: "good",
     respondedAt: now + 120_000
   };
   assert.match(validateResponse(response, nudge, response.respondedAt).join(" "), /过期/);
+});
+
+test("创建合法快捷回复并计算响应延迟", () => {
+  const nudge = validNudge();
+  const response = createResponse({
+    nudgeId: nudge.nudgeId,
+    actionId: "good",
+    respondedAt: now + 2_800,
+    responseLatencyMs: 2_800
+  }, nudge);
+
+  assert.equal(response.type, "COMPANION_RESPONSE");
+  assert.deepEqual(validateResponse(response, nudge, response.respondedAt), []);
 });
