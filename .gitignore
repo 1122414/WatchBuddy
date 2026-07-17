@@ -1,0 +1,16 @@
+.DS_Store
+.idea/
+.gradle/
+.hvigor/
+node_modules/
+local.properties
+*.iml
+*.log
+build/
+**/build/
+**/.cxx/
+**/outputs/
+*.jks
+*.keystore
+secrets.properties
+agconnect-services.json

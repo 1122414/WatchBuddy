@@ -1,0 +1,53 @@
+{
+  "app": {
+    "bundleName": "com.watchbuddy.watch",
+    "vendor": "WatchBuddy",
+    "version": {
+      "code": 1000000,
+      "name": "0.1.0"
+    }
+  },
+  "deviceConfig": {},
+  "module": {
+    "deviceType": [
+      "liteWearable"
+    ],
+    "distro": {
+      "deliveryWithInstall": true,
+      "moduleName": "entry",
+      "moduleType": "entry"
+    },
+    "distroFilter": {
+      "screenShape": {
+        "policy": "include",
+        "value": [
+          "circle"
+        ]
+      },
+      "screenWindow": {
+        "policy": "include",
+        "value": [
+          "466*466"
+        ]
+      }
+    },
+    "abilities": [
+      {
+        "name": ".MainAbility",
+        "srcLanguage": "js",
+        "srcPath": "MainAbility",
+        "description": "$string:MainAbility_desc",
+        "label": "$string:MainAbility_label",
+        "type": "page"
+      }
+    ],
+    "js": [
+      {
+        "pages": [
+          "pages/index/index"
+        ],
+        "name": ".MainAbility"
+      }
+    ]
+  }
+}

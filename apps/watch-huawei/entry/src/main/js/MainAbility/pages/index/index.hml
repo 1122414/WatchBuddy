@@ -1,0 +1,29 @@
+<div class="container">
+  <div class="status-row">
+    <text class="status-dot">●</text>
+    <text class="status-label">{{stateLabel}}</text>
+  </div>
+
+  <div class="character {{characterClass}}" onclick="onCharacterTap">
+    <div class="antenna"></div>
+    <div class="face">
+      <div class="eyes">
+        <div class="eye"></div>
+        <div class="eye"></div>
+      </div>
+      <div class="mouth"></div>
+    </div>
+  </div>
+
+  <div class="bubble" if="{{messageVisible}}">
+    <text class="message">{{message}}</text>
+  </div>
+
+  <div class="actions" if="{{messageVisible}}">
+    <input class="action primary" type="button" value="{{actionOne}}" onclick="replyOne"></input>
+    <input class="action" type="button" value="{{actionTwo}}" onclick="replyTwo"></input>
+    <input class="action quiet" type="button" value="{{actionThree}}" onclick="replyThree"></input>
+  </div>
+
+  <text class="hint" if="{{!messageVisible}}">轻点它，看看它在想什么</text>
+</div>

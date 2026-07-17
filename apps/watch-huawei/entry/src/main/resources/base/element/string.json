@@ -1,0 +1,12 @@
+{
+  "string": [
+    {
+      "name": "MainAbility_desc",
+      "value": "WatchBuddy AI 伙伴"
+    },
+    {
+      "name": "MainAbility_label",
+      "value": "WatchBuddy"
+    }
+  ]
+}
