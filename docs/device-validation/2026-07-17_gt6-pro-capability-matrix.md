@@ -15,7 +15,11 @@
 | 活动通信 | 蓝牙统计显示华为运动健康 PhoneService 持续收发 | 设备链路处于活动状态 |
 | 手表屏幕 | 官方规格 466 × 466，圆形 | 表端只适配该分辨率 |
 | Android IDE | Android Studio 2026.1，内置 JDK 21 | 手机端开发工具可用 |
+| Android SDK | Platform 36 / Build-Tools 36.0.0 已安装，标准 SDK License 已由用户确认 | 可执行正式 Gradle 构建 |
 | Android 工程配置 | AGP 9.2.0 / Gradle 9.4.1 配置成功 | 工程模型可解析 |
+| 手机端构建 | `:app:assembleDebug` 成功，APK SHA-256 为 `695db7615688c5964348bc43c57f14630bb9dcd29213a0619bf32f5c49f213b6` | Java、资源、DEX、打包与 debug 签名均通过 |
+| 手机端安装 | `adb install -r` 返回 `Success`，包名 `com.watchbuddy.mobile`、版本 `0.1.0` | 已安装到 OnePlus PKX110 |
+| 手机端启动 | 冷启动 `Status: ok`，进程存活且调试台界面正常显示 | 手机端离线功能可开始真机验证 |
 | Wear Engine 依赖 | `com.huawei.hms:wearengine:5.0.0.300` 依赖树解析成功 | 手机 SDK 坐标有效 |
 | Lite Wearable SDK | 官方 5.0.2.306 已校验 SHA-256 并纳入第三方声明 | 表端 P2P SDK 来源可追溯 |
 
@@ -37,5 +41,8 @@
 
 采用 B 级路线作为工程基线：表端文字与快捷回复，手机端语音。只有表端录音和播放均通过真机验证，才切换到 A 级。
 
-当前缺少 DevEco Studio、华为开发者服务申请和真机签名；Android SDK Platform 36 /
-Build-Tools 36 也因 License 尚未由用户接受而不能安装。因此仍不能声称 APK 或 HAP 可安装。
+Android SDK、APK 构建、手机安装和冷启动已经通过。当前 APK 的华为 App ID 仍是占位值
+`0`；Wear Engine 授权未回调，设备查询返回 `WearEngineException: Internal error`。华为管理
+中心同时确认账号尚未完成开发者实名认证，因此还不能申请 Wear Engine 服务、生成 Client ID、
+下载表端完整工具链或创建真机签名材料。该结果不能用于判断 OnePlus 手机是否最终支持 Wear
+Engine，需在配置真实 Client ID 后复测。

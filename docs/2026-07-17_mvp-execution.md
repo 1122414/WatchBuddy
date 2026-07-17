@@ -69,7 +69,7 @@
 
 ## 外部前置条件
 
-- Android SDK 许可需由用户本人确认；
+- [x] Android SDK 标准许可已由用户本人确认；
 - 华为开发者账号需要完成实名认证；
 - Wear Engine 和 Health Service Kit 需要在华为开发者后台申请；
 - 手机包名、表端包名、App ID 与签名指纹必须在后台保持一致；
@@ -79,9 +79,11 @@
 
 - Android Gradle Plugin 9.2.0 / Gradle 9.4.1 配置阶段通过；
 - `com.huawei.hms:wearengine:5.0.0.300` 及其 AndroidX 依赖树解析通过；
-- Android Java 编译尚未开始：SDK Platform 36 与 Build-Tools 36 License 未由用户接受；
+- Android SDK Platform 36 / Build-Tools 36.0.0 已安装，`:app:assembleDebug` 正式构建成功；
+- debug APK 已安装到 OnePlus PKX110 并冷启动成功，包版本为 `0.1.0`；
+- 当前 APK 的华为 App ID 是占位值 `0`，Wear Engine 查询返回 `Internal error`，必须在服务申请后写入真实 Client ID 再复测；
 - 表端已接入官方 Lite Wearable SDK 5.0.2.306，并记录文件哈希与第三方声明；
 - 双向协议的离线测试覆盖 ACK、重试、过期、重复、非法版本、超长消息和重复动作；
 - 手机端已实现主动策略、可解释原因、记忆控制、显式短语音、手机 TTS 与真实活动采样；
-- 上述手机/表端实现仍需 APK/HAP 构建和 GT 6 Pro 真机验证，未据此勾选端到端验收项；
-- 华为 DevEco 下载页需要用户本人登录；若触发实名认证或开发者协议，也必须由用户本人处理。
+- 手机端已完成 APK 构建、安装和启动；表端仍需 HAP 构建、签名和 GT 6 Pro 真机验证；
+- 华为账号已登录，但管理中心要求先完成开发者实名认证；实名认证、服务协议与开发者身份资料必须由用户本人处理。
