@@ -85,6 +85,10 @@ npm run start:api
 HarmonyOS 手表应用、签名证书与真机调试权限；任何账号凭据、服务端密钥、签名文件与设备令牌
 均不得提交到 Git。
 
+真机联网前，将公网 HTTPS 地址写入
+`apps/watch-huawei/entry/src/main/js/MainAbility/common/api-config.js`。仓库默认留空，表端会显示
+“待配置服务”，避免误把本地 HTTP 或占位地址当成独立联网结果。
+
 ## 隐私边界
 
 - AI 服务密钥只保存在服务端，不写入 HAP；

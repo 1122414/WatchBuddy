@@ -1,5 +1,5 @@
 <div class="container">
-  <div class="status-row">
+  <div class="status-row" onclick="checkServer">
     <text class="status-dot">●</text>
     <text class="status-label">{{stateLabel}}</text>
     <text class="connection-label"> · {{connectionLabel}}</text>
@@ -27,5 +27,5 @@
     <input class="action quiet" if="{{actionFour}}" type="button" value="{{actionFour}}" onclick="replyFour"></input>
   </div>
 
-  <text class="hint" if="{{!messageVisible}}">轻点它，看看它在想什么</text>
+  <text class="hint" if="{{!messageVisible}}">轻点角色体验，轻点状态重试联网</text>
 </div>

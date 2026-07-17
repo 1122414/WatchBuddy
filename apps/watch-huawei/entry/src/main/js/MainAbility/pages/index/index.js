@@ -1,18 +1,7 @@
 import storage from '@system.storage';
 import vibrator from '@system.vibrator';
 
-import {
-  acknowledgeResponse,
-  initializeWearEngine,
-  sendJson,
-  sendReliableResponse,
-  unregisterWearEngine
-} from '../../common/wear-engine-manager.js';
-import {
-  createDeliveryAck,
-  createResponseMessage,
-  inspectIncomingMessage
-} from '../../common/watch-protocol.js';
+import { checkWatchBuddyHealth } from '../../common/watch-api-client.js';
 
 const STATE_LABELS = {
   sleeping: '睡觉',
@@ -60,26 +49,24 @@ export default {
     actionFourId: '',
     currentNudgeId: '',
     currentNudgeCreatedAt: 0,
-    recentNudgeIds: [],
-    connectionLabel: '离线角色',
+    connectionLabel: '正在连接',
     demoIndex: 0
   },
 
   onInit() {
     this.restoreState();
-    this.restoreRecentNudges();
   },
 
   onShow() {
-    this.connectPhone();
+    this.checkServer();
   },
 
   onHide() {
-    unregisterWearEngine();
+    this.cancelHealthCheck();
   },
 
   onDestroy() {
-    unregisterWearEngine();
+    this.cancelHealthCheck();
   },
 
   restoreState() {
@@ -121,6 +108,7 @@ export default {
     const demo = DEMO_MESSAGES[this.demoIndex % DEMO_MESSAGES.length];
     this.demoIndex += 1;
     this.presentMessage(demo);
+    this.vibrate();
   },
 
   presentMessage(nudge) {
@@ -156,9 +144,6 @@ export default {
   },
 
   finishReply(actionId, outcome) {
-    if (this.currentNudgeId) {
-      this.sendResponse(actionId);
-    }
     const nextState = outcome === 'busy' ? 'giving_space' : 'idle';
     this.messageVisible = false;
     this.setState(nextState);
@@ -169,98 +154,37 @@ export default {
     console.info(`[WatchBuddy] local response: ${outcome}`);
   },
 
-  connectPhone() {
-    unregisterWearEngine();
-    initializeWearEngine(this.messageReceiver());
-  },
-
-  messageReceiver() {
-    return {
-      onSuccess: function() {
-        this.connectionLabel = '手机已连接';
+  checkServer() {
+    this.cancelHealthCheck();
+    this.connectionLabel = '正在连接';
+    this.healthCheck = checkWatchBuddyHealth({
+      onSuccess: function(result) {
+        this.connectionLabel = `服务在线 ${result.version}`;
       }.bind(this),
       onFailure: function(reason) {
-        this.connectionLabel = reason === 'peer_not_configured' ? '待配置签名' : '手机未连接';
-      }.bind(this),
-      onReceiveMessage: function(data) {
-        this.handleIncomingMessage(data);
+        this.connectionLabel = this.connectionLabelForFailure(reason);
       }.bind(this)
-    };
-  },
-
-  handleIncomingMessage(data) {
-    const result = inspectIncomingMessage(data, this.recentNudgeIds);
-    if (result.kind === 'reject') {
-      console.error(`[WatchBuddy] rejected message: ${result.reason}`);
-      return;
-    }
-    if (result.kind === 'delivery_ack') {
-      if (result.status === 'responded') {
-        acknowledgeResponse(result.messageId);
-      }
-      return;
-    }
-    if (result.kind === 'acknowledge') {
-      this.sendAck(result.messageId, result.status);
-      return;
-    }
-
-    this.recentNudgeIds = result.recentNudgeIds;
-    this.persistRecentNudges();
-    this.presentMessage(result.message);
-    this.vibrate();
-    this.sendAck(result.message.nudgeId, 'displayed');
-  },
-
-  sendResponse(actionId) {
-    const response = createResponseMessage(
-      this.currentNudgeId,
-      actionId,
-      this.currentNudgeCreatedAt
-    );
-    sendReliableResponse(response, this.sendCallback('response'));
-  },
-
-  sendAck(messageId, status) {
-    sendJson(createDeliveryAck(messageId, status), this.sendCallback('ack'));
-  },
-
-  sendCallback(kind) {
-    return {
-      onSuccess() {
-        console.info(`[WatchBuddy] ${kind} sent`);
-      },
-      onFailure: function() {
-        this.connectionLabel = '回复待重试';
-      }.bind(this),
-      onSendResult(result) {
-        const code = result && result.code !== undefined ? result.code : 'unknown';
-        console.info(`[WatchBuddy] ${kind} result: ${code}`);
-      },
-      onSendProgress() {
-      }
-    };
-  },
-
-  persistRecentNudges() {
-    storage.set({
-      key: 'watchbuddy_recent_nudges',
-      value: JSON.stringify(this.recentNudgeIds)
     });
   },
 
-  restoreRecentNudges() {
-    storage.get({
-      key: 'watchbuddy_recent_nudges',
-      success: (value) => {
-        try {
-          const ids = JSON.parse(value || '[]');
-          this.recentNudgeIds = Array.isArray(ids) ? ids.slice(0, 16) : [];
-        } catch (error) {
-          this.recentNudgeIds = [];
-        }
-      }
-    });
+  cancelHealthCheck() {
+    if (this.healthCheck) {
+      this.healthCheck.cancel();
+      this.healthCheck = null;
+    }
+  },
+
+  connectionLabelForFailure(reason) {
+    if (reason === 'service_not_configured') {
+      return '待配置服务';
+    }
+    if (reason === 'timeout') {
+      return '服务超时';
+    }
+    if (reason === 'invalid_response' || reason === 'invalid_json') {
+      return '响应异常';
+    }
+    return '服务离线';
   },
 
   vibrate() {

@@ -74,10 +74,10 @@ WatchBuddy API
 
 ### 阶段 0：独立运行能力 Spike
 
-- [ ] 安装并验证 DevEco Studio、Lite Wearable SDK、Hvigor 和 HDC；
+- [ ] 安装并验证 DevEco Studio 6.0.0 以上、Lite Wearable SDK 与 Hvigor；
 - [ ] 创建与 `com.watchbuddy.watch` 匹配的 HarmonyOS 手表应用与调试签名；
 - [ ] 构建一个不含 Wear Engine 的最小 HAP；
-- [ ] 在 GT 6 Pro 安装并打开最小 HAP；
+- [ ] 按官方 Lite Wearable 流程，通过应用调测助手把最小 HAP 安装到 GT 6 Pro；
 - [ ] 手表通过 HTTPS `GET /health` 获得服务端响应；
 - [ ] 手机关机或断开蓝牙后重复 HTTPS 测试；
 - [ ] 验证令牌安全存储、请求超时和离线提示；
@@ -161,11 +161,14 @@ WatchBuddy API
 
 - 同意 DevEco Studio、HarmonyOS SDK 或设备调试协议；
 - 在 AGC 创建 HarmonyOS 手表应用并确认包名、设备类型与协议；
-- 在手表上确认开发者模式、调试、安装或敏感权限；
+- 在安装阶段使用已配对华为手机上的应用调测助手选择 HAP，并在手表上确认安装或敏感权限；
 - 选择最终服务部署环境与计费方案。
 
 除上述必须由用户确认的动作外，构建、测试、文档和本地配置由项目自动化完成。需要操作手表时，
 必须提前说明具体操作和目的。不得操作用户手机。
+
+手机仅作为 Lite Wearable 官方规定的 HAP 安装通道，不安装或运行 WatchBuddy 手机端，也不参与
+WatchBuddy 的联网、对话、提醒、语音、传感器或记忆。安装后的独立运行验收必须关闭手机或断开蓝牙。
 
 ## 7. 已有资产与退出旧路线
 
@@ -187,8 +190,14 @@ WatchBuddy API
 ## 8. 当前已知事实
 
 - 当前表端配置为 `liteWearable`、圆屏 466 × 466，包名 `com.watchbuddy.watch`；
-- 当前仓库尚未提供可用的 DevEco Studio、HarmonyOS SDK、Hvigor/HDC 命令链路；
-- 当前表端仍导入 Wear Engine 并配置手机 peer，尚未满足独立运行；
+- 华为当前文档标明 WATCH GT 6 的设备能力级别为 API 20；当前官方 Lite Wearable 示例工程仍使用
+  `targetSdkVersion/compatibleSdkVersion = 5.0.5(17)`，本工程与官方示例保持一致；
+- Lite Wearable 提供 `@system.fetch`，默认支持 HTTPS；华为文档给出的限制为请求头不超过 2KB、
+  传输层单包不超过 7KB；
+- Lite Wearable 不能直接连接 DevEco Studio，官方真机安装流程依赖应用调测助手和已配对华为手机；
+- 当前电脑尚未提供可用的 DevEco Studio、HarmonyOS SDK 与 Hvigor 命令链路；
+- 当前表端运行入口已改用 `@system.fetch` 健康检查且不再导入 Wear Engine，但公网 HTTPS 服务地址、
+  HAP 构建和真机联网仍未验证；
 - Android APK 已构建安装，但不再属于目标架构；
 - Android APPID `118346425` 的 Wear Engine 申请已被驳回，审核意见建议手表直接联网同步服务端；
 - 手表 HAP 构建、签名、安装、独立 HTTPS、后台、语音与传感器均仍需直接证据。

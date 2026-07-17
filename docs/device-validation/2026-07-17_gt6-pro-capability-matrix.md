@@ -12,8 +12,11 @@
 | 设备形态 | `deviceType` 为 `liteWearable` | 使用 Lite Wearable JS 工程 |
 | 屏幕适配 | `screenShape=circle`、`screenWindow=466*466` | 与目标圆屏一致 |
 | 表端 UI | 已实现角色、状态、消息与快捷回复 | 可复用 |
-| 当前表端传输 | 导入 Wear Engine、手机 peer 和双向 ACK | 不符合目标，必须替换 |
-| 独立构建工具链 | 未发现可用 DevEco Studio、Hvigor、HDC 或 Java 运行时 | 未通过 |
+| GT 6 能力级别 | 华为当前 Lite Wearable 文档列出 WATCH GT 6 为 API 20 | 设备支持，仍需真机验证 |
+| 工程 SDK 级别 | 华为 2026-07-17 官方 Lite Wearable 示例仍使用 `5.0.5(17)` | 与官方示例保持一致 |
+| 当前表端传输 | 运行入口已改用 `@system.fetch` HTTPS 健康检查，不再导入 Wear Engine | 代码完成，待构建/真机 |
+| 独立构建工具链 | 未发现可用 DevEco Studio、Lite Wearable SDK 或 Hvigor | 未通过 |
+| 真机安装通道 | 华为文档明确 Lite Wearable 不能直连 DevEco Studio，需应用调测助手安装 | 安装阶段需要用户操作 |
 
 ## 独立运行硬门槛
 
@@ -31,6 +34,9 @@
 | 息屏/后台提醒 | 应用关闭或息屏后收到测试提醒 | 待验证 | 不支持则下次打开呈现 |
 
 阶段 0 只有“脱离手机联网”通过才算完成。网络仍经由 WatchBuddy 手机端或 Wear Engine 转发不算通过。
+
+`@system.fetch` 官方文档说明默认支持 HTTPS；Lite Wearable FAQ 还规定请求头不超过 2KB、传输层
+单包不超过 7KB。当前表端按这两个上限设计，但是否通过手机网络代理仍必须通过关闭手机后的真机测试判定。
 
 ## MVP 功能验收
 
@@ -77,3 +83,9 @@
 4. 手表完成注册、对话、回复、记忆和删除的端到端记录；
 5. 表端运行代码中不存在 Wear Engine 或手机 peer 依赖；
 6. 离线、重启、令牌失效和服务端错误均有真机结果。
+
+## 官方依据
+
+- [华为：轻量级智能穿戴应用开发](https://developer.huawei.com/consumer/cn/doc/best-practices/bpta-lite-wearable-guide)
+- [华为：`@system.fetch` 数据请求](https://developer.huawei.com/consumer/cn/doc/harmonyos-references-v5/js-apis-system-fetch-V5)
+- [华为官方 Lite Wearable 示例工程](https://gitcode.com/harmonyos_samples/BestPracticeSnippets/tree/master/LiteWearable)
