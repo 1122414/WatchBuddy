@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test packages/companion-core/test/*.test.js apps/watch-huawei/test/*.test.js"
+    "start:api": "node apps/watchbuddy-api/src/server.js",
+    "test": "node --test packages/companion-core/test/*.test.js apps/watch-huawei/test/*.test.js apps/watchbuddy-api/test/*.test.js"
   },
   "engines": {
     "node": ">=22"

@@ -72,6 +72,15 @@ docs/
 npm test
 ```
 
+启动最小 WatchBuddy API：
+
+```bash
+npm run start:api
+```
+
+当前提供 `GET /health`。本地进程默认监听 `127.0.0.1:8787`；真机验证前仍需部署到受信任的
+公网 HTTPS 地址，不能把本地 HTTP 结果当作 GT 6 Pro 独立联网证据。
+
 表端工程使用 DevEco Studio 打开 `apps/watch-huawei`。构建和安装前需要配置
 HarmonyOS 手表应用、签名证书与真机调试权限；任何账号凭据、服务端密钥、签名文件与设备令牌
 均不得提交到 Git。
