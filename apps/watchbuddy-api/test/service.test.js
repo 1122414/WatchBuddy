@@ -6,9 +6,9 @@ import { WatchBuddyService } from "../src/service.js";
 const NOW = Date.parse("2026-07-18T03:00:00.000Z");
 const TOKEN = "test_device_token_123456789012345678901234567890";
 
-function createService() {
+function createService(initialTimestamp = NOW) {
   let id = 0;
-  let timestamp = NOW;
+  let timestamp = initialTimestamp;
   const service = new WatchBuddyService({
     idFactory: () => `test_${String(id += 1).padStart(8, "0")}`,
     now: () => timestamp,
@@ -114,6 +114,64 @@ test("状态接口生成通过 companion-core 校验的表端消息", () => {
   assert.equal(state.nudge.type, "COMPANION_NUDGE");
   assert.equal(state.nudge.actions.length, 3);
   assert.equal(state.nextCheckAt, NOW + 5 * 60_000);
+});
+
+test("睡眠时段不生成主动消息", () => {
+  const midnightInChina = Date.parse("2026-07-18T16:00:00.000Z");
+  const { service } = createService(midnightInChina);
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+
+  const state = service.getCompanionState(device);
+
+  assert.equal(state.characterState, "sleeping");
+  assert.equal(state.nudge, null);
+  assert.equal(state.initiative.blockedBy, "sleeping");
+  assert.equal(state.nextCheckAt, midnightInChina + 7 * 60 * 60 * 1000);
+});
+
+test("忙碌回复抑制消息并在六小时后恢复", () => {
+  const { advance, service } = createService();
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+  const first = service.getCompanionState(device);
+
+  service.reply(device, {
+    actionId: "busy",
+    nudgeId: first.nudge.nudgeId
+  });
+  advance(60 * 60 * 1000);
+  const blocked = service.getCompanionState(device);
+  assert.equal(blocked.nudge, null);
+  assert.equal(blocked.initiative.blockedBy, "user_requested_space");
+  assert.equal(blocked.nextCheckAt, NOW + 6 * 60 * 60 * 1000);
+
+  advance(5 * 60 * 60 * 1000);
+  const resumed = service.getCompanionState(device);
+  assert.equal(resumed.nudge.type, "COMPANION_NUDGE");
+});
+
+test("每日主动预算达到两次后停止发送", () => {
+  const { advance, service } = createService();
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+  const morning = service.getCompanionState(device);
+  service.reply(device, {
+    actionId: "share",
+    nudgeId: morning.nudge.nudgeId
+  });
+
+  advance(3 * 60 * 60 * 1000);
+  const evening = service.getCompanionState(device);
+  service.reply(device, {
+    actionId: "share",
+    nudgeId: evening.nudge.nudgeId
+  });
+
+  advance(3 * 60 * 60 * 1000);
+  const budgetBlocked = service.getCompanionState(device);
+  assert.equal(budgetBlocked.nudge, null);
+  assert.equal(budgetBlocked.initiative.blockedBy, "daily_budget");
 });
 
 test("快捷回复更新角色状态并消费当前消息", () => {

@@ -234,12 +234,18 @@ export default {
         const state = result.data;
         this.connectionLabel = '服务在线';
         this.setState(state.characterState);
-        this.persistNudge(state.nudge);
-        if (!this.pendingReply
-          || this.pendingReply.payload.nudgeId !== state.nudge.nudgeId) {
-          this.presentMessage(state.nudge);
+        if (state.nudge) {
+          this.persistNudge(state.nudge);
+          if (!this.pendingReply
+            || this.pendingReply.payload.nudgeId !== state.nudge.nudgeId) {
+            this.presentMessage(state.nudge);
+          } else {
+            this.messageVisible = false;
+          }
         } else {
+          this.deleteCachedNudge();
           this.messageVisible = false;
+          this.currentNudgeId = '';
         }
         this.schedulePendingReply();
       }.bind(this),
@@ -596,6 +602,15 @@ export default {
       } else {
         this.deleteStored(NUDGE_ACTION_STORAGE_KEYS[index]);
       }
+    }
+  },
+
+  deleteCachedNudge() {
+    this.cachedNudge = null;
+    this.deleteStored(NUDGE_META_STORAGE_KEY);
+    this.deleteStored(NUDGE_MESSAGE_STORAGE_KEY);
+    for (let index = 0; index < NUDGE_ACTION_STORAGE_KEYS.length; index += 1) {
+      this.deleteStored(NUDGE_ACTION_STORAGE_KEYS[index]);
     }
   },
 

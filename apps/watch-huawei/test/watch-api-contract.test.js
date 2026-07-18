@@ -185,6 +185,11 @@ test("校验注册、状态与回复响应", () => {
       companionState: {
         activity: "curious"
       },
+      initiative: {
+        blockedBy: null,
+        decision: "send",
+        reasons: ["处于日常互动窗口"]
+      },
       nextCheckAt: NOW + 300_000,
       nudge: nudge(),
       serverTime: NOW
@@ -205,6 +210,29 @@ test("校验注册、状态与回复响应", () => {
       }
     }
   }).ok, true);
+});
+
+test("接受主动策略阻断后的空消息状态", () => {
+  const state = inspectCompanionStateResponse({
+    code: 200,
+    data: {
+      characterState: "sleeping",
+      companionState: {
+        activity: "sleeping"
+      },
+      initiative: {
+        blockedBy: "sleeping",
+        decision: "block",
+        reasons: []
+      },
+      nextCheckAt: NOW + 30 * 60_000,
+      nudge: null,
+      serverTime: NOW
+    }
+  });
+
+  assert.equal(state.ok, true);
+  assert.equal(state.data.nudge, null);
 });
 
 test("校验记忆列表和删除响应", () => {
@@ -245,6 +273,11 @@ test("拒绝过大、过期或错误状态码的业务响应", () => {
     code: 200,
     data: {
       characterState: "curious",
+      initiative: {
+        blockedBy: null,
+        decision: "send",
+        reasons: []
+      },
       nextCheckAt: NOW + 300_000,
       nudge: {
         ...nudge(),

@@ -208,16 +208,28 @@ export function inspectCompanionStateResponse(response) {
   if (!payload
     || CHARACTER_STATES.indexOf(payload.characterState) < 0
     || !Number.isSafeInteger(payload.serverTime)
-    || !Number.isSafeInteger(payload.nextCheckAt)) {
+    || !Number.isSafeInteger(payload.nextCheckAt)
+    || payload.nextCheckAt <= payload.serverTime
+    || !payload.initiative
+    || ['block', 'pending', 'send'].indexOf(payload.initiative.decision) < 0
+    || !Array.isArray(payload.initiative.reasons)
+    || (payload.initiative.decision === 'block'
+      && typeof payload.initiative.blockedBy !== 'string')) {
     return invalid('invalid_response');
   }
-  const inspected = inspectIncomingMessage(
-    JSON.stringify(payload.nudge),
-    [],
-    payload.serverTime
-  );
-  if (inspected.kind !== 'display') {
-    return invalid('invalid_nudge');
+  if (payload.nudge === null) {
+    if (payload.initiative.decision !== 'block') {
+      return invalid('invalid_response');
+    }
+  } else {
+    const inspected = inspectIncomingMessage(
+      JSON.stringify(payload.nudge),
+      [],
+      payload.serverTime
+    );
+    if (inspected.kind !== 'display') {
+      return invalid('invalid_nudge');
+    }
   }
   return {
     ok: true,

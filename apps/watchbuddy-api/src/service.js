@@ -5,11 +5,16 @@ import {
 } from "node:crypto";
 
 import {
+  createInitiativeState,
+  decideInitiative,
+  DEFAULT_POLICY,
   MemoryStore,
   applyInteraction,
   createNudge,
   createResponse,
   initialCompanionState,
+  recordOutcome,
+  recordSent,
   stateForLocalTime
 } from "../../../packages/companion-core/src/index.js";
 
@@ -56,6 +61,33 @@ function localHour(timestamp, timezoneOffsetMinutes) {
   return new Date(localTimestamp).getUTCHours();
 }
 
+function localDate(timestamp, timezoneOffsetMinutes) {
+  const localTimestamp = timestamp + timezoneOffsetMinutes * 60_000;
+  return new Date(localTimestamp).toISOString().slice(0, 10);
+}
+
+function nextLocalHourAt(timestamp, timezoneOffsetMinutes, targetHour) {
+  const offsetMilliseconds = timezoneOffsetMinutes * 60_000;
+  const localTimestamp = timestamp + offsetMilliseconds;
+  const target = new Date(localTimestamp);
+  target.setUTCHours(targetHour, 0, 0, 0);
+  if (target.getTime() <= localTimestamp) {
+    target.setUTCDate(target.getUTCDate() + 1);
+  }
+  return target.getTime() - offsetMilliseconds;
+}
+
+function candidateForLocalHour(hour, date) {
+  const isEvening = hour >= 14;
+  return {
+    message: isEvening
+      ? "今天到现在，哪一小段最值得留下？"
+      : "早上好，今天最想先照顾好哪件事？",
+    source: "daily_routine",
+    topic: `daily_routine_${date}_${isEvening ? "evening" : "morning"}`
+  };
+}
+
 export class WatchBuddyService {
   #devicesById = new Map();
   #devicesByTokenHash = new Map();
@@ -95,6 +127,7 @@ export class WatchBuddyService {
 
     const device = existing ?? {
       deviceId: input.deviceId,
+      initiativeState: createInitiativeState(),
       memories: new MemoryStore(),
       pendingNudge: null,
       state: initialCompanionState()
@@ -133,32 +166,85 @@ export class WatchBuddyService {
 
   getCompanionState(device) {
     const timestamp = this.#now();
+    if (device.state.activity === "giving_space"
+      && Number.isSafeInteger(device.state.lastInteractionAt)
+      && timestamp - device.state.lastInteractionAt
+        >= DEFAULT_POLICY.cooldownAfterBusyMs) {
+      device.state = initialCompanionState({
+        ...device.state,
+        activity: "idle"
+      });
+    }
+    const hour = localHour(timestamp, device.timezoneOffsetMinutes);
+    const date = localDate(timestamp, device.timezoneOffsetMinutes);
     device.state = stateForLocalTime(
       device.state,
-      localHour(timestamp, device.timezoneOffsetMinutes)
+      hour
     );
 
-    if (!device.pendingNudge || device.pendingNudge.expiresAt <= timestamp) {
-      device.pendingNudge = createNudge({
-        actions: [
-          { id: "share", label: "跟你说说" },
-          { id: "later", label: "晚点" },
-          { id: "busy", label: "我在忙" }
-        ],
-        characterState: device.state.activity,
-        createdAt: timestamp,
-        expiresAt: timestamp + 15 * 60_000,
-        intensity: 1,
-        message: "今天到现在，哪一小段最值得留下？",
-        nudgeId: `nudge_${this.#idFactory()}`,
-        source: "daily_routine"
+    if (device.pendingNudge && device.pendingNudge.expiresAt <= timestamp) {
+      device.pendingNudge = null;
+      device.initiativeState = recordOutcome(
+        device.initiativeState,
+        "ignored",
+        timestamp
+      );
+    }
+
+    let initiative = {
+      blockedBy: null,
+      decision: "pending",
+      reasons: []
+    };
+    if (!device.pendingNudge) {
+      const candidate = candidateForLocalHour(hour, date);
+      initiative = decideInitiative({
+        candidate,
+        context: {
+          interruptible: true,
+          quietMode: false,
+          sleeping: device.state.activity === "sleeping",
+          userRequestedSpace: device.state.activity === "giving_space"
+        },
+        initiativeState: device.initiativeState,
+        localDate: date,
+        now: timestamp
       });
+      device.initiativeState = initiative.state;
+
+      if (initiative.decision === "send") {
+        device.pendingNudge = createNudge({
+          actions: [
+            { id: "share", label: "跟你说说" },
+            { id: "later", label: "晚点" },
+            { id: "busy", label: "我在忙" }
+          ],
+          characterState: device.state.activity,
+          createdAt: timestamp,
+          expiresAt: timestamp + 15 * 60_000,
+          intensity: 1,
+          message: candidate.message,
+          nudgeId: `nudge_${this.#idFactory()}`,
+          source: candidate.source
+        });
+        device.initiativeState = recordSent(
+          device.initiativeState,
+          candidate,
+          timestamp,
+          date
+        );
+      }
     }
 
     return {
       characterState: device.state.activity,
       companionState: device.state,
-      nextCheckAt: timestamp + 5 * 60_000,
+      initiative: {
+        blockedBy: initiative.blockedBy,
+        decision: initiative.decision,
+        reasons: initiative.reasons
+      },
+      nextCheckAt: this.#nextCheckAt(device, initiative, timestamp),
       nudge: device.pendingNudge,
       serverTime: timestamp
     };
@@ -220,6 +306,11 @@ export class WatchBuddyService {
     }
 
     device.state = applyInteraction(device.state, outcome, timestamp);
+    device.initiativeState = recordOutcome(
+      device.initiativeState,
+      outcome,
+      timestamp
+    );
     device.pendingNudge = null;
 
     return {
@@ -241,5 +332,35 @@ export class WatchBuddyService {
 
   clearMemories(device) {
     return device.memories.clear();
+  }
+
+  #nextCheckAt(device, initiative, timestamp) {
+    if (device.pendingNudge) {
+      return Math.min(
+        device.pendingNudge.expiresAt,
+        timestamp + 5 * 60_000
+      );
+    }
+    if (Number.isSafeInteger(device.initiativeState.blockedUntil)
+      && device.initiativeState.blockedUntil > timestamp) {
+      return device.initiativeState.blockedUntil;
+    }
+    if (Number.isSafeInteger(device.initiativeState.lastNudgeAt)) {
+      const cooldownUntil = device.initiativeState.lastNudgeAt
+        + DEFAULT_POLICY.cooldownAfterNudgeMs;
+      if (cooldownUntil > timestamp) {
+        return cooldownUntil;
+      }
+    }
+    if (initiative.blockedBy === "sleeping"
+      || initiative.blockedBy === "daily_budget"
+      || initiative.blockedBy === "repeated_topic") {
+      return nextLocalHourAt(
+        timestamp,
+        device.timezoneOffsetMinutes,
+        7
+      );
+    }
+    return timestamp + 30 * 60_000;
   }
 }
