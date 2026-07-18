@@ -85,8 +85,16 @@ npm run test:pet-tools
 把通过授权审查的 Codex Pet v2 转成手表资源：
 
 ```bash
+npm run import:pet -- \
+  --source-url "https://codex-pets.net/api/pets/my-pet/download?v=123" \
+  --output-dir /path/to/licensed-codex-pet-v2 \
+  --author "Pet Author" \
+  --license-id CC-BY-4.0 \
+  --license-evidence-url https://example.com/my-pet/LICENSE \
+  --attribution "My Pet by Pet Author."
+
 npm run convert:pet -- \
-  --source-dir /path/to/codex-pet-v2 \
+  --source-dir /path/to/licensed-codex-pet-v2 \
   --output-dir /path/to/watch-pet-output \
   --source-url https://example.com/pets/my-pet \
   --author "Pet Author" \
@@ -96,6 +104,12 @@ npm run convert:pet -- \
 
 npm run validate:pet -- /path/to/watch-pet-output
 ```
+
+受控导入器只接受 `codex-pets.net` 官方下载 API、最多两次同源重定向，以及
+`CC0-1.0`、`CC-BY-4.0`、`MIT` 或 `Apache-2.0`。许可证证据必须来自独立页面；
+站点分享页本身不能充当再分发许可。导入过程限制响应和解压大小，只允许平铺的
+`pet.json` 与一张 PNG/WebP 图集，并在写入前校验 v2 清单、图片魔数、尺寸、透明通道、
+必需格和未使用格。输出包含可追溯的 `source-provenance.json`。
 
 转换器拒绝旧版/伪装 v2、无透明通道、错误网格、空必需格、非透明未使用格、未知授权和已有输出
 目录；当前 v2 契约中的 `row 0 / column 6` 中立帧属于必需格。成功结果包含
