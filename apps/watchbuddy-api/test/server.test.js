@@ -127,6 +127,7 @@ test("仅用 HTTP 完成注册、状态、回复、记忆和撤销闭环", async
   assert.equal(stateResponse.status, 200);
   assert.equal(state.characterState, "idle");
   assert.equal(state.nudge.type, "COMPANION_NUDGE");
+  assert.deepEqual(state.settings, { quietMode: false });
 
   timestamp += 2_000;
   const quickReplyResponse = await fetch(`${baseUrl}/v1/companion/reply`, {
@@ -200,6 +201,63 @@ test("仅用 HTTP 完成注册、状态、回复、记忆和撤销闭环", async
     headers: { authorization }
   });
   assert.equal(unauthorizedResponse.status, 401);
+});
+
+test("安静模式设置要求鉴权、JSON 和严格布尔字段", async (t) => {
+  const server = createWatchBuddyServer();
+  t.after(() => close(server));
+  const baseUrl = await listen(server);
+  const registration = await registerDevice(baseUrl, {
+    idempotencyKey: "register-settings"
+  });
+  const authorization = `Bearer ${registration.body.deviceToken}`;
+
+  const unauthorized = await fetch(`${baseUrl}/v1/settings`);
+  assert.equal(unauthorized.status, 401);
+
+  const quietResponse = await fetch(`${baseUrl}/v1/settings`, {
+    body: JSON.stringify({ quietMode: true }),
+    headers: {
+      authorization,
+      "content-type": "application/json"
+    },
+    method: "PUT"
+  });
+  assert.equal(quietResponse.status, 200);
+  assert.deepEqual(await quietResponse.json(), { quietMode: true });
+
+  const stateResponse = await fetch(`${baseUrl}/v1/companion/state`, {
+    headers: { authorization }
+  });
+  const state = await stateResponse.json();
+  assert.equal(state.nudge, null);
+  assert.equal(state.initiative.blockedBy, "quiet_mode");
+
+  const settingsResponse = await fetch(`${baseUrl}/v1/settings`, {
+    headers: { authorization }
+  });
+  assert.equal(settingsResponse.status, 200);
+  assert.deepEqual(await settingsResponse.json(), { quietMode: true });
+
+  const wrongType = await fetch(`${baseUrl}/v1/settings`, {
+    body: JSON.stringify({ quietMode: "true" }),
+    headers: {
+      authorization,
+      "content-type": "application/json"
+    },
+    method: "PUT"
+  });
+  assert.equal(wrongType.status, 400);
+
+  const extraField = await fetch(`${baseUrl}/v1/settings`, {
+    body: JSON.stringify({ quietMode: true, unknown: true }),
+    headers: {
+      authorization,
+      "content-type": "application/json"
+    },
+    method: "PUT"
+  });
+  assert.equal(extraField.status, 400);
 });
 
 test("鉴权设备可读取受控宠物目录、分页摘要和完整性固定资源", async (t) => {

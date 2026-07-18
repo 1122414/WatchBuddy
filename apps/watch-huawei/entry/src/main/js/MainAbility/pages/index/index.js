@@ -10,7 +10,8 @@ import {
   fetchPetCatalog,
   fetchPetDetail,
   registerWatchBuddy,
-  replyToCompanion
+  replyToCompanion,
+  updateSettings
 } from '../../common/watch-api-client.js';
 import {
   canRetryReply,
@@ -92,6 +93,8 @@ export default {
     currentNudgeId: '',
     currentNudgeCreatedAt: 0,
     connectionLabel: '正在连接',
+    quietMode: false,
+    quietModeLabel: '安静：关',
     mainScreen: true,
     memoryScreen: false,
     memoryStatus: '正在读取',
@@ -332,6 +335,8 @@ export default {
         this.activeRequest = null;
         const state = result.data;
         this.connectionLabel = '服务在线';
+        this.quietMode = state.settings.quietMode;
+        this.quietModeLabel = this.quietMode ? '安静：开' : '安静：关';
         this.setState(state.characterState);
         if (state.nudge) {
           this.persistNudge(state.nudge);
@@ -370,6 +375,36 @@ export default {
       this.persistPendingReply();
     }
     this.ensureConnected();
+  },
+
+  toggleQuietMode() {
+    if (!this.deviceToken) {
+      this.connectionLabel = '尚未注册';
+      return;
+    }
+    const nextQuietMode = !this.quietMode;
+    this.cancelRequest();
+    this.quietModeLabel = '设置中';
+    this.activeRequest = updateSettings(
+      this.deviceToken,
+      nextQuietMode,
+      {
+        onSuccess: function(result) {
+          this.activeRequest = null;
+          this.quietMode = result.data.quietMode;
+          this.quietModeLabel = this.quietMode ? '安静：开' : '安静：关';
+          this.connectionLabel = this.quietMode
+            ? '安静模式已开启'
+            : '安静模式已关闭';
+          this.syncCompanionState();
+        }.bind(this),
+        onFailure: function(reason) {
+          this.activeRequest = null;
+          this.quietModeLabel = this.quietMode ? '安静：开' : '安静：关';
+          this.connectionLabel = this.connectionLabelForFailure(reason);
+        }.bind(this)
+      }
+    );
   },
 
   applyTimeState() {

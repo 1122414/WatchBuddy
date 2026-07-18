@@ -140,12 +140,18 @@ test('页面使用真实宠物并在隐藏、销毁和记忆页停止计时器',
     /showMemories\(\) \{[\s\S]*?this\.stopPetAnimation\(\);/
   );
   assert.match(hml, /value="宠物" onclick="showPets"/);
+  assert.match(
+    hml,
+    /value="\{\{quietModeLabel\}\}" onclick="toggleQuietMode"/
+  );
   assert.match(hml, /class="pet-screen" if="\{\{petScreen\}\}"/);
   assert.match(
     source,
     /cancelActiveWork\(\) \{[\s\S]*?this\.cancelPetInstall\(\);/
   );
   assert.match(source, /installPetBundle\(\{/);
+  assert.match(source, /updateSettings\(\s*this\.deviceToken,/);
+  assert.match(source, /this\.quietMode = state\.settings\.quietMode;/);
   assert.match(source, /serializePetSelection\(selection\)/);
   assert.match(fileAdapter, /import file from '@system\.file';/);
   assert.match(fileAdapter, /file\.writeArrayBuffer\(\{/);

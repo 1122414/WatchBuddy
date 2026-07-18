@@ -130,12 +130,18 @@ export class WatchBuddyService {
       initiativeState: createInitiativeState(),
       memories: new MemoryStore(),
       pendingNudge: null,
+      settings: {
+        quietMode: false
+      },
       state: initialCompanionState()
     };
 
     device.locale = input.locale || "zh-CN";
     device.registeredAt = existing?.registeredAt ?? timestamp;
     device.revokedAt = null;
+    device.settings ??= {
+      quietMode: false
+    };
     device.timezoneOffsetMinutes = input.timezoneOffsetMinutes;
     device.tokenHash = tokenHash(token);
     this.#devicesById.set(device.deviceId, device);
@@ -202,7 +208,7 @@ export class WatchBuddyService {
         candidate,
         context: {
           interruptible: true,
-          quietMode: false,
+          quietMode: device.settings.quietMode,
           sleeping: device.state.activity === "sleeping",
           userRequestedSpace: device.state.activity === "giving_space"
         },
@@ -246,8 +252,33 @@ export class WatchBuddyService {
       },
       nextCheckAt: this.#nextCheckAt(device, initiative, timestamp),
       nudge: device.pendingNudge,
+      settings: this.getSettings(device),
       serverTime: timestamp
     };
+  }
+
+  getSettings(device) {
+    return {
+      quietMode: device.settings.quietMode
+    };
+  }
+
+  updateSettings(device, input) {
+    if (!input
+      || typeof input !== "object"
+      || Array.isArray(input)
+      || Object.keys(input).length !== 1
+      || typeof input.quietMode !== "boolean") {
+      throw new TypeError("设置必须且只能包含布尔值 quietMode");
+    }
+
+    device.settings = {
+      quietMode: input.quietMode
+    };
+    if (input.quietMode) {
+      device.pendingNudge = null;
+    }
+    return this.getSettings(device);
   }
 
   reply(device, input) {
@@ -344,6 +375,9 @@ export class WatchBuddyService {
     if (Number.isSafeInteger(device.initiativeState.blockedUntil)
       && device.initiativeState.blockedUntil > timestamp) {
       return device.initiativeState.blockedUntil;
+    }
+    if (initiative.blockedBy === "quiet_mode") {
+      return timestamp + 6 * 60 * 60_000;
     }
     if (Number.isSafeInteger(device.initiativeState.lastNudgeAt)) {
       const cooldownUntil = device.initiativeState.lastNudgeAt

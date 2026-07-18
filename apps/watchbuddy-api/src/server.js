@@ -277,6 +277,9 @@ function methodForPath(pathname) {
   if (pathname === "/v1/companion/reply") {
     return "POST";
   }
+  if (pathname === "/v1/settings") {
+    return "GET, PUT";
+  }
   if (pathname === "/v1/pets"
     || PET_DETAIL_PATH_PATTERN.test(pathname)
     || PET_ASSETS_PATH_PATTERN.test(pathname)
@@ -429,6 +432,19 @@ export function createWatchBuddyServer({
         );
         statusCode = 200;
         sendJson(response, statusCode, result, responseHeaders);
+        return;
+      }
+
+      if (url.pathname === "/v1/settings") {
+        statusCode = 200;
+        sendJson(
+          response,
+          statusCode,
+          request.method === "GET"
+            ? service.getSettings(device)
+            : service.updateSettings(device, await readJson(request)),
+          responseHeaders
+        );
         return;
       }
 

@@ -25,6 +25,7 @@
     <div class="utility-actions" if="{{!messageVisible}}">
       <input class="utility-entry" type="button" value="宠物" onclick="showPets"></input>
       <input class="utility-entry" type="button" value="记忆" onclick="showMemories"></input>
+      <input class="utility-entry quiet-entry" type="button" value="{{quietModeLabel}}" onclick="toggleQuietMode"></input>
     </div>
   </div>
 

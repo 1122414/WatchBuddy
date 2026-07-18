@@ -173,6 +173,7 @@ npm run start:api
 - `GET /health`；
 - `POST /v1/device/register` 与 `DELETE /v1/device`；
 - `GET /v1/companion/state` 与 `POST /v1/companion/reply`；
+- `GET /v1/settings` 与 `PUT /v1/settings`；
 - `GET /v1/memories?limit=10&offset=0`；
 - `DELETE /v1/memories/:id` 与 `DELETE /v1/memories`。
 

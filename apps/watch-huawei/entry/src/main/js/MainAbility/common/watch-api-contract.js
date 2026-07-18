@@ -110,6 +110,33 @@ export function createCompanionStateRequest(baseUrl, deviceToken) {
   );
 }
 
+export function createSettingsRequest(baseUrl, deviceToken) {
+  return createRequest(
+    baseUrl,
+    '/v1/settings',
+    'GET',
+    null,
+    deviceToken
+  );
+}
+
+export function createUpdateSettingsRequest(
+  baseUrl,
+  deviceToken,
+  quietMode
+) {
+  if (typeof quietMode !== 'boolean') {
+    throw new TypeError('quietMode 必须是布尔值');
+  }
+  return createRequest(
+    baseUrl,
+    '/v1/settings',
+    'PUT',
+    { quietMode },
+    deviceToken
+  );
+}
+
 export function createReplyRequest(
   baseUrl,
   deviceToken,
@@ -284,6 +311,7 @@ export function inspectCompanionStateResponse(response) {
     || !Number.isSafeInteger(payload.serverTime)
     || !Number.isSafeInteger(payload.nextCheckAt)
     || payload.nextCheckAt <= payload.serverTime
+    || !isValidSettings(payload.settings)
     || !payload.initiative
     || ['block', 'pending', 'send'].indexOf(payload.initiative.decision) < 0
     || !Array.isArray(payload.initiative.reasons)
@@ -308,6 +336,20 @@ export function inspectCompanionStateResponse(response) {
   return {
     ok: true,
     data: payload
+  };
+}
+
+export function inspectSettingsResponse(response) {
+  const result = inspectJsonResponse(response, 200);
+  if (!result.ok) {
+    return result;
+  }
+  if (!isValidSettings(result.data)) {
+    return invalid('invalid_response');
+  }
+  return {
+    ok: true,
+    data: result.data
   };
 }
 
@@ -761,6 +803,14 @@ function isValidMemory(memory) {
     && Array.from(memory.summary).length <= 64
     && ['normal', 'private', 'sensitive'].indexOf(memory.sensitivity) >= 0
     && Number.isSafeInteger(memory.updatedAt);
+}
+
+function isValidSettings(settings) {
+  return settings
+    && typeof settings === 'object'
+    && !Array.isArray(settings)
+    && Object.keys(settings).length === 1
+    && typeof settings.quietMode === 'boolean';
 }
 
 function invalid(reason) {

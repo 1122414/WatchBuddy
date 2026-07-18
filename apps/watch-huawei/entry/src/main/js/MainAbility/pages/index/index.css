@@ -107,19 +107,25 @@
 }
 
 .utility-actions {
-  width: 244px;
+  width: 360px;
   height: 48px;
   margin-top: 10px;
   justify-content: space-between;
 }
 
 .utility-entry {
-  width: 112px;
+  width: 110px;
   height: 48px;
   border-radius: 24px;
   background-color: #263349;
   color: #e9eef6;
   font-size: 18px;
+}
+
+.quiet-entry {
+  background-color: #352c3b;
+  color: #e3c9ed;
+  font-size: 16px;
 }
 
 .memory-screen {

@@ -13,6 +13,8 @@ import {
   createPetDetailRequest,
   createRegistrationRequest,
   createReplyRequest,
+  createSettingsRequest,
+  createUpdateSettingsRequest,
   inspectClearMemoriesResponse,
   inspectCompanionStateResponse,
   inspectDeleteMemoryResponse,
@@ -24,6 +26,7 @@ import {
   inspectPetDetailResponse,
   inspectRegistrationResponse,
   inspectReplyResponse,
+  inspectSettingsResponse,
   MAX_FETCH_HEADER_BYTES,
   MAX_FETCH_PACKET_BYTES,
   normalizeApiBaseUrl,
@@ -111,6 +114,24 @@ test("创建注册、状态、回复和记忆请求", () => {
   assert.equal(
     createCompanionStateRequest(BASE_URL, DEVICE_TOKEN).url,
     "https://api.example.com/v1/companion/state"
+  );
+  assert.equal(
+    createSettingsRequest(BASE_URL, DEVICE_TOKEN).url,
+    "https://api.example.com/v1/settings"
+  );
+  assert.deepEqual(
+    createUpdateSettingsRequest(BASE_URL, DEVICE_TOKEN, true),
+    {
+      data: JSON.stringify({ quietMode: true }),
+      header: {
+        Accept: "application/json",
+        Authorization: `Bearer ${DEVICE_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      method: "PUT",
+      responseType: "json",
+      url: "https://api.example.com/v1/settings"
+    }
   );
   assert.equal(
     createReplyRequest(
@@ -250,11 +271,27 @@ test("校验注册、状态与回复响应", () => {
       },
       nextCheckAt: NOW + 300_000,
       nudge: nudge(),
+      settings: {
+        quietMode: false
+      },
       serverTime: NOW
     }
   });
   assert.equal(state.ok, true);
   assert.equal(state.data.nudge.nudgeId, "nudge_12345678");
+  assert.equal(state.data.settings.quietMode, false);
+
+  assert.deepEqual(inspectSettingsResponse({
+    code: 200,
+    data: {
+      quietMode: true
+    }
+  }), {
+    ok: true,
+    data: {
+      quietMode: true
+    }
+  });
 
   assert.equal(inspectReplyResponse({
     code: 200,
@@ -285,6 +322,9 @@ test("接受主动策略阻断后的空消息状态", () => {
       },
       nextCheckAt: NOW + 30 * 60_000,
       nudge: null,
+      settings: {
+        quietMode: true
+      },
       serverTime: NOW
     }
   });
@@ -390,6 +430,9 @@ test("拒绝过大、过期或错误状态码的业务响应", () => {
         ...nudge(),
         expiresAt: NOW
       },
+      settings: {
+        quietMode: false
+      },
       serverTime: NOW
     }
   }).reason, "invalid_nudge");
@@ -403,6 +446,20 @@ test("拒绝过大、过期或错误状态码的业务响应", () => {
     code: 200,
     data: "中".repeat(3000)
   }).reason, "response_too_large");
+  assert.equal(inspectSettingsResponse({
+    code: 200,
+    data: {
+      quietMode: "true"
+    }
+  }).reason, "invalid_response");
+  assert.throws(
+    () => createUpdateSettingsRequest(
+      BASE_URL,
+      DEVICE_TOKEN,
+      "true"
+    ),
+    /布尔值/
+  );
 });
 
 test("拒绝错误状态码、伪造服务和过大响应", () => {

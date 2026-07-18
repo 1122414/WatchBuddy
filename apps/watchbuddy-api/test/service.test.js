@@ -174,6 +174,56 @@ test("每日主动预算达到两次后停止发送", () => {
   assert.equal(budgetBlocked.initiative.blockedBy, "daily_budget");
 });
 
+test("安静模式立即撤下消息并持续阻止主动互动", () => {
+  const { advance, service } = createService();
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+  const initial = service.getCompanionState(device);
+  assert.equal(initial.nudge.type, "COMPANION_NUDGE");
+  assert.deepEqual(initial.settings, { quietMode: false });
+
+  assert.deepEqual(
+    service.updateSettings(device, { quietMode: true }),
+    { quietMode: true }
+  );
+  const quiet = service.getCompanionState(device);
+  assert.equal(quiet.nudge, null);
+  assert.equal(quiet.initiative.blockedBy, "quiet_mode");
+  assert.equal(quiet.nextCheckAt, NOW + 6 * 60 * 60_000);
+  assert.deepEqual(quiet.settings, { quietMode: true });
+
+  advance(6 * 60 * 60_000);
+  assert.equal(
+    service.getCompanionState(device).initiative.blockedBy,
+    "quiet_mode"
+  );
+
+  service.updateSettings(device, { quietMode: false });
+  assert.deepEqual(service.getSettings(device), { quietMode: false });
+});
+
+test("服务端拒绝不完整或夹带字段的安静模式设置", () => {
+  const { service } = createService();
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+
+  assert.throws(
+    () => service.updateSettings(device, {}),
+    /quietMode/
+  );
+  assert.throws(
+    () => service.updateSettings(device, {
+      quietMode: true,
+      unknown: true
+    }),
+    /quietMode/
+  );
+  assert.throws(
+    () => service.updateSettings(device, { quietMode: "true" }),
+    /quietMode/
+  );
+});
+
 test("快捷回复更新角色状态并消费当前消息", () => {
   const { advance, service } = createService();
   const registration = register(service);

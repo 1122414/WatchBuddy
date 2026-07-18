@@ -13,6 +13,8 @@ import {
   createPetDetailRequest,
   createRegistrationRequest,
   createReplyRequest,
+  createSettingsRequest,
+  createUpdateSettingsRequest,
   inspectClearMemoriesResponse,
   inspectCompanionStateResponse,
   inspectDeleteMemoryResponse,
@@ -23,7 +25,8 @@ import {
   inspectPetCatalogResponse,
   inspectPetDetailResponse,
   inspectRegistrationResponse,
-  inspectReplyResponse
+  inspectReplyResponse,
+  inspectSettingsResponse
 } from './watch-api-contract.js';
 
 const DEFAULT_TIMEOUT_MS = 8000;
@@ -57,6 +60,29 @@ export function fetchCompanionState(deviceToken, options) {
       deviceToken
     ),
     inspectCompanionStateResponse,
+    options
+  );
+}
+
+export function fetchSettings(deviceToken, options) {
+  return executeRequest(
+    () => createSettingsRequest(
+      WATCHBUDDY_API_BASE_URL,
+      deviceToken
+    ),
+    inspectSettingsResponse,
+    options
+  );
+}
+
+export function updateSettings(deviceToken, quietMode, options) {
+  return executeRequest(
+    () => createUpdateSettingsRequest(
+      WATCHBUDDY_API_BASE_URL,
+      deviceToken,
+      quietMode
+    ),
+    inspectSettingsResponse,
     options
   );
 }
