@@ -88,16 +88,19 @@ WatchBuddy API
 
 ### 阶段 1：服务端最小闭环
 
-- [ ] 新建 WatchBuddy API 工程，不向手表暴露模型密钥；
-- [ ] `POST /v1/device/register`：注册手表并返回可撤销设备令牌；
-- [ ] `GET /v1/companion/state`：返回角色状态、消息和 `nextCheckAt`；
-- [ ] `POST /v1/companion/reply`：接收文字/快捷回复并返回下一条回应；
-- [ ] `GET /v1/memories`：列出可见记忆；
-- [ ] `DELETE /v1/memories/:id` 与 `DELETE /v1/memories`：删除记忆；
-- [ ] 接入 `packages/companion-core` 的校验、主动策略和记忆模型；
-- [ ] 完成鉴权、输入长度限制、幂等、速率限制和结构化日志测试。
+- [x] 新建 WatchBuddy API 工程，不向手表暴露模型密钥；
+- [x] `POST /v1/device/register`：注册手表并返回可撤销设备令牌；
+- [x] `GET /v1/companion/state`：返回角色状态、消息和 `nextCheckAt`；
+- [x] `POST /v1/companion/reply`：接收文字/快捷回复并返回下一条回应；
+- [x] `GET /v1/memories`：分页列出可见记忆；
+- [x] `DELETE /v1/memories/:id` 与 `DELETE /v1/memories`：删除记忆；
+- [x] 接入 `packages/companion-core` 的校验、主动策略和记忆模型；
+- [x] 完成鉴权、输入长度限制、幂等、速率限制和结构化日志测试。
 
 硬门槛：仅用 HTTP 客户端即可完成注册、对话、记忆创建与删除闭环。
+
+源代码和本地 HTTP 测试已提前完成，但阶段 0 的 GT 6 Pro 独立 HTTPS 真机门槛尚未通过，
+因此不能把阶段 1 标记为真机验收完成。当前内存存储只用于闭环验证，进程重启持久化在阶段 3 补齐。
 
 ### 阶段 2：表端 HTTPS 改造
 
@@ -195,7 +198,8 @@ WatchBuddy 的联网、对话、提醒、语音、传感器或记忆。安装后
 - Lite Wearable 提供 `@system.fetch`，默认支持 HTTPS；华为文档给出的限制为请求头不超过 2KB、
   传输层单包不超过 7KB；
 - Lite Wearable 不能直接连接 DevEco Studio，官方真机安装流程依赖应用调测助手和已配对华为手机；
-- 当前电脑尚未提供可用的 DevEco Studio、HarmonyOS SDK 与 Hvigor 命令链路；
+- 当前电脑已安装并验证 DevEco Studio 6.0.2，内置 OHPM、Hvigor 和 Java 可识别；
+  HarmonyOS SDK 组件尚未安装，因此 HAP 构建仍未通过；
 - 当前表端运行入口已改用 `@system.fetch` 健康检查且不再导入 Wear Engine，但公网 HTTPS 服务地址、
   HAP 构建和真机联网仍未验证；
 - Android APK 已构建安装，但不再属于目标架构；

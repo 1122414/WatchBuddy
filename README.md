@@ -98,8 +98,20 @@ npm run build:watch
 npm run start:api
 ```
 
-当前提供 `GET /health`。本地进程默认监听 `127.0.0.1:8787`；真机验证前仍需部署到受信任的
-公网 HTTPS 地址，不能把本地 HTTP 结果当作 GT 6 Pro 独立联网证据。
+当前开发版提供以下接口：
+
+- `GET /health`；
+- `POST /v1/device/register` 与 `DELETE /v1/device`；
+- `GET /v1/companion/state` 与 `POST /v1/companion/reply`；
+- `GET /v1/memories?limit=10&offset=0`；
+- `DELETE /v1/memories/:id` 与 `DELETE /v1/memories`。
+
+注册和回复写操作要求 `Idempotency-Key`，设备接口使用 Bearer 令牌。请求和响应均限制在
+Lite Wearable 单包 7 KB 以内，记忆列表每页最多 20 条。当前存储仅供本地闭环验证，
+进程重启后会清空；持久化存储和 AI 适配器仍属于后续阶段。
+
+本地进程默认监听 `127.0.0.1:8787`；真机验证前仍需部署到受信任的公网 HTTPS 地址，
+不能把本地 HTTP 结果当作 GT 6 Pro 独立联网证据。
 
 表端工程使用 DevEco Studio 打开 `apps/watch-huawei`。构建和安装前需要配置
 HarmonyOS 手表应用、签名证书与真机调试权限；任何账号凭据、服务端密钥、签名文件与设备令牌
