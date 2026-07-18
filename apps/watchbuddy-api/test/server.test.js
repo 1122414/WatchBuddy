@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 
 import {
   createWatchBuddyServer,
@@ -48,6 +49,10 @@ async function registerDevice(baseUrl, {
     body: await response.json(),
     response
   };
+}
+
+function sha256(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
 }
 
 test("GET /health 返回可供手表探测的服务状态", async (t) => {
@@ -195,6 +200,126 @@ test("仅用 HTTP 完成注册、状态、回复、记忆和撤销闭环", async
     headers: { authorization }
   });
   assert.equal(unauthorizedResponse.status, 401);
+});
+
+test("鉴权设备可读取受控宠物目录、分页摘要和完整性固定资源", async (t) => {
+  const server = createWatchBuddyServer({
+    rateLimitPerMinute: 100
+  });
+  t.after(() => close(server));
+  const baseUrl = await listen(server);
+  const registration = await registerDevice(baseUrl, {
+    idempotencyKey: "register-pet-catalog"
+  });
+  const authorization = `Bearer ${registration.body.deviceToken}`;
+
+  const listResponse = await fetch(`${baseUrl}/v1/pets`, {
+    headers: { authorization }
+  });
+  const listText = await listResponse.text();
+  const list = JSON.parse(listText);
+  assert.equal(listResponse.status, 200);
+  assert.equal(Buffer.byteLength(listText) < 7 * 1024, true);
+  assert.equal(list.catalogSchemaVersion, 1);
+  assert.equal(list.pets.length, 1);
+  assert.equal(list.pets[0].id, "watchbuddy-sprout");
+  assert.match(list.pets[0].manifestSha256, /^[a-f0-9]{64}$/);
+
+  const detailResponse = await fetch(
+    `${baseUrl}${list.pets[0].metadataUrl}`,
+    { headers: { authorization } }
+  );
+  const detailText = await detailResponse.text();
+  const detail = JSON.parse(detailText);
+  assert.equal(detailResponse.status, 200);
+  assert.equal(Buffer.byteLength(detailText) < 7 * 1024, true);
+  assert.equal(detail.pet.version, list.pets[0].version);
+  assert.equal(detail.pet.source.license.redistributionAllowed, true);
+  assert.equal(detail.pet.animations.idle.frames.length, 6);
+
+  const assetsResponse = await fetch(
+    `${baseUrl}${detail.pet.assetsUrl}?limit=20&offset=0`,
+    { headers: { authorization } }
+  );
+  const assetsText = await assetsResponse.text();
+  const assets = JSON.parse(assetsText);
+  assert.equal(assetsResponse.status, 200);
+  assert.equal(Buffer.byteLength(assetsText) < 7 * 1024, true);
+  assert.equal(assets.assets.length, 20);
+  assert.equal(assets.hasMore, true);
+  assert.equal(assets.nextOffset, 20);
+
+  const descriptor = assets.assets[0];
+  const assetResponse = await fetch(`${baseUrl}${descriptor.url}`, {
+    headers: { authorization }
+  });
+  const assetBytes = Buffer.from(await assetResponse.arrayBuffer());
+  assert.equal(assetResponse.status, 200);
+  assert.equal(assetResponse.headers.get("content-type"), "image/webp");
+  assert.equal(
+    assetResponse.headers.get("x-content-sha256"),
+    descriptor.sha256
+  );
+  assert.equal(assetResponse.headers.get("content-length"), `${descriptor.bytes}`);
+  assert.equal(sha256(assetBytes), descriptor.sha256);
+
+  const unchanged = await fetch(`${baseUrl}${descriptor.url}`, {
+    headers: {
+      authorization,
+      "if-none-match": assetResponse.headers.get("etag")
+    }
+  });
+  assert.equal(unchanged.status, 304);
+  assert.equal((await unchanged.arrayBuffer()).byteLength, 0);
+});
+
+test("宠物目录拒绝未鉴权、非法分页、路径穿越和未知资源", async (t) => {
+  const server = createWatchBuddyServer({
+    rateLimitPerMinute: 100
+  });
+  t.after(() => close(server));
+  const baseUrl = await listen(server);
+
+  const unauthorized = await fetch(`${baseUrl}/v1/pets`);
+  assert.equal(unauthorized.status, 401);
+
+  const registration = await registerDevice(baseUrl, {
+    idempotencyKey: "register-pet-security"
+  });
+  const authorization = `Bearer ${registration.body.deviceToken}`;
+
+  const invalidPage = await fetch(
+    `${baseUrl}/v1/pets/watchbuddy-sprout/assets?limit=21`,
+    { headers: { authorization } }
+  );
+  assert.equal(invalidPage.status, 400);
+  assert.equal((await invalidPage.json()).error, "invalid_query");
+
+  const unknownPet = await fetch(`${baseUrl}/v1/pets/missing`, {
+    headers: { authorization }
+  });
+  assert.equal(unknownPet.status, 404);
+  assert.equal((await unknownPet.json()).error, "pet_not_found");
+
+  const unknownAsset = await fetch(
+    `${baseUrl}/v1/pets/watchbuddy-sprout/assets/missing`,
+    { headers: { authorization } }
+  );
+  assert.equal(unknownAsset.status, 404);
+  assert.equal((await unknownAsset.json()).error, "pet_asset_not_found");
+
+  const traversal = await fetch(
+    `${baseUrl}/v1/pets/watchbuddy-sprout/assets/%2e%2e%2fwatch-pet.json`,
+    { headers: { authorization } }
+  );
+  assert.equal(traversal.status, 404);
+
+  const wrongMethod = await fetch(`${baseUrl}/v1/pets`, {
+    headers: { authorization },
+    method: "POST"
+  });
+  assert.equal(wrongMethod.status, 405);
+  assert.equal(wrongMethod.headers.get("allow"), "GET");
 });
 
 test("幂等键会重放相同回复并拒绝不同请求复用", async (t) => {

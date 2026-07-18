@@ -5,6 +5,7 @@ import {
 import http from "node:http";
 import { pathToFileURL } from "node:url";
 
+import { defaultPetCatalog } from "./pet-catalog.js";
 import { WatchBuddyService } from "./service.js";
 
 const DEFAULT_HOST = "127.0.0.1";
@@ -12,6 +13,17 @@ const DEFAULT_PORT = 8787;
 const MAX_REQUEST_BYTES = 7 * 1024;
 const MAX_RESPONSE_BYTES = 7 * 1024;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{8,128}$/;
+const PET_ID_PATTERN = "[a-z0-9][a-z0-9-]{0,47}";
+const ASSET_ID_PATTERN = "[a-z0-9][a-z0-9-]{0,63}";
+const PET_DETAIL_PATH_PATTERN = new RegExp(
+  `^/v1/pets/(${PET_ID_PATTERN})$`
+);
+const PET_ASSETS_PATH_PATTERN = new RegExp(
+  `^/v1/pets/(${PET_ID_PATTERN})/assets$`
+);
+const PET_ASSET_PATH_PATTERN = new RegExp(
+  `^/v1/pets/(${PET_ID_PATTERN})/assets/(${ASSET_ID_PATTERN})$`
+);
 
 class HttpError extends Error {
   constructor(statusCode, code, message, headers = {}) {
@@ -115,6 +127,37 @@ function sendJson(response, statusCode, body, extraHeaders = {}) {
     ...extraHeaders
   });
   response.end(payload);
+}
+
+function sendAsset(request, response, asset, extraHeaders = {}) {
+  if (asset.length > MAX_RESPONSE_BYTES) {
+    throw new HttpError(
+      500,
+      "response_too_large",
+      `宠物资源不能超过 ${MAX_RESPONSE_BYTES} 字节`
+    );
+  }
+  const etag = `"${asset.sha256}"`;
+  const headers = {
+    "cache-control": "private, max-age=31536000, immutable",
+    "content-type": asset.contentType,
+    etag,
+    "x-content-sha256": asset.sha256,
+    ...extraHeaders
+  };
+
+  if (request.headers["if-none-match"] === etag) {
+    response.writeHead(304, headers);
+    response.end();
+    return 304;
+  }
+
+  response.writeHead(200, {
+    ...headers,
+    "content-length": asset.length
+  });
+  response.end(asset.bytes);
+  return 200;
 }
 
 async function readJson(request) {
@@ -233,6 +276,12 @@ function methodForPath(pathname) {
   if (pathname === "/v1/companion/reply") {
     return "POST";
   }
+  if (pathname === "/v1/pets"
+    || PET_DETAIL_PATH_PATTERN.test(pathname)
+    || PET_ASSETS_PATH_PATTERN.test(pathname)
+    || PET_ASSET_PATH_PATTERN.test(pathname)) {
+    return "GET";
+  }
   if (pathname === "/v1/memories") {
     return "GET, DELETE";
   }
@@ -257,6 +306,7 @@ export function createWatchBuddyServer({
   idempotencyStore = new IdempotencyStore(),
   logger = null,
   now = () => Date.now(),
+  petCatalog = defaultPetCatalog,
   rateLimitPerMinute = 60,
   service = new WatchBuddyService({ now }),
   serviceVersion = "0.1.0"
@@ -378,6 +428,74 @@ export function createWatchBuddyServer({
         );
         statusCode = 200;
         sendJson(response, statusCode, result, responseHeaders);
+        return;
+      }
+
+      if (url.pathname === "/v1/pets") {
+        statusCode = 200;
+        sendJson(response, statusCode, {
+          catalogSchemaVersion: 1,
+          pets: petCatalog.listPets()
+        }, responseHeaders);
+        return;
+      }
+
+      const petAssetMatch = PET_ASSET_PATH_PATTERN.exec(url.pathname);
+      if (petAssetMatch) {
+        const asset = petCatalog.getAsset(
+          petAssetMatch[1],
+          petAssetMatch[2]
+        );
+        if (!asset) {
+          throw new HttpError(404, "pet_asset_not_found", "宠物资源不存在");
+        }
+        statusCode = sendAsset(
+          request,
+          response,
+          asset,
+          responseHeaders
+        );
+        return;
+      }
+
+      const petAssetsMatch = PET_ASSETS_PATH_PATTERN.exec(url.pathname);
+      if (petAssetsMatch) {
+        const limit = integerQueryParameter(url, "limit", {
+          defaultValue: 16,
+          maximum: 20,
+          minimum: 1
+        });
+        const offset = integerQueryParameter(url, "offset", {
+          defaultValue: 0,
+          maximum: 100_000,
+          minimum: 0
+        });
+        const page = petCatalog.listAssets(petAssetsMatch[1], {
+          limit,
+          offset
+        });
+        if (!page) {
+          throw new HttpError(404, "pet_not_found", "宠物不存在");
+        }
+        statusCode = 200;
+        sendJson(response, statusCode, {
+          catalogSchemaVersion: 1,
+          ...page
+        }, responseHeaders);
+        return;
+      }
+
+      const petDetailMatch = PET_DETAIL_PATH_PATTERN.exec(url.pathname);
+      if (petDetailMatch) {
+        const pet = petCatalog.getPet(petDetailMatch[1]);
+        if (!pet) {
+          throw new HttpError(404, "pet_not_found", "宠物不存在");
+        }
+        statusCode = 200;
+        sendJson(response, statusCode, {
+          catalogSchemaVersion: 1,
+          pet
+        }, responseHeaders);
         return;
       }
 
