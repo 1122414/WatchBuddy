@@ -110,6 +110,12 @@ class ConvertCodexPetTest(unittest.TestCase):
         self.assertTrue((self.output / "conversion-report.json").is_file())
         with Image.open(self.output / "preview-466.png") as preview:
             self.assertEqual(preview.size, (466, 466))
+        with Image.open(self.output / "contact-sheet.png") as contact_sheet:
+            self.assertEqual(contact_sheet.size, (1088, 1470))
+        self.assertRegex(
+            result["report"]["output"]["contactSheetSha256"],
+            r"^[a-f0-9]{64}$",
+        )
 
         command = [
             "node",
@@ -136,6 +142,23 @@ class ConvertCodexPetTest(unittest.TestCase):
             result["report"]["output"]["includesLookDirections"],
             False,
         )
+
+    def test_quantized_png_preserves_transparency_and_small_frames(self) -> None:
+        result = convert_codex_pet(
+            self.options(output_format="png", png_colors=256)
+        )
+        first = result["manifest"]["assets"][0]
+        frame_path = self.output / first["path"]
+
+        self.assertEqual(result["report"]["output"]["pngColors"], 256)
+        self.assertLess(first["bytes"], 7 * 1024)
+        with Image.open(frame_path) as frame:
+            alpha = frame.convert("RGBA").getchannel("A")
+            self.assertEqual(alpha.getextrema(), (0, 255))
+
+    def test_rejects_png_palette_option_for_webp(self) -> None:
+        with self.assertRaisesRegex(ConversionError, "只适用于 PNG"):
+            convert_codex_pet(self.options(png_colors=256))
 
     def test_rejects_legacy_v1_source(self) -> None:
         self.write_source(sprite_version=1)

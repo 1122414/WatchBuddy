@@ -442,6 +442,34 @@ export function createWatchBuddyServer({
 
       const petAssetMatch = PET_ASSET_PATH_PATTERN.exec(url.pathname);
       if (petAssetMatch) {
+        const encodings = url.searchParams.getAll("encoding");
+        if (
+          url.searchParams.size > encodings.length
+          || encodings.length > 1
+          || (encodings.length === 1 && encodings[0] !== "base64")
+        ) {
+          throw new HttpError(
+            400,
+            "invalid_query",
+            "宠物资源 encoding 只支持 base64"
+          );
+        }
+        if (encodings.length === 1) {
+          const payload = petCatalog.getBase64Asset(
+            petAssetMatch[1],
+            petAssetMatch[2]
+          );
+          if (!payload) {
+            throw new HttpError(
+              404,
+              "pet_asset_not_found",
+              "宠物资源不存在"
+            );
+          }
+          statusCode = 200;
+          sendJson(response, statusCode, payload, responseHeaders);
+          return;
+        }
         const asset = petCatalog.getAsset(
           petAssetMatch[1],
           petAssetMatch[2]

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import shutil
 import tempfile
@@ -19,7 +20,7 @@ from PIL import Image, ImageDraw, ImageOps
 from PIL.Image import DecompressionBombError, DecompressionBombWarning
 
 
-TOOL_VERSION = "1.0.0"
+TOOL_VERSION = "1.1.0"
 ATLAS_WIDTH = 1536
 ATLAS_HEIGHT = 2288
 CELL_WIDTH = 192
@@ -108,6 +109,7 @@ class ConversionOptions:
     display_size: int = 176
     output_format: str = "webp"
     quality: int = 82
+    png_colors: int = 0
     include_look_directions: bool = True
 
 
@@ -181,6 +183,14 @@ def convert_codex_pet(options: ConversionOptions) -> dict[str, Any]:
             preview_path,
             options.display_size,
         )
+        contact_sheet_path = temporary_dir / "contact-sheet.png"
+        create_contact_sheet(
+            temporary_dir,
+            manifest["assets"],
+            contact_sheet_path,
+            options.frame_width,
+            frame_height,
+        )
         report = {
             "toolVersion": TOOL_VERSION,
             "source": {
@@ -191,11 +201,13 @@ def convert_codex_pet(options: ConversionOptions) -> dict[str, Any]:
             "output": {
                 "manifestSha256": sha256(manifest_path.read_bytes()),
                 "previewSha256": sha256(preview_path.read_bytes()),
+                "contactSheetSha256": sha256(contact_sheet_path.read_bytes()),
                 "assetCount": len(manifest["assets"]),
                 "totalBytes": manifest["budget"]["totalBytes"],
                 "frameWidth": options.frame_width,
                 "frameHeight": frame_height,
                 "format": options.output_format,
+                "pngColors": options.png_colors or None,
                 "includesLookDirections": options.include_look_directions,
             },
         }
@@ -232,6 +244,10 @@ def validate_options(options: ConversionOptions) -> None:
         raise ConversionError("output_format 必须为 png 或 webp")
     if not 1 <= options.quality <= 100:
         raise ConversionError("quality 必须为 1 到 100")
+    if options.png_colors != 0 and not 16 <= options.png_colors <= 256:
+        raise ConversionError("png_colors 必须为 0 或 16 到 256")
+    if options.output_format != "png" and options.png_colors != 0:
+        raise ConversionError("png_colors 只适用于 PNG 输出")
 
 
 def parse_source_manifest(raw: bytes) -> dict[str, Any]:
@@ -471,12 +487,21 @@ def write_frame(
             exact=True,
         )
     else:
-        resized.save(
+        output = resized
+        if options.png_colors:
+            output = resized.quantize(
+                colors=options.png_colors,
+                method=Image.Quantize.FASTOCTREE,
+                dither=Image.Dither.NONE,
+            )
+        output.save(
             output_path,
             format="PNG",
             optimize=True,
             compress_level=9,
         )
+        if output is not resized:
+            output.close()
     raw = output_path.read_bytes()
     if not raw or len(raw) > MAX_FRAME_BYTES:
         raise ConversionError(
@@ -526,6 +551,43 @@ def create_preview(frame_path: Path, output_path: Path, display_size: int) -> No
         fill=(38, 51, 73, 255),
     )
     canvas.save(output_path, format="PNG", optimize=True)
+
+
+def create_contact_sheet(
+    root: Path,
+    assets: list[dict[str, Any]],
+    output_path: Path,
+    frame_width: int,
+    frame_height: int,
+) -> None:
+    columns = 8
+    gap = 4
+    rows = math.ceil(len(assets) / columns)
+    cell_width = frame_width + gap * 2
+    cell_height = frame_height + gap * 2
+    canvas = Image.new(
+        "RGBA",
+        (columns * cell_width, rows * cell_height),
+        (24, 28, 36, 255),
+    )
+    draw = ImageDraw.Draw(canvas)
+
+    for index, asset in enumerate(assets):
+        column = index % columns
+        row = index // columns
+        left = column * cell_width + gap
+        top = row * cell_height + gap
+        draw.rectangle(
+            (left, top, left + frame_width - 1, top + frame_height - 1),
+            fill=(48, 54, 66, 255),
+        )
+        with Image.open(root / asset["path"]) as source:
+            frame = source.convert("RGBA")
+        canvas.alpha_composite(frame, (left, top))
+        frame.close()
+
+    canvas.save(output_path, format="PNG", optimize=True)
+    canvas.close()
 
 
 def crop_cell(image: Image.Image, row: int, column: int) -> Image.Image:
@@ -603,6 +665,12 @@ def parse_args() -> ConversionOptions:
     parser.add_argument("--format", choices=("png", "webp"), default="webp")
     parser.add_argument("--quality", type=int, default=82)
     parser.add_argument(
+        "--png-colors",
+        type=int,
+        default=0,
+        help="PNG 调色板颜色数（0 保留 RGBA，16-256 启用量化）",
+    )
+    parser.add_argument(
         "--omit-look-directions",
         action="store_true",
         help="不把 v2 的 16 个注视方向写入手表资源",
@@ -623,6 +691,7 @@ def parse_args() -> ConversionOptions:
         display_size=args.display_size,
         output_format=args.format,
         quality=args.quality,
+        png_colors=args.png_colors,
         include_look_directions=not args.omit_look_directions,
     )
 

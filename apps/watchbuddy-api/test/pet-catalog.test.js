@@ -18,7 +18,7 @@ test("默认目录只公开经过校验的 Sprout 宠物", () => {
   assert.equal(pets[0].id, "watchbuddy-sprout");
   assert.match(pets[0].version, /^sha256-[a-f0-9]{16}$/);
   assert.match(pets[0].manifestSha256, /^[a-f0-9]{64}$/);
-  assert.equal(pets[0].budget.totalBytes, 329_310);
+  assert.equal(pets[0].budget.totalBytes, 325_871);
   assert.equal(pets[0].assetCount, 73);
   assert.equal(pets[0].preview.assetId, "idle-0");
 });
@@ -26,7 +26,7 @@ test("默认目录只公开经过校验的 Sprout 宠物", () => {
 test("目录版本固定到仓库清单 SHA-256", () => {
   const manifestBytes = readFileSync(
     new URL(
-      "../../../assets/pets/watchbuddy-sprout/watch/watch-pet.json",
+      "../../../assets/pets/watchbuddy-sprout/watch-lite/watch-pet.json",
       import.meta.url
     )
   );
@@ -62,7 +62,7 @@ test("资源摘要可分页且下载内容与摘要一致", () => {
     "watchbuddy-sprout",
     descriptor.id
   );
-  assert.equal(asset.contentType, "image/webp");
+  assert.equal(asset.contentType, "image/png");
   assert.equal(asset.length, descriptor.bytes);
   assert.equal(sha256(asset.bytes), descriptor.sha256);
 
@@ -71,6 +71,18 @@ test("资源摘要可分页且下载内容与摘要一致", () => {
     sha256(
       defaultPetCatalog.getAsset("watchbuddy-sprout", descriptor.id).bytes
     ),
+    descriptor.sha256
+  );
+
+  const encoded = defaultPetCatalog.getBase64Asset(
+    "watchbuddy-sprout",
+    descriptor.id
+  );
+  assert.equal(encoded.asset.encoding, "base64");
+  assert.equal(encoded.asset.mediaType, "image/png");
+  assert.equal(Buffer.byteLength(JSON.stringify(encoded)) < 7 * 1024, true);
+  assert.equal(
+    sha256(Buffer.from(encoded.asset.data, "base64")),
     descriptor.sha256
   );
 });
@@ -83,6 +95,13 @@ test("不存在的宠物和资源不会回退到任意文件路径", () => {
   );
   assert.equal(
     defaultPetCatalog.getAsset("watchbuddy-sprout", "../watch-pet.json"),
+    null
+  );
+  assert.equal(
+    defaultPetCatalog.getBase64Asset(
+      "watchbuddy-sprout",
+      "../watch-pet.json"
+    ),
     null
   );
 });

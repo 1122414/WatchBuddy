@@ -1,0 +1,685 @@
+{
+  "schemaVersion": 1,
+  "id": "watchbuddy-sprout",
+  "displayName": "Sprout（芽芽）",
+  "description": "WatchBuddy 的原创薄荷绿腕上 AI 伙伴。",
+  "renderer": "frame-sequence-v1",
+  "source": {
+    "format": "codex-pet-v2",
+    "spriteVersionNumber": 2,
+    "sourceUrl": "https://github.com/1122414/WatchBuddy/tree/main/assets/pets/watchbuddy-sprout/source",
+    "author": "WatchBuddy",
+    "license": {
+      "name": "WatchBuddy Asset License 1.0",
+      "url": "https://github.com/1122414/WatchBuddy/blob/main/assets/pets/watchbuddy-sprout/LICENSE.md",
+      "redistributionAllowed": true
+    },
+    "attribution": "Sprout（芽芽）, an original WatchBuddy mascot.",
+    "sha256": "724e14cc69c83502d1f363f0e33cd424f3db930d6abae90acdb34b0a1e03a040"
+  },
+  "frame": {
+    "width": 128,
+    "height": 139,
+    "displayWidth": 176,
+    "displayHeight": 176
+  },
+  "assets": [
+    {
+      "id": "idle-0",
+      "path": "frames/idle/000.png",
+      "sha256": "e805f2a5461acc87f2eb81891ceb49be66ccf3b9ab61bb6791dbc1dee7f43e86",
+      "bytes": 4139
+    },
+    {
+      "id": "idle-1",
+      "path": "frames/idle/001.png",
+      "sha256": "6ae0a1f9e0d4eaa1f311472d5e2fb88b3afaff0b9037441a2acf7ca5edde2b4d",
+      "bytes": 4168
+    },
+    {
+      "id": "idle-2",
+      "path": "frames/idle/002.png",
+      "sha256": "62f270f98007a7ec4a86eae4fcae670f795482eeddd8e1e9a720f60d28278137",
+      "bytes": 3962
+    },
+    {
+      "id": "idle-3",
+      "path": "frames/idle/003.png",
+      "sha256": "e8a40e0d087b9b06ddd313bad5f083d98eccc718fa2c349cb344a0d048b9d5ff",
+      "bytes": 4197
+    },
+    {
+      "id": "idle-4",
+      "path": "frames/idle/004.png",
+      "sha256": "c72c04cd6dabf61449296a8d79734ad30bbd3d56b720b332d68fb7e0f0aa5ea2",
+      "bytes": 4076
+    },
+    {
+      "id": "idle-5",
+      "path": "frames/idle/005.png",
+      "sha256": "f42cce265516527fbad1319365aad96c5b6ad789c1fd071890d217258011e9c6",
+      "bytes": 4136
+    },
+    {
+      "id": "running-right-0",
+      "path": "frames/running-right/000.png",
+      "sha256": "a6371087a69f8f655bc317244c11e0a83a76b40baae6f3146d20ab5d5403ff02",
+      "bytes": 4924
+    },
+    {
+      "id": "running-right-1",
+      "path": "frames/running-right/001.png",
+      "sha256": "f30254b2819199db52b1e24a54d266547eb2cb346475cea7e777010c717efc7f",
+      "bytes": 4927
+    },
+    {
+      "id": "running-right-2",
+      "path": "frames/running-right/002.png",
+      "sha256": "a52637da594f472deb4a310a0a3ddf1dbb402b070f31004f1ebd6877e6d7a83d",
+      "bytes": 4828
+    },
+    {
+      "id": "running-right-3",
+      "path": "frames/running-right/003.png",
+      "sha256": "22d474e43d2da9f7685180ea10efe871573178b26e967f67a657fcef8f29a39c",
+      "bytes": 4608
+    },
+    {
+      "id": "running-right-4",
+      "path": "frames/running-right/004.png",
+      "sha256": "c3920a2e4d0ecbb4c063729dcb533a5f76e0dccaebb4c2f5bb211c4f4f12a896",
+      "bytes": 4503
+    },
+    {
+      "id": "running-right-5",
+      "path": "frames/running-right/005.png",
+      "sha256": "6df127347853884cc7d03247d0fa62a001d4e212fbf010a739fe78d5dce32d1d",
+      "bytes": 4514
+    },
+    {
+      "id": "running-right-6",
+      "path": "frames/running-right/006.png",
+      "sha256": "992712171398c0151edf3bfe94ccf949354d5abf31532db650a8825a6e3e2b23",
+      "bytes": 4601
+    },
+    {
+      "id": "running-right-7",
+      "path": "frames/running-right/007.png",
+      "sha256": "4517d641ea60cdbf5425d4650d70d98c250011d25410fa1bd4467d5a19c3f398",
+      "bytes": 4436
+    },
+    {
+      "id": "running-left-0",
+      "path": "frames/running-left/000.png",
+      "sha256": "dbc447ec81701f32467ff6775a771cbc052094ae1b09f119c34ed40645e798d4",
+      "bytes": 4895
+    },
+    {
+      "id": "running-left-1",
+      "path": "frames/running-left/001.png",
+      "sha256": "64458cfc1d81157412307ca6fa4c7e7edbb8877d7d22b093aca9c1f72375e371",
+      "bytes": 4929
+    },
+    {
+      "id": "running-left-2",
+      "path": "frames/running-left/002.png",
+      "sha256": "37d3bf4dc5cc8339f5fd459cb61d484aa57cf2176b3553e72ac9bf7bee28c548",
+      "bytes": 4875
+    },
+    {
+      "id": "running-left-3",
+      "path": "frames/running-left/003.png",
+      "sha256": "4d0aad28e82cbac9de0dd76796e35006fcfefc9c961796d2de9d4c4556dcd4bc",
+      "bytes": 4610
+    },
+    {
+      "id": "running-left-4",
+      "path": "frames/running-left/004.png",
+      "sha256": "9a255da69476d8e5b13a8824db7f989a6e1cd193dabce74081fa2d72ca530098",
+      "bytes": 4490
+    },
+    {
+      "id": "running-left-5",
+      "path": "frames/running-left/005.png",
+      "sha256": "79e8cd23d74e9dce44c34ce355a5e0ac8ff307b7616f2a5546415ffe751feb1a",
+      "bytes": 4536
+    },
+    {
+      "id": "running-left-6",
+      "path": "frames/running-left/006.png",
+      "sha256": "37046fcadd5bf05fad139a07d73c6914637678b3e51f58b121755faaf444e32f",
+      "bytes": 4603
+    },
+    {
+      "id": "running-left-7",
+      "path": "frames/running-left/007.png",
+      "sha256": "183741ff83af0309205805deee0f934099fa8faee53d0d0e1c6a58f8dbace088",
+      "bytes": 4442
+    },
+    {
+      "id": "waving-0",
+      "path": "frames/waving/000.png",
+      "sha256": "0efea8ead3992d115be8c991b9eeb67bb4d70800db776f7fb5c3bf33618525b9",
+      "bytes": 4272
+    },
+    {
+      "id": "waving-1",
+      "path": "frames/waving/001.png",
+      "sha256": "df6d55e9720a4704bdaadd022a0d8a1b35dbfff30418a5854234fb6acdd48cfa",
+      "bytes": 4383
+    },
+    {
+      "id": "waving-2",
+      "path": "frames/waving/002.png",
+      "sha256": "80e09651c90f92efa88ef548d9a567465e8b32d05575441341ceb8ea1979833e",
+      "bytes": 4337
+    },
+    {
+      "id": "waving-3",
+      "path": "frames/waving/003.png",
+      "sha256": "441037db2f2f6db22b174429fc9e9490a8865c04a9b5eb291422020206e7ea4b",
+      "bytes": 4245
+    },
+    {
+      "id": "jumping-0",
+      "path": "frames/jumping/000.png",
+      "sha256": "617005bd47699af469b8df37b21f8a801879e5cfd4da0286329d6f1a2bdb0be5",
+      "bytes": 3106
+    },
+    {
+      "id": "jumping-1",
+      "path": "frames/jumping/001.png",
+      "sha256": "c9c37325325e8e82c587a0a9d3258ec34283e89096483ade88ec2e2cc794d988",
+      "bytes": 3227
+    },
+    {
+      "id": "jumping-2",
+      "path": "frames/jumping/002.png",
+      "sha256": "419cbeb589807ca8ee72c60e59c01f625f91747c48437b50773f662cbe13993d",
+      "bytes": 3266
+    },
+    {
+      "id": "jumping-3",
+      "path": "frames/jumping/003.png",
+      "sha256": "4ca61cd0dd379354528e87e4be6527d8f284d3e19905519abfa56f8c4d1b9d13",
+      "bytes": 3221
+    },
+    {
+      "id": "jumping-4",
+      "path": "frames/jumping/004.png",
+      "sha256": "aa1cde3a357f2f5b843a5a863da75e90635b09e5fd15a1f286a9b918f3d7de1a",
+      "bytes": 3124
+    },
+    {
+      "id": "failed-0",
+      "path": "frames/failed/000.png",
+      "sha256": "fdb14fa5caf91e1a2bf4283785b3d3397a925003dc6c9a41a36fbb21ef311613",
+      "bytes": 4483
+    },
+    {
+      "id": "failed-1",
+      "path": "frames/failed/001.png",
+      "sha256": "741de0a8a1e07c227db1ac38abfbd32af70b184aa75734015d748a80c5ba8159",
+      "bytes": 4674
+    },
+    {
+      "id": "failed-2",
+      "path": "frames/failed/002.png",
+      "sha256": "01f0d38b230e7645cf60e3fa353f8232928420956a1859799bb5f823f308fb9c",
+      "bytes": 4441
+    },
+    {
+      "id": "failed-3",
+      "path": "frames/failed/003.png",
+      "sha256": "575cfc5887bc74131236bf22085c1f389031a59bc3b6d3818760617341af7729",
+      "bytes": 4805
+    },
+    {
+      "id": "failed-4",
+      "path": "frames/failed/004.png",
+      "sha256": "2bc18eae714d01ce6edd57e1f7e9316303c987d8073c8037dc57b1ca76150403",
+      "bytes": 4562
+    },
+    {
+      "id": "failed-5",
+      "path": "frames/failed/005.png",
+      "sha256": "e2317c8c9dbcb9c2d339bfa98953837dd5fc686e3f1c034e5085d8f70e5f020d",
+      "bytes": 4781
+    },
+    {
+      "id": "failed-6",
+      "path": "frames/failed/006.png",
+      "sha256": "b65a0ccd52da278efb1e8c4c9614577eb3930493f88edc2d1a12a999298955da",
+      "bytes": 4531
+    },
+    {
+      "id": "failed-7",
+      "path": "frames/failed/007.png",
+      "sha256": "927b13b2ea3c24e59bff07664a3ff4025410ba33d7e183ce40ac07772b839254",
+      "bytes": 3855
+    },
+    {
+      "id": "waiting-0",
+      "path": "frames/waiting/000.png",
+      "sha256": "30d9dc5ab955458bbe5ae5bc46d79e3b596b9a42d6ddb8a23dc2627cb4436b3b",
+      "bytes": 4655
+    },
+    {
+      "id": "waiting-1",
+      "path": "frames/waiting/001.png",
+      "sha256": "ea6ad629a97287a7b9a5303583fbb7ee24c4666a85f988d89797d16982e8300c",
+      "bytes": 4891
+    },
+    {
+      "id": "waiting-2",
+      "path": "frames/waiting/002.png",
+      "sha256": "7ae54ed735d04b2ee75da6355ad12bca7a7e5ff663b8bb3fdde0172e39e241cd",
+      "bytes": 4634
+    },
+    {
+      "id": "waiting-3",
+      "path": "frames/waiting/003.png",
+      "sha256": "919864fdcff715c0b6530c9c4849909dfa28ba679fa254785766de9b38535ab1",
+      "bytes": 4968
+    },
+    {
+      "id": "waiting-4",
+      "path": "frames/waiting/004.png",
+      "sha256": "4c0d78bb46fc720154f37d8e5cb304ccd70ac0ee5a9a0ccff83526bd9f531e09",
+      "bytes": 4690
+    },
+    {
+      "id": "waiting-5",
+      "path": "frames/waiting/005.png",
+      "sha256": "e486584c0ee4e70c651209c50e49e57294539ab503a247671a307d8cad827503",
+      "bytes": 4592
+    },
+    {
+      "id": "running-0",
+      "path": "frames/running/000.png",
+      "sha256": "3ac072596695920a304d0e04c2cc01c8005c89732a4360f8569dcbfd8b924e71",
+      "bytes": 4451
+    },
+    {
+      "id": "running-1",
+      "path": "frames/running/001.png",
+      "sha256": "63d9026c362b3702b8780c19fbef099e722c02e6f06ac133d8489b2829cc2eed",
+      "bytes": 4439
+    },
+    {
+      "id": "running-2",
+      "path": "frames/running/002.png",
+      "sha256": "d002ff9d1ad3c53c570d553ea23c610f7e4cea1bcfe77f9b7a035f32bb49c5af",
+      "bytes": 4261
+    },
+    {
+      "id": "running-3",
+      "path": "frames/running/003.png",
+      "sha256": "adcdd3e4ee9fe36dde1496186e40fe892ea552f7fd062225fcbd0e9fc248ff18",
+      "bytes": 4413
+    },
+    {
+      "id": "running-4",
+      "path": "frames/running/004.png",
+      "sha256": "46f91c986f34ebe0017de3b1c9057d6d2ceb9ef5647bf675bc7a394607797664",
+      "bytes": 4375
+    },
+    {
+      "id": "running-5",
+      "path": "frames/running/005.png",
+      "sha256": "7eacabab2b7da6424c0417e7d785fb88cdef643a024dcaed7063d39e12d82e51",
+      "bytes": 4446
+    },
+    {
+      "id": "review-0",
+      "path": "frames/review/000.png",
+      "sha256": "7c4f79f94d2ebf354bfb67d9acfe0b28b025bd051d9509c8f8244c42a0669ce7",
+      "bytes": 4276
+    },
+    {
+      "id": "review-1",
+      "path": "frames/review/001.png",
+      "sha256": "a678119aecfeb05ef1e10c45c6a1e72f25411009277691c63876f75b6f15c408",
+      "bytes": 4238
+    },
+    {
+      "id": "review-2",
+      "path": "frames/review/002.png",
+      "sha256": "30c0e40409ef2daef093de04b678f5c8c204d8d21d575615d27dc5bf8063d59e",
+      "bytes": 4392
+    },
+    {
+      "id": "review-3",
+      "path": "frames/review/003.png",
+      "sha256": "970ed484c4c954a8784323f96c535b06bf00bf58dbfc079ccb32861b13a9fe7b",
+      "bytes": 4243
+    },
+    {
+      "id": "review-4",
+      "path": "frames/review/004.png",
+      "sha256": "e10d027b770a5d9c312def0259d623718ede1254a2a2577b542b323f59e9831c",
+      "bytes": 4555
+    },
+    {
+      "id": "review-5",
+      "path": "frames/review/005.png",
+      "sha256": "29687bdb60e86b3ed976c3d14388a133f0a714a96ab17deca0a7d3aa7eca08cf",
+      "bytes": 4311
+    },
+    {
+      "id": "look-00",
+      "path": "frames/look/000.png",
+      "sha256": "ede3fd729094396284d82f1edb633e8e7f987c685b2b0609b424ae68d4464a40",
+      "bytes": 5084
+    },
+    {
+      "id": "look-01",
+      "path": "frames/look/001.png",
+      "sha256": "3f7aed09b231fb8ef239e325da9fe18d17b7418601556a97b8b7f188b33a82df",
+      "bytes": 5060
+    },
+    {
+      "id": "look-02",
+      "path": "frames/look/002.png",
+      "sha256": "a9c70071b0ef2305779e586fa2c994f1a58b64b86d29becdcd89b49d5ed7c752",
+      "bytes": 5092
+    },
+    {
+      "id": "look-03",
+      "path": "frames/look/003.png",
+      "sha256": "a1c6dfbcc47ef203f00abf4c153ecd7b95f36bdd33682fbdab1e3fe25bf40a64",
+      "bytes": 5139
+    },
+    {
+      "id": "look-04",
+      "path": "frames/look/004.png",
+      "sha256": "8261bfc79b92a47db3d12d0e4640afd9e5d382757baa922f09aa3dec7a02077a",
+      "bytes": 5006
+    },
+    {
+      "id": "look-05",
+      "path": "frames/look/005.png",
+      "sha256": "ede98e6e75aefb03bf473a8ad9ff03352a5f293372dc291193e850dda2805814",
+      "bytes": 4839
+    },
+    {
+      "id": "look-06",
+      "path": "frames/look/006.png",
+      "sha256": "a78f1e895b14efc33eeeb0d47434707da54779bb100c59e8b731cf1899e25e8f",
+      "bytes": 4657
+    },
+    {
+      "id": "look-07",
+      "path": "frames/look/007.png",
+      "sha256": "609b8651dafbc011c952e60efcf1e5908d7878478d308a4a9f7350c5eab62be2",
+      "bytes": 4312
+    },
+    {
+      "id": "look-08",
+      "path": "frames/look/008.png",
+      "sha256": "d9bd0be0cf2bb0d256c5d2fd04942114e66510bbb56871b4ac5fe2f7c0d46b34",
+      "bytes": 4721
+    },
+    {
+      "id": "look-09",
+      "path": "frames/look/009.png",
+      "sha256": "7a0e56db2c4719f8203016a15e01927aaaf729e8e8433831e1fb74cb1f8cc769",
+      "bytes": 4663
+    },
+    {
+      "id": "look-10",
+      "path": "frames/look/010.png",
+      "sha256": "e379b8c4b1c46734c094bd2a9ed07ea8246693003d4166e2312d1d75ffc5883e",
+      "bytes": 4578
+    },
+    {
+      "id": "look-11",
+      "path": "frames/look/011.png",
+      "sha256": "453a3b4290cf1e8308e3b49b334714fd99699d0bbcdf05a5c12dd6bd2b78872f",
+      "bytes": 4444
+    },
+    {
+      "id": "look-12",
+      "path": "frames/look/012.png",
+      "sha256": "08a396a4a07bfa4f7de89a28fd8c44081f09bf7753e8a48a4d8885ecf7f1984f",
+      "bytes": 4588
+    },
+    {
+      "id": "look-13",
+      "path": "frames/look/013.png",
+      "sha256": "dc1c5170eaa894d3aa7e955bbe4af602bbf4eb0ed526a976cdd0054c40952211",
+      "bytes": 4705
+    },
+    {
+      "id": "look-14",
+      "path": "frames/look/014.png",
+      "sha256": "c8b082d4f6c2add0cd9d3455bcb4c23c34d8a295a606cf4b8d0969a3f766d979",
+      "bytes": 4598
+    },
+    {
+      "id": "look-15",
+      "path": "frames/look/015.png",
+      "sha256": "5c6047afa2970d33ac0bab5fe9715ca611723a898de6a71722c85d9fa5d56741",
+      "bytes": 4843
+    }
+  ],
+  "animations": {
+    "idle": {
+      "frames": [
+        "idle-0",
+        "idle-1",
+        "idle-2",
+        "idle-3",
+        "idle-4",
+        "idle-5"
+      ],
+      "durationsMs": [
+        280,
+        110,
+        110,
+        140,
+        140,
+        320
+      ],
+      "loop": true
+    },
+    "runningRight": {
+      "frames": [
+        "running-right-0",
+        "running-right-1",
+        "running-right-2",
+        "running-right-3",
+        "running-right-4",
+        "running-right-5",
+        "running-right-6",
+        "running-right-7"
+      ],
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ],
+      "loop": true
+    },
+    "runningLeft": {
+      "frames": [
+        "running-left-0",
+        "running-left-1",
+        "running-left-2",
+        "running-left-3",
+        "running-left-4",
+        "running-left-5",
+        "running-left-6",
+        "running-left-7"
+      ],
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ],
+      "loop": true
+    },
+    "waving": {
+      "frames": [
+        "waving-0",
+        "waving-1",
+        "waving-2",
+        "waving-3"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        280
+      ],
+      "loop": false
+    },
+    "jumping": {
+      "frames": [
+        "jumping-0",
+        "jumping-1",
+        "jumping-2",
+        "jumping-3",
+        "jumping-4"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140,
+        280
+      ],
+      "loop": false
+    },
+    "failed": {
+      "frames": [
+        "failed-0",
+        "failed-1",
+        "failed-2",
+        "failed-3",
+        "failed-4",
+        "failed-5",
+        "failed-6",
+        "failed-7"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140,
+        140,
+        140,
+        140,
+        240
+      ],
+      "loop": false
+    },
+    "waiting": {
+      "frames": [
+        "waiting-0",
+        "waiting-1",
+        "waiting-2",
+        "waiting-3",
+        "waiting-4",
+        "waiting-5"
+      ],
+      "durationsMs": [
+        150,
+        150,
+        150,
+        150,
+        150,
+        260
+      ],
+      "loop": true
+    },
+    "running": {
+      "frames": [
+        "running-0",
+        "running-1",
+        "running-2",
+        "running-3",
+        "running-4",
+        "running-5"
+      ],
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ],
+      "loop": true
+    },
+    "review": {
+      "frames": [
+        "review-0",
+        "review-1",
+        "review-2",
+        "review-3",
+        "review-4",
+        "review-5"
+      ],
+      "durationsMs": [
+        150,
+        150,
+        150,
+        150,
+        150,
+        280
+      ],
+      "loop": true
+    }
+  },
+  "stateMap": {
+    "sleeping": "idle",
+    "idle": "idle",
+    "daydreaming": "waiting",
+    "watching": "review",
+    "curious": "jumping",
+    "concerned": "waiting",
+    "chatting": "waving",
+    "giving_space": "idle"
+  },
+  "interactionMap": {
+    "tap": "jumping",
+    "message": "waving",
+    "loading": "running",
+    "failure": "failed"
+  },
+  "fallbackFrame": "idle-0",
+  "budget": {
+    "frameCount": 73,
+    "totalBytes": 325871,
+    "maxFrameBytes": 5139
+  },
+  "lookDirections": {
+    "000": "look-00",
+    "022.5": "look-01",
+    "045": "look-02",
+    "067.5": "look-03",
+    "090": "look-04",
+    "112.5": "look-05",
+    "135": "look-06",
+    "157.5": "look-07",
+    "180": "look-08",
+    "202.5": "look-09",
+    "225": "look-10",
+    "247.5": "look-11",
+    "270": "look-12",
+    "292.5": "look-13",
+    "315": "look-14",
+    "337.5": "look-15"
+  }
+}

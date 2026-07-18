@@ -16,7 +16,7 @@ import {
 const DEFAULT_BUNDLE_DIRECTORIES = Object.freeze([
   fileURLToPath(
     new URL(
-      "../../../assets/pets/watchbuddy-sprout/watch/",
+      "../../../assets/pets/watchbuddy-sprout/watch-lite/",
       import.meta.url
     )
   )
@@ -24,6 +24,7 @@ const DEFAULT_BUNDLE_DIRECTORIES = Object.freeze([
 const MAX_CATALOG_PETS = 16;
 const MAX_CATALOG_TOTAL_BYTES = 16 * 1024 * 1024;
 const MAX_DISTRIBUTED_ASSET_BYTES = 7 * 1024;
+const MAX_JSON_RESPONSE_BYTES = 7 * 1024;
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -44,6 +45,10 @@ function assetUrl(petId, assetId) {
   return `/v1/pets/${petId}/assets/${assetId}`;
 }
 
+function base64AssetUrl(petId, assetId) {
+  return `${assetUrl(petId, assetId)}?encoding=base64`;
+}
+
 function metadataUrl(petId) {
   return `/v1/pets/${petId}`;
 }
@@ -54,6 +59,20 @@ function assetsUrl(petId) {
 
 function createVersion(manifestSha256) {
   return `sha256-${manifestSha256.slice(0, 16)}`;
+}
+
+function createBase64Payload(asset) {
+  return {
+    catalogSchemaVersion: 1,
+    asset: {
+      bytes: asset.length,
+      data: asset.bytes.toString("base64"),
+      encoding: "base64",
+      id: asset.id,
+      mediaType: asset.contentType,
+      sha256: asset.sha256
+    }
+  };
 }
 
 function createRecord(bundleDirectory) {
@@ -75,13 +94,26 @@ function createRecord(bundleDirectory) {
     if (bytes.length !== asset.bytes || sha256(bytes) !== asset.sha256) {
       throw new TypeError(`宠物资源在加载期间发生变化: ${asset.path}`);
     }
-    assetsById.set(asset.id, Object.freeze({
+    const loaded = Object.freeze({
       bytes,
       contentType: mediaTypeForPath(asset.path),
       id: asset.id,
       length: asset.bytes,
       sha256: asset.sha256
-    }));
+    });
+    if (loaded.contentType !== "image/png") {
+      throw new TypeError(`Lite Wearable 同步资源必须是 PNG: ${asset.path}`);
+    }
+    if (
+      Buffer.byteLength(JSON.stringify(createBase64Payload(loaded)))
+      > MAX_JSON_RESPONSE_BYTES
+    ) {
+      throw new RangeError(
+        `Base64 宠物资源响应不能超过 ${MAX_JSON_RESPONSE_BYTES} 字节: `
+        + asset.path
+      );
+    }
+    assetsById.set(asset.id, loaded);
   }
 
   const fallback = assetsById.get(manifest.fallbackFrame);
@@ -98,6 +130,7 @@ function createRecord(bundleDirectory) {
     metadataUrl: metadataUrl(manifest.id),
     preview: Object.freeze({
       assetId: fallback.id,
+      base64Url: base64AssetUrl(manifest.id, fallback.id),
       bytes: fallback.length,
       mediaType: fallback.contentType,
       sha256: fallback.sha256,
@@ -118,6 +151,7 @@ function createRecord(bundleDirectory) {
   const assets = manifest.assets.map((asset) => {
     const loaded = assetsById.get(asset.id);
     return Object.freeze({
+      base64Url: base64AssetUrl(manifest.id, asset.id),
       bytes: asset.bytes,
       id: asset.id,
       mediaType: loaded.contentType,
@@ -173,6 +207,14 @@ export class PetCatalog {
       ...asset,
       bytes: Buffer.from(asset.bytes)
     };
+  }
+
+  getBase64Asset(petId, assetId) {
+    const asset = this.#records.get(petId)?.assetsById.get(assetId);
+    if (!asset) {
+      return null;
+    }
+    return createBase64Payload(asset);
   }
 
   getPet(petId) {

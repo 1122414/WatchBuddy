@@ -259,13 +259,17 @@ WatchBuddy 的联网、对话、提醒、语音、传感器或记忆。安装后
 - 当前 Codex Pet v2 是 8 × 11 图集并包含 16 个注视方向；8 × 9 只作为旧版兼容输入，不作为新资源标准；
 - 本机已有的 `chibi-skadi` 是 1536 × 1872 的旧资源且缺少 v2 标记，不能直接用于默认宠物交付；
 - 原创默认宠物 Sprout（芽芽）已完成 hatch-pet v2 图集、三人方向盲测、最终视觉 QA、授权说明与
-  手表资源转换；受控下载用的 73 帧 WebP 包为 329310 字节；
+  手表资源转换；受控同步使用 73 帧、325871 字节的 256 色透明 PNG 轻量包；
 - 表端源码已用 Sprout PNG 逐帧渲染替换 CSS 占位角色，内置 73 帧为 1237298 字节；状态、轻点、
   消息、处理中、失败、页面隐藏和记忆页生命周期均有 Node.js 契约测试；
 - 466 × 466 浏览器预览已验证透明背景、176 × 176 触摸区和消息/回复区无重叠，但不能替代 HAP
   编译或 GT 6 Pro 真机结果；
 - 服务端已提供鉴权后的受控宠物列表、紧凑渲染清单、分页资源摘要与按 ID 下载接口；所有 JSON
-  响应受 7KB 上限约束，单帧提供长度、ETag 和 SHA-256，当前只发布已审核的 Sprout WebP 包；
+  响应受 7KB 上限约束，单帧提供长度、ETag 和 SHA-256，并支持 Lite Wearable 可读取的
+  Base64 JSON；当前只发布已审核的 Sprout PNG 轻量包；
+- DevEco 6.0.2 随附 API 声明确认 Lite Wearable 的 `@system.fetch` 响应不提供
+  ArrayBuffer，而 `@system.file` 保留 `writeArrayBuffer`、`readArrayBuffer` 和 `move`；
+  随附媒体文档列出的 Lite Wearable 图片格式为 BMP/JPEG/PNG，因此动态同步不使用 WebP；
 - 表端尚未接入动态宠物目录、文件缓存、原子切换或失败回滚；
 - 手表 HAP 构建、签名、安装、独立 HTTPS、后台、语音与传感器均仍需直接证据。
 
