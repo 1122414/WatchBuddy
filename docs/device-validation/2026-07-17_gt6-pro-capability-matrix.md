@@ -15,7 +15,7 @@
 | GT 6 能力级别 | 华为当前 Lite Wearable 文档列出 WATCH GT 6 为 API 20 | 设备支持，仍需真机验证 |
 | 工程 SDK 级别 | 华为 2026-07-17 官方 Lite Wearable 示例仍使用 `5.0.5(17)` | 与官方示例保持一致 |
 | 当前表端传输 | 运行入口已改用 `@system.fetch` 完成注册、状态、回复和记忆请求，不再导入 Wear Engine | 代码完成，待构建/真机 |
-| 独立构建工具链 | DevEco Studio 6.0.2、内置 OHPM、Hvigor、Java 和 Node.js 已识别；HarmonyOS SDK 仍缺失 | 部分通过 |
+| 独立构建工具链 | DevEco Studio 6.0.2、内置 OHPM、Hvigor、Java 和 Node.js 已识别；HarmonyOS/HMS SDK 仅缺 `js`，Hvigor 返回 `00303168` | 部分通过，需在 SDK Manager 补齐 `js` |
 | 真机安装通道 | 华为文档明确 Lite Wearable 不能直连 DevEco Studio，需应用调测助手安装 | 安装阶段需要用户操作 |
 
 ## 独立运行硬门槛
@@ -67,7 +67,7 @@
 | 服务端目录 | API 已提供鉴权后的列表、紧凑清单、分页摘要和按 ID 下载；默认只发布已审核的 Sprout | 服务端完成，待表端/真机 | 仅返回审核后元数据和固定摘要 |
 | codex-pets.net 导入 | 构建期导入器已限制官方 HTTPS 路径、同源重定向、包/解压预算、ZIP 路径、v2 清单、图集与许可证白名单；站点页面没有单宠物许可证字段 | 导入边界完成，待明确授权的站点 v2 宠物 | 不让手表直连，不接受未知授权或任意 URL |
 | 动态资源下载 | 表端现有网络层只处理小型 JSON | 未验证 | 临时下载、SHA-256、原子切换、缓存和回滚通过真机 |
-| 系统表盘常驻 | 当前工程是 `liteWearable` 第三方应用，没有表盘工程或发布证据 | 独立 Spike | 官方文档、工程构建、发布路径和真机四项均有证据 |
+| 系统表盘常驻 | 官方路线为独立 Theme Studio Pro 466 × 466 表盘主题，支持打包序列帧与简单触摸；没有证据表明其可运行 WatchBuddy HAP、任意 HTTPS 或动态宠物资源 | 文档边界已确认，尚无表盘产物/真机证据 | 独立创建、导出并在 GT 6 Pro 验证；完整 AI 功能留在应用内 |
 
 宠物 MVP 的可交付边界是 WatchBuddy 应用主页内的内置宠物。动态换宠物和系统表盘常驻不能用桌面
 浏览器预览或 Node.js 单元测试替代 Lite Wearable SDK/真机结果。
@@ -108,3 +108,5 @@
 - [华为：轻量级智能穿戴应用开发](https://developer.huawei.com/consumer/cn/doc/best-practices/bpta-lite-wearable-guide)
 - [华为：`@system.fetch` 数据请求](https://developer.huawei.com/consumer/cn/doc/harmonyos-references-v5/js-apis-system-fetch-V5)
 - [华为官方 Lite Wearable 示例工程](https://gitcode.com/harmonyos_samples/BestPracticeSnippets/tree/master/LiteWearable)
+- [华为：表盘主题与 Theme Studio Pro 工具](https://developer.huawei.com/consumer/cn/doc/content/themes-tools-0000001104440212)
+- [华为：Theme Studio Pro 466 × 466 表盘样式](https://developer.huawei.com/consumer/en/doc/content/style-customize-pro-0000001583807170)

@@ -149,7 +149,9 @@ npm run doctor:watch
 自检会识别 DevEco Studio 内置的 OHPM、Hvigor 和 Java，并确认
 HarmonyOS SDK 的 `toolchains`、`ets`、`js`、`native`、`previewer`
 组件是否完整；同时校验 Lite Wearable FA 模型、目标 SDK、466 × 466
-圆屏、页面文件、网络权限及独立运行源码约束。
+圆屏、页面文件、网络权限及独立运行源码约束。组件不完整时，按输出提示在
+DevEco Studio 的 `Tools > SDK Manager` 中补齐 HarmonyOS 组件；OpenHarmony
+同名组件不作为 HarmonyOS 工程的替代品。
 
 安装完整 SDK 后，构建 Lite Wearable debug HAP：
 

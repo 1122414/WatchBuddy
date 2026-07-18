@@ -73,13 +73,19 @@ function findBundledExecutable(devEcoPath, relativePath) {
   return isExecutable(executablePath) ? executablePath : "";
 }
 
-function inspectSdkHome() {
-  const candidates = [
+function sdkCandidates(additionalCandidates = []) {
+  return [
     process.env.DEVECO_SDK_HOME,
     join(homedir(), "Library", "Huawei", "Sdk"),
-    join(homedir(), "Library", "OpenHarmony", "Sdk")
-  ].filter(Boolean);
-  let firstPartialSdk = null;
+    join(homedir(), "Library", "OpenHarmony", "Sdk"),
+    ...additionalCandidates
+  ].filter((candidate, index, values) => (
+    Boolean(candidate) && values.indexOf(candidate) === index
+  ));
+}
+
+export function inspectSdkHome(candidates = sdkCandidates()) {
+  let bestPartialSdk = null;
 
   for (const candidate of candidates) {
     if (!existsSync(candidate)) {
@@ -89,29 +95,46 @@ function inspectSdkHome() {
     const possibleHomes = [
       candidate,
       ...readdirSync(candidate, { withFileTypes: true })
-        .filter((entry) => entry.isDirectory())
+        .filter((entry) => (
+          entry.isDirectory()
+          && !["hms", "openharmony"].includes(entry.name)
+        ))
         .map((entry) => join(candidate, entry.name))
     ];
 
     for (const possibleHome of possibleHomes) {
-      const missingComponents = requiredSdkComponents.filter(
-        (component) => !existsSync(join(possibleHome, component))
-      );
-      if (missingComponents.length === 0) {
-        return {
-          home: possibleHome,
-          missingComponents: []
-        };
-      }
+      const componentHomes = [
+        possibleHome,
+        join(possibleHome, "hms")
+      ];
+      for (const componentHome of componentHomes) {
+        const missingComponents = requiredSdkComponents.filter(
+          (component) => !existsSync(join(componentHome, component))
+        );
+        if (missingComponents.length === 0) {
+          return {
+            componentHome,
+            home: possibleHome,
+            missingComponents: []
+          };
+        }
 
-      firstPartialSdk ??= {
-        home: possibleHome,
-        missingComponents
-      };
+        if (
+          !bestPartialSdk
+          || missingComponents.length < bestPartialSdk.missingComponents.length
+        ) {
+          bestPartialSdk = {
+            componentHome,
+            home: possibleHome,
+            missingComponents
+          };
+        }
+      }
     }
   }
 
-  return firstPartialSdk ?? {
+  return bestPartialSdk ?? {
+    componentHome: "",
     home: "",
     missingComponents: requiredSdkComponents
   };
@@ -197,7 +220,10 @@ export function inspectWatchToolchain() {
     : (canRunJava(pathJava)
       ? pathJava
       : (canRunJava(androidStudioJava) ? androidStudioJava : ""));
-  const sdk = inspectSdkHome();
+  const bundledSdk = devEcoPath
+    ? join(devEcoPath, "Contents", "sdk", "default")
+    : "";
+  const sdk = inspectSdkHome(sdkCandidates([bundledSdk]));
   const projectConfig = readProjectConfig();
 
   const checks = [
@@ -210,7 +236,9 @@ export function inspectWatchToolchain() {
       name: "HarmonyOS SDK",
       ok: Boolean(sdk.home) && sdk.missingComponents.length === 0,
       detail: sdk.home
-        ? `${sdk.home}${sdk.missingComponents.length > 0
+        ? `${sdk.home}${sdk.componentHome !== sdk.home
+          ? `（组件目录 ${sdk.componentHome}）`
+          : ""}${sdk.missingComponents.length > 0
           ? `（缺少 ${sdk.missingComponents.join(", ")}）`
           : ""}`
         : "未安装"
@@ -305,7 +333,10 @@ export function printWatchToolchainReport(report) {
   }
 
   if (!report.canBuild) {
-    console.error("\n尚不能构建 HAP：请安装完整 HarmonyOS SDK 后重试。");
+    console.error(
+      "\n尚不能构建 HAP：请在 DevEco Studio > Tools > SDK Manager "
+      + "补齐上方列出的 HarmonyOS SDK 组件后重试。"
+    );
     return;
   }
 

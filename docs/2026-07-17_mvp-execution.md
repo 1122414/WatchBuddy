@@ -122,8 +122,10 @@ WatchBuddy API
 
 硬门槛：仓库搜索不得再发现表端运行代码导入 Wear Engine 或 peer 配置。
 
-表端源码和 Node.js 契约测试已完成；尚未安装 HarmonyOS SDK，因此 DevEco 编译、
-Lite Wearable 运行时兼容性、沙箱存储和 466 × 466 真机布局仍未验收。
+表端源码和 Node.js 契约测试已完成。DevEco 6.0.2 内置 HarmonyOS/HMS SDK 当前仅缺少
+`js` 组件；同目录下完整的 OpenHarmony `js` 不能替代 HarmonyOS 工程组件。Hvigor 已据此返回
+`00303168 Configuration Error: SDK component missing`，因此 DevEco 编译、Lite Wearable
+运行时兼容性、沙箱存储和 466 × 466 真机布局仍未验收。
 
 ### 阶段 2A：应用内宠物资源闭环
 
@@ -180,8 +182,9 @@ Lite Wearable 运行时兼容性、沙箱存储和 466 × 466 真机布局仍未
 - [ ] 验证表端麦克风、录音权限、音频上传和播放；
 - [ ] 验证至少一种来自手表自身的活动或传感器入口；
 - [ ] 所有不支持项写入能力矩阵和产品限制。
-- [ ] 单独核对第三方应用能否创建、发布或运行交互式系统表盘；
-- [ ] 若平台不开放，则保留应用主页与快捷入口，不使用悬浮窗或手机端伪装常驻。
+- [x] 单独核对第三方应用能否创建、发布或运行交互式系统表盘；
+- [x] 确认表盘必须作为 Theme Studio Pro 的独立主题产物验证，不能把 Lite Wearable HAP
+  冒充系统表盘；MVP 保留应用主页，不使用悬浮窗或手机端伪装常驻。
 
 ### 阶段 5：签名、安装与真机交付
 
@@ -250,8 +253,9 @@ WatchBuddy 的联网、对话、提醒、语音、传感器或记忆。安装后
 - Lite Wearable 提供 `@system.fetch`，默认支持 HTTPS；华为文档给出的限制为请求头不超过 2KB、
   传输层单包不超过 7KB；
 - Lite Wearable 不能直接连接 DevEco Studio，官方真机安装流程依赖应用调测助手和已配对华为手机；
-- 当前电脑已安装并验证 DevEco Studio 6.0.2，内置 OHPM、Hvigor 和 Java 可识别；
-  HarmonyOS SDK 组件尚未安装，因此 HAP 构建仍未通过；
+- 当前电脑已安装并验证 DevEco Studio 6.0.2，内置 OHPM、Hvigor、Java 和 Node.js 可识别；
+  内置 HarmonyOS 6.0.2/HMS SDK 的 `toolchains`、`ets`、`native`、`previewer` 已存在，
+  仅缺少 `js`。手动 Hvigor 构建已用 `00303168` 确认该缺失会阻止 HAP 构建；
 - 当前表端运行入口已接入 `@system.fetch` 注册、状态、快捷回复和记忆 API，包含紧凑本地缓存与
   三次有界重试，且不再导入 Wear Engine；公网 HTTPS 服务地址、HAP 构建和真机联网仍未验证；
 - Android APK 已构建安装，但不再属于目标架构；
@@ -359,3 +363,25 @@ Lite Wearable 的动态二进制下载、可持久文件目录和运行时图片
   Lite Wearable 使用轻量化 UI 与低功耗能力；
 - [华为轻量级穿戴开发指南](https://developer.huawei.com/consumer/cn/doc/best-practices/bpta-lite-wearable-guide)：
   用于后续 SDK、组件、资源和真机能力核验。
+
+## 10. 系统表盘 Spike 结论
+
+华为将“轻量级智能穿戴应用”和“表盘主题”定义为两条独立交付路线。系统表盘需要使用
+Theme Studio Pro 创建 466 × 466 表盘工程，同时处理常亮与息屏/AOD 状态，再单独导出、测试和发布；
+它不是 `apps/watch-huawei` 生成的 Lite Wearable HAP。
+
+官方主题文档给出了序列帧图片和按钮触摸能力，因此可以继续验证“打包进表盘的简化宠物动画与轻点
+反馈”。但当前没有官方证据证明表盘主题能运行 WatchBuddy JS 应用、直接调用任意 HTTPS API、
+读取 HAP 动态下载的宠物文件，或承载 AI 对话和记忆功能。因此产品边界固定为：
+
+- 完整宠物互动、联网对话、记忆和在线换宠物继续运行在 WatchBuddy 应用内；
+- 系统表盘只作为后续独立主题产物，第一版最多使用随表盘打包的静态/序列帧宠物；
+- Theme Studio Pro 工程、GT 6 Pro 导入与真机交互未完成前，不对外宣称系统表盘可用；
+- 表盘路线失败时不回退到手机、Wear Engine、悬浮窗或伪装常驻。
+
+官方依据：
+
+- [华为：轻量级智能穿戴开发](https://developer.huawei.com/consumer/cn/multidevice/wearables/lite/)；
+- [华为：表盘主题与 Theme Studio Pro 工具](https://developer.huawei.com/consumer/cn/doc/content/themes-tools-0000001104440212)；
+- [华为：Theme Studio Pro 466 × 466 表盘样式](https://developer.huawei.com/consumer/en/doc/content/style-customize-pro-0000001583807170)；
+- [华为：SourceImage 序列帧与触摸行为](https://developer.huawei.com/consumer/cn/doc/sourceimage-0000001073857910)。
