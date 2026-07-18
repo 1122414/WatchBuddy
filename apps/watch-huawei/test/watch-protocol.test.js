@@ -69,7 +69,7 @@ test('无效 JSON 和缺少动作字段的消息被拒绝', () => {
 });
 
 test('超长消息和重复动作不会进入表端 UI', () => {
-  const tooLong = nudge({ message: '这是一条明显超过手表消息长度限制的文字，需要在手机侧被拒绝并且不能进入表端界面' });
+  const tooLong = nudge({ message: '这是一条明显超过手表消息长度限制的文字，需要在服务端被拒绝并且不能进入表端界面' });
   const duplicateActions = nudge({
     actions: [
       { id: 'same', label: '第一项' },
@@ -84,7 +84,7 @@ test('超长消息和重复动作不会进入表端 UI', () => {
   );
 });
 
-test('手机 ACK 会终止对应回复的重试', () => {
+test('服务端 ACK 会终止对应回复的重试', () => {
   const ack = createDeliveryAck('nudge_12345678', 'responded', NOW);
   const result = inspectIncomingMessage(JSON.stringify(ack), [], NOW);
 

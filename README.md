@@ -80,7 +80,17 @@ npm run doctor:watch
 
 自检会识别 DevEco Studio 内置的 OHPM、Hvigor 和 Java，并确认
 HarmonyOS SDK 的 `toolchains`、`ets`、`js`、`native`、`previewer`
-组件是否完整。
+组件是否完整；同时校验 Lite Wearable FA 模型、目标 SDK、466 × 466
+圆屏、页面文件、网络权限及独立运行源码约束。
+
+安装完整 SDK 后，构建 Lite Wearable debug HAP：
+
+```bash
+npm run build:watch
+```
+
+构建脚本固定使用 `apps/watch-huawei`、`default` 产品和 `entry@default`
+模块，并在成功后打印实际 HAP 路径。
 
 启动最小 WatchBuddy API：
 
