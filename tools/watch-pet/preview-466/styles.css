@@ -253,6 +253,93 @@ input {
   pointer-events: none;
 }
 
+.pet-catalog-screen {
+  position: absolute;
+  inset: 0;
+  padding: 48px 44px 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0c1018;
+  text-align: center;
+}
+
+.pet-catalog-screen h2 {
+  width: 340px;
+  height: 44px;
+  margin: 0;
+  color: #f4f7fb;
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.pet-catalog-screen p {
+  width: 340px;
+  height: 76px;
+  margin: 14px 0 0;
+  color: #aab4c5;
+  font-size: 20px;
+}
+
+.pet-catalog-screen > span {
+  height: 34px;
+  margin-top: 8px;
+  color: #758196;
+  font-size: 18px;
+}
+
+.pet-catalog-screen strong {
+  width: 340px;
+  height: 54px;
+  margin-top: 8px;
+  color: #7bf2bf;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.catalog-navigation {
+  width: 160px;
+  height: 50px;
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.catalog-navigation span {
+  width: 68px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  background: #182131;
+  color: #e9eef6;
+  font-size: 28px;
+}
+
+.catalog-actions {
+  width: 326px;
+  height: 56px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.catalog-actions span {
+  width: 154px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 26px;
+  background: #263349;
+  color: #e9eef6;
+  font-size: 18px;
+}
+
+.catalog-actions .primary {
+  background: #7bf2bf;
+  color: #101722;
+}
+
 .watch-screen.sleeping {
   opacity: 0.72;
 }

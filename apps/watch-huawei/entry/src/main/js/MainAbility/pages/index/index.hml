@@ -1,5 +1,5 @@
 <div class="root">
-  <div class="container" if="{{!memoryScreen}}">
+  <div class="container" if="{{mainScreen}}">
     <div class="status-row" onclick="checkServer">
       <text class="status-dot">●</text>
       <text class="status-label">{{stateLabel}}</text>
@@ -22,7 +22,10 @@
     </div>
 
     <text class="hint" if="{{!messageVisible}}">轻点角色同步，轻点状态重试</text>
-    <input class="memory-entry" if="{{!messageVisible}}" type="button" value="记忆" onclick="showMemories"></input>
+    <div class="utility-actions" if="{{!messageVisible}}">
+      <input class="utility-entry" type="button" value="宠物" onclick="showPets"></input>
+      <input class="utility-entry" type="button" value="记忆" onclick="showMemories"></input>
+    </div>
   </div>
 
   <div class="memory-screen" if="{{memoryScreen}}">
@@ -44,6 +47,23 @@
     <div class="memory-actions">
       <input class="memory-action danger" type="button" value="清空" onclick="clearAllMemories"></input>
       <input class="memory-action" type="button" value="返回" onclick="hideMemories"></input>
+    </div>
+  </div>
+
+  <div class="pet-screen" if="{{petScreen}}">
+    <text class="pet-title">{{petCatalogName}}</text>
+    <text class="pet-description">{{petCatalogDescription}}</text>
+    <text class="pet-position">{{petCatalogPosition}}</text>
+    <text class="pet-status">{{petCatalogStatus}}</text>
+
+    <div class="pet-navigation">
+      <input class="pet-nav-action" type="button" value="‹" onclick="previousCatalogPet"></input>
+      <input class="pet-nav-action" type="button" value="›" onclick="nextCatalogPet"></input>
+    </div>
+
+    <div class="pet-actions">
+      <input class="pet-action primary" type="button" value="{{petCatalogAction}}" onclick="selectCatalogPet"></input>
+      <input class="pet-action" type="button" value="返回" onclick="hidePets"></input>
     </div>
   </div>
 </div>

@@ -7,6 +7,10 @@ import {
   createDeleteMemoryRequest,
   createHealthRequest,
   createMemoriesRequest,
+  createPetAssetRequest,
+  createPetAssetsRequest,
+  createPetCatalogRequest,
+  createPetDetailRequest,
   createRegistrationRequest,
   createReplyRequest,
   inspectClearMemoriesResponse,
@@ -14,6 +18,10 @@ import {
   inspectDeleteMemoryResponse,
   inspectHealthResponse,
   inspectMemoriesResponse,
+  inspectPetAssetResponse,
+  inspectPetAssetsResponse,
+  inspectPetCatalogResponse,
+  inspectPetDetailResponse,
   inspectRegistrationResponse,
   inspectReplyResponse,
   MAX_FETCH_HEADER_BYTES,
@@ -21,6 +29,9 @@ import {
   normalizeApiBaseUrl,
   utf8ByteLength
 } from "../entry/src/main/js/MainAbility/common/watch-api-contract.js";
+import {
+  defaultPetCatalog
+} from "../../watchbuddy-api/src/pet-catalog.js";
 
 const BASE_URL = "https://api.example.com";
 const DEVICE_TOKEN = "device_token_123456789012345678901234567890";
@@ -128,6 +139,53 @@ test("创建注册、状态、回复和记忆请求", () => {
   assert.equal(
     createClearMemoriesRequest(BASE_URL, DEVICE_TOKEN).method,
     "DELETE"
+  );
+});
+
+test("创建受控宠物目录、清单、分页和 Base64 资源请求", () => {
+  const pet = defaultPetCatalog.listPets()[0];
+  const descriptor = defaultPetCatalog.listAssets(pet.id, {
+    limit: 1,
+    offset: 0
+  }).assets[0];
+
+  assert.equal(
+    createPetCatalogRequest(BASE_URL, DEVICE_TOKEN).url,
+    "https://api.example.com/v1/pets"
+  );
+  assert.equal(
+    createPetDetailRequest(BASE_URL, DEVICE_TOKEN, pet.id).url,
+    `https://api.example.com/v1/pets/${pet.id}`
+  );
+  assert.equal(
+    createPetAssetsRequest(
+      BASE_URL,
+      DEVICE_TOKEN,
+      pet.id,
+      pet.version,
+      20,
+      40
+    ).url,
+    `https://api.example.com/v1/pets/${pet.id}/assets?limit=20&offset=40`
+  );
+  assert.equal(
+    createPetAssetRequest(
+      BASE_URL,
+      DEVICE_TOKEN,
+      pet.id,
+      descriptor.id
+    ).url,
+    `https://api.example.com/v1/pets/${pet.id}/assets/`
+      + `${descriptor.id}?encoding=base64`
+  );
+  assert.throws(
+    () => createPetAssetRequest(
+      BASE_URL,
+      DEVICE_TOKEN,
+      pet.id,
+      "../manifest"
+    ),
+    /资源 ID/
   );
 });
 
@@ -266,6 +324,55 @@ test("校验记忆列表和删除响应", () => {
       deleted: 1
     }
   }).ok, true);
+});
+
+test("校验受控宠物目录、清单、分页和 Base64 资源响应", () => {
+  const summary = defaultPetCatalog.listPets()[0];
+  const pet = defaultPetCatalog.getPet(summary.id);
+  const page = defaultPetCatalog.listAssets(summary.id, {
+    limit: 20,
+    offset: 0
+  });
+  const descriptor = page.assets[0];
+  const encoded = defaultPetCatalog.getBase64Asset(
+    summary.id,
+    descriptor.id
+  );
+
+  assert.equal(inspectPetCatalogResponse({
+    code: 200,
+    data: {
+      catalogSchemaVersion: 1,
+      pets: [summary]
+    }
+  }).ok, true);
+  assert.equal(inspectPetDetailResponse({
+    code: 200,
+    data: {
+      catalogSchemaVersion: 1,
+      pet
+    }
+  }, summary.id).data.version, summary.version);
+  assert.equal(inspectPetAssetsResponse({
+    code: 200,
+    data: {
+      catalogSchemaVersion: 1,
+      ...page
+    }
+  }, summary.id, summary.version).data.assets.length, 20);
+  assert.equal(inspectPetAssetResponse({
+    code: 200,
+    data: encoded
+  }, descriptor).data.sha256, descriptor.sha256);
+
+  assert.equal(inspectPetAssetsResponse({
+    code: 200,
+    data: {
+      catalogSchemaVersion: 1,
+      ...page,
+      version: "sha256-0000000000000000"
+    }
+  }, summary.id, summary.version).reason, "invalid_response");
 });
 
 test("拒绝过大、过期或错误状态码的业务响应", () => {

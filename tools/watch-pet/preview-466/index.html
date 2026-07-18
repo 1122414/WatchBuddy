@@ -43,6 +43,11 @@
           显示消息与回复区
         </label>
 
+        <label class="check-row">
+          <input id="catalog-toggle" type="checkbox">
+          显示宠物目录页
+        </label>
+
         <div class="action-buttons" aria-label="一次性动作">
           <button type="button" data-action="tap">轻点 / 跳跃</button>
           <button type="button" data-action="message">新消息 / 挥手</button>
@@ -55,7 +60,7 @@
         <div class="watch-screen" id="watch-screen">
           <div class="safe-ring" aria-hidden="true"></div>
 
-          <div class="status-row">
+          <div class="status-row" id="status-row">
             <span class="status-dot">●</span>
             <span id="state-label">空闲</span>
             <span class="connection-label"> · 服务在线</span>
@@ -77,6 +82,21 @@
 
           <div class="touch-outline" id="touch-outline" aria-hidden="true">
             176 × 176 触摸热区
+          </div>
+
+          <div class="pet-catalog-screen" id="pet-catalog-screen" hidden>
+            <h2>Sprout（芽芽）</h2>
+            <p>WatchBuddy 的原创薄荷绿腕上 AI 伙伴。</p>
+            <span>1/1 · 319 KiB</span>
+            <strong>已审核 · 点下方安装</strong>
+            <div class="catalog-navigation" aria-hidden="true">
+              <span>‹</span>
+              <span>›</span>
+            </div>
+            <div class="catalog-actions" aria-hidden="true">
+              <span class="primary">下载并使用</span>
+              <span>返回</span>
+            </div>
           </div>
         </div>
 

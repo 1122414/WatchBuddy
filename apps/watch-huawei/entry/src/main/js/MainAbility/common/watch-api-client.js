@@ -7,6 +7,10 @@ import {
   createDeleteMemoryRequest,
   createHealthRequest,
   createMemoriesRequest,
+  createPetAssetRequest,
+  createPetAssetsRequest,
+  createPetCatalogRequest,
+  createPetDetailRequest,
   createRegistrationRequest,
   createReplyRequest,
   inspectClearMemoriesResponse,
@@ -14,6 +18,10 @@ import {
   inspectDeleteMemoryResponse,
   inspectHealthResponse,
   inspectMemoriesResponse,
+  inspectPetAssetResponse,
+  inspectPetAssetsResponse,
+  inspectPetCatalogResponse,
+  inspectPetDetailResponse,
   inspectRegistrationResponse,
   inspectReplyResponse
 } from './watch-api-contract.js';
@@ -49,6 +57,69 @@ export function fetchCompanionState(deviceToken, options) {
       deviceToken
     ),
     inspectCompanionStateResponse,
+    options
+  );
+}
+
+export function fetchPetCatalog(deviceToken, options) {
+  return executeRequest(
+    () => createPetCatalogRequest(
+      WATCHBUDDY_API_BASE_URL,
+      deviceToken
+    ),
+    inspectPetCatalogResponse,
+    options
+  );
+}
+
+export function fetchPetDetail(deviceToken, petId, options) {
+  return executeRequest(
+    () => createPetDetailRequest(
+      WATCHBUDDY_API_BASE_URL,
+      deviceToken,
+      petId
+    ),
+    (response) => inspectPetDetailResponse(response, petId),
+    options
+  );
+}
+
+export function fetchPetAssets(
+  deviceToken,
+  petId,
+  version,
+  limit,
+  offset,
+  options
+) {
+  return executeRequest(
+    () => createPetAssetsRequest(
+      WATCHBUDDY_API_BASE_URL,
+      deviceToken,
+      petId,
+      version,
+      limit,
+      offset
+    ),
+    (response) => inspectPetAssetsResponse(response, petId, version),
+    options
+  );
+}
+
+export function fetchPetAsset(
+  deviceToken,
+  petId,
+  descriptor,
+  options
+) {
+  return executeRequest(
+    () => createPetAssetRequest(
+      WATCHBUDDY_API_BASE_URL,
+      deviceToken,
+      petId,
+      descriptor && descriptor.id
+    ),
+    (response) => inspectPetAssetResponse(response, descriptor),
     options
   );
 }

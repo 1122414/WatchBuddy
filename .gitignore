@@ -3,6 +3,7 @@
 .gradle/
 .hvigor/
 .local/
+.playwright-cli/
 node_modules/
 __pycache__/
 *.py[cod]
@@ -13,6 +14,7 @@ build/
 **/build/
 **/.cxx/
 **/outputs/
+output/playwright/
 *.jks
 *.keystore
 secrets.properties

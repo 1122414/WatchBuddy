@@ -1,3 +1,6 @@
+import { isValidPetDetail } from './watch-api-contract.js';
+import { petAssetUri } from './watch-pet-integrity.js';
+
 const PET_ROOT = 'common/images/pets/watchbuddy-sprout';
 const TAP_DEBOUNCE_MS = 800;
 
@@ -79,29 +82,65 @@ const INTERACTION_ANIMATIONS = {
   failure: 'failed'
 };
 
+const DEFAULT_PET_RUNTIME = {
+  animations: PET_ANIMATIONS,
+  id: 'watchbuddy-sprout',
+  interactionAnimations: INTERACTION_ANIMATIONS,
+  stateAnimations: STATE_ANIMATIONS,
+  version: 'builtin'
+};
+
 export const DEFAULT_PET_ID = 'watchbuddy-sprout';
 export const DEFAULT_PET_FRAME = PET_ANIMATIONS.idle.frames[0];
 
-export function getPetAnimation(name) {
-  return PET_ANIMATIONS[name] || PET_ANIMATIONS.idle;
+export function createDownloadedPetRuntime(pet) {
+  if (!isValidPetDetail(pet)) {
+    throw new TypeError('下载宠物运行清单无效');
+  }
+  const animations = {};
+  Object.keys(pet.animations).forEach((name) => {
+    const animation = pet.animations[name];
+    animations[name] = {
+      durationsMs: animation.durationsMs.slice(),
+      frames: animation.frames.map(
+        (assetId) => petAssetUri(pet.version, assetId)
+      ),
+      loop: animation.loop
+    };
+  });
+  return {
+    animations,
+    id: pet.id,
+    interactionAnimations: copyMap(pet.interactionMap),
+    stateAnimations: copyMap(pet.stateMap),
+    version: pet.version
+  };
 }
 
-export function petAnimationForState(state) {
-  return STATE_ANIMATIONS[state] || 'idle';
+export function getPetAnimation(name, runtime) {
+  const selected = runtime || DEFAULT_PET_RUNTIME;
+  return selected.animations[name] || selected.animations.idle;
 }
 
-export function petSteadyAnimationForState(state) {
-  const name = petAnimationForState(state);
-  return getPetAnimation(name).loop ? name : 'idle';
+export function petAnimationForState(state, runtime) {
+  const selected = runtime || DEFAULT_PET_RUNTIME;
+  return selected.stateAnimations[state] || 'idle';
 }
 
-export function petInteractionAnimation(interaction) {
-  return INTERACTION_ANIMATIONS[interaction] || 'idle';
+export function petSteadyAnimationForState(state, runtime) {
+  const name = petAnimationForState(state, runtime);
+  return getPetAnimation(name, runtime).loop ? name : 'idle';
 }
 
-export function createPetPlayback(name) {
-  const animation = getPetAnimation(name);
-  const animationName = PET_ANIMATIONS[name] ? name : 'idle';
+export function petInteractionAnimation(interaction, runtime) {
+  const selected = runtime || DEFAULT_PET_RUNTIME;
+  return selected.interactionAnimations[interaction] || 'idle';
+}
+
+export function createPetPlayback(name, runtime) {
+  const selected = runtime || DEFAULT_PET_RUNTIME;
+  const animation = getPetAnimation(name, selected);
+  const animationName = selected.animations[name] ? name : 'idle';
   return {
     animationName,
     frameIndex: 0,
@@ -111,8 +150,8 @@ export function createPetPlayback(name) {
   };
 }
 
-export function advancePetPlayback(playback) {
-  const animation = getPetAnimation(playback.animationName);
+export function advancePetPlayback(playback, runtime) {
+  const animation = getPetAnimation(playback.animationName, runtime);
   const nextIndex = playback.frameIndex + 1;
   if (nextIndex >= animation.frames.length) {
     if (!animation.loop) {
@@ -146,4 +185,12 @@ export function canTriggerPetTap(lastTapAt, now, debounceMs = TAP_DEBOUNCE_MS) {
     && Number.isFinite(lastTapAt)
     && now >= lastTapAt
     && now - lastTapAt >= debounceMs;
+}
+
+function copyMap(source) {
+  const target = {};
+  Object.keys(source).forEach((key) => {
+    target[key] = source[key];
+  });
+  return target;
 }

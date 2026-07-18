@@ -7,6 +7,8 @@ import {
   deleteMemory,
   fetchCompanionState,
   fetchMemories,
+  fetchPetCatalog,
+  fetchPetDetail,
   registerWatchBuddy,
   replyToCompanion
 } from '../../common/watch-api-client.js';
@@ -21,13 +23,16 @@ import {
 import {
   deserializeIdentity,
   deserializeNudge,
+  deserializePetSelection,
   ensureStorageValue,
   serializeIdentity,
-  serializeNudge
+  serializeNudge,
+  serializePetSelection
 } from '../../common/watch-storage-contract.js';
 import {
   advancePetPlayback,
   canTriggerPetTap,
+  createDownloadedPetRuntime,
   createPetPlayback,
   DEFAULT_PET_FRAME,
   getPetAnimation,
@@ -35,12 +40,21 @@ import {
   petInteractionAnimation,
   petSteadyAnimationForState
 } from '../../common/watch-pet-runtime.js';
+import {
+  installPetBundle,
+  loadInstalledPet
+} from '../../common/watch-pet-installer.js';
+import { watchPetFiles } from '../../common/watch-pet-files.js';
+import {
+  createWatchPetTransport
+} from '../../common/watch-pet-transport.js';
 
 const IDENTITY_STORAGE_KEY = 'wb_identity';
 const PENDING_META_STORAGE_KEY = 'wb_pending_meta';
 const PENDING_PAYLOAD_STORAGE_KEY = 'wb_pending_payload';
 const NUDGE_META_STORAGE_KEY = 'wb_nudge_meta';
 const NUDGE_MESSAGE_STORAGE_KEY = 'wb_nudge_message';
+const PET_SELECTION_STORAGE_KEY = 'wb_pet_selection';
 const NUDGE_ACTION_STORAGE_KEYS = [
   'wb_nudge_action_1',
   'wb_nudge_action_2',
@@ -78,6 +92,7 @@ export default {
     currentNudgeId: '',
     currentNudgeCreatedAt: 0,
     connectionLabel: '正在连接',
+    mainScreen: true,
     memoryScreen: false,
     memoryStatus: '正在读取',
     memoryOneVisible: false,
@@ -88,7 +103,13 @@ export default {
     memoryThree: '',
     memoryOneId: '',
     memoryTwoId: '',
-    memoryThreeId: ''
+    memoryThreeId: '',
+    petScreen: false,
+    petCatalogName: '宠物目录',
+    petCatalogDescription: '正在读取可用宠物',
+    petCatalogPosition: '',
+    petCatalogStatus: '尚未读取',
+    petCatalogAction: '下载并使用'
   },
 
   onInit() {
@@ -106,21 +127,31 @@ export default {
     this.petTimer = null;
     this.petPlayback = null;
     this.petActionActive = false;
+    this.petRuntime = null;
+    this.downloadedPet = null;
+    this.petCatalog = [];
+    this.petCatalogIndex = 0;
+    this.petInstaller = null;
     this.lastPetTapAt = 0;
     this.restoreState();
     this.restoreCachedNudge();
     this.restorePendingReply();
+    this.restorePetSelection();
     this.restoreIdentity();
   },
 
   onShow() {
     this.visible = true;
-    if (this.messageVisible) {
-      this.startPetInteraction(petInteractionAnimation('message'));
-    } else {
-      this.playPetStateEntry();
+    if (!this.memoryScreen && !this.petScreen) {
+      if (this.messageVisible) {
+        this.startPetInteraction(
+          petInteractionAnimation('message', this.petRuntime)
+        );
+      } else {
+        this.playPetStateEntry();
+      }
+      this.ensureConnected();
     }
-    this.ensureConnected();
   },
 
   onHide() {
@@ -211,6 +242,43 @@ export default {
     });
   },
 
+  restorePetSelection() {
+    this.readValue(PET_SELECTION_STORAGE_KEY, (value) => {
+      let selection;
+      try {
+        selection = deserializePetSelection(value);
+      } catch (error) {
+        this.deleteStored(PET_SELECTION_STORAGE_KEY);
+        return;
+      }
+      loadInstalledPet(selection, watchPetFiles, {
+        onFailure: function() {
+          this.downloadedPet = null;
+          this.petRuntime = null;
+          this.deleteStored(PET_SELECTION_STORAGE_KEY);
+        }.bind(this),
+        onSuccess: function(pet) {
+          this.applyDownloadedPet(pet);
+        }.bind(this)
+      });
+    });
+  },
+
+  applyDownloadedPet(pet) {
+    try {
+      this.petRuntime = createDownloadedPetRuntime(pet);
+      this.downloadedPet = pet;
+    } catch (error) {
+      this.petRuntime = null;
+      this.downloadedPet = null;
+      this.deleteStored(PET_SELECTION_STORAGE_KEY);
+      return;
+    }
+    if (this.visible && !this.memoryScreen && !this.petScreen) {
+      this.playPetStateEntry();
+    }
+  },
+
   ensureConnected() {
     if (!this.visible || !this.identityReady) {
       return;
@@ -225,7 +293,9 @@ export default {
   registerDevice() {
     this.cancelRequest();
     this.connectionLabel = '正在注册';
-    this.startPetInteraction(petInteractionAnimation('loading'));
+    this.startPetInteraction(
+      petInteractionAnimation('loading', this.petRuntime)
+    );
     this.activeRequest = registerWatchBuddy({
       deviceId: this.deviceId,
       locale: 'zh-CN',
@@ -242,7 +312,9 @@ export default {
       onFailure: function(reason) {
         this.activeRequest = null;
         this.connectionLabel = this.connectionLabelForFailure(reason);
-        this.startPetInteraction(petInteractionAnimation('failure'));
+        this.startPetInteraction(
+          petInteractionAnimation('failure', this.petRuntime)
+        );
       }.bind(this)
     });
   },
@@ -251,7 +323,9 @@ export default {
     this.cancelRequest();
     this.connectionLabel = '正在连接';
     if (!preservePetAction) {
-      this.startPetInteraction(petInteractionAnimation('loading'));
+      this.startPetInteraction(
+        petInteractionAnimation('loading', this.petRuntime)
+      );
     }
     this.activeRequest = fetchCompanionState(this.deviceToken, {
       onSuccess: function(result) {
@@ -280,7 +354,9 @@ export default {
       onFailure: function(reason) {
         this.activeRequest = null;
         this.connectionLabel = this.connectionLabelForFailure(reason);
-        this.startPetInteraction(petInteractionAnimation('failure'));
+        this.startPetInteraction(
+          petInteractionAnimation('failure', this.petRuntime)
+        );
         this.schedulePendingReply();
       }.bind(this)
     });
@@ -324,6 +400,7 @@ export default {
     if (stateChanged
       && this.visible
       && !this.memoryScreen
+      && !this.petScreen
       && !this.petActionActive) {
       this.playPetStateEntry();
     }
@@ -335,7 +412,9 @@ export default {
       return;
     }
     this.lastPetTapAt = now;
-    this.startPetInteraction(petInteractionAnimation('tap'));
+    this.startPetInteraction(
+      petInteractionAnimation('tap', this.petRuntime)
+    );
     this.syncCompanionState(true);
     this.vibrate();
   },
@@ -357,7 +436,9 @@ export default {
     this.currentNudgeId = nudge.nudgeId;
     this.currentNudgeCreatedAt = nudge.createdAt;
     this.messageVisible = true;
-    this.startPetInteraction(petInteractionAnimation('message'));
+    this.startPetInteraction(
+      petInteractionAnimation('message', this.petRuntime)
+    );
   },
 
   replyOne() {
@@ -386,7 +467,9 @@ export default {
     }, this.createLocalId('reply'));
     this.messageVisible = false;
     this.connectionLabel = '正在发送';
-    this.startPetInteraction(petInteractionAnimation('loading'));
+    this.startPetInteraction(
+      petInteractionAnimation('loading', this.petRuntime)
+    );
     this.persistPendingReply();
     this.sendPendingReply();
   },
@@ -400,7 +483,9 @@ export default {
 
     this.cancelRequest();
     const pending = this.pendingReply;
-    this.startPetInteraction(petInteractionAnimation('loading'));
+    this.startPetInteraction(
+      petInteractionAnimation('loading', this.petRuntime)
+    );
     this.activeRequest = replyToCompanion(
       this.deviceToken,
       pending.payload,
@@ -433,7 +518,9 @@ export default {
           this.connectionLabel = reason === 'http_401'
             ? '令牌已失效'
             : '回复待重试';
-          this.startPetInteraction(petInteractionAnimation('failure'));
+          this.startPetInteraction(
+            petInteractionAnimation('failure', this.petRuntime)
+          );
           this.schedulePendingReply();
         }.bind(this)
       }
@@ -460,6 +547,8 @@ export default {
   },
 
   showMemories() {
+    this.mainScreen = false;
+    this.petScreen = false;
     this.memoryScreen = true;
     this.stopPetAnimation();
     this.loadMemories();
@@ -467,8 +556,197 @@ export default {
 
   hideMemories() {
     this.memoryScreen = false;
+    this.mainScreen = true;
     this.playPetStateEntry();
     this.ensureConnected();
+  },
+
+  showPets() {
+    this.mainScreen = false;
+    this.memoryScreen = false;
+    this.petScreen = true;
+    this.stopPetAnimation();
+    this.loadPetCatalog();
+  },
+
+  hidePets() {
+    this.cancelPetInstall();
+    this.cancelRequest();
+    this.petScreen = false;
+    this.mainScreen = true;
+    this.playPetStateEntry();
+    this.ensureConnected();
+  },
+
+  loadPetCatalog() {
+    if (!this.deviceToken) {
+      this.petCatalogStatus = '尚未注册';
+      this.petCatalogDescription = '返回主页完成服务注册后再试';
+      return;
+    }
+    this.cancelRequest();
+    this.petCatalogStatus = '正在读取';
+    this.petCatalogDescription = '读取经过审核的宠物目录';
+    this.activeRequest = fetchPetCatalog(this.deviceToken, {
+      onFailure: function(reason) {
+        this.activeRequest = null;
+        this.petCatalog = [];
+        this.petCatalogStatus = this.connectionLabelForFailure(reason);
+        this.petCatalogDescription = '目录暂时不可用';
+      }.bind(this),
+      onSuccess: function(result) {
+        this.activeRequest = null;
+        this.petCatalog = result.data.pets;
+        this.petCatalogIndex = 0;
+        this.applyCatalogPet();
+      }.bind(this)
+    });
+  },
+
+  applyCatalogPet() {
+    const summary = this.petCatalog[this.petCatalogIndex];
+    if (!summary) {
+      this.petCatalogName = '暂无宠物';
+      this.petCatalogDescription = '目录中没有可用宠物';
+      this.petCatalogPosition = '';
+      this.petCatalogStatus = '请稍后再试';
+      this.petCatalogAction = '不可用';
+      return;
+    }
+    this.petCatalogName = summary.displayName;
+    this.petCatalogDescription = summary.description;
+    this.petCatalogPosition = `${this.petCatalogIndex + 1}/`
+      + `${this.petCatalog.length} · `
+      + `${Math.ceil(summary.budget.totalBytes / 1024)} KiB`;
+    if (this.downloadedPet
+      && this.downloadedPet.version === summary.version) {
+      this.petCatalogStatus = '当前正在使用';
+      this.petCatalogAction = '正在使用';
+    } else {
+      this.petCatalogStatus = '已审核 · 点下方安装';
+      this.petCatalogAction = '下载并使用';
+    }
+  },
+
+  previousCatalogPet() {
+    if (this.petInstaller || this.petCatalogIndex <= 0) {
+      return;
+    }
+    this.petCatalogIndex -= 1;
+    this.applyCatalogPet();
+  },
+
+  nextCatalogPet() {
+    if (this.petInstaller
+      || this.petCatalogIndex >= this.petCatalog.length - 1) {
+      return;
+    }
+    this.petCatalogIndex += 1;
+    this.applyCatalogPet();
+  },
+
+  selectCatalogPet() {
+    if (this.petInstaller || !this.deviceToken) {
+      return;
+    }
+    const summary = this.petCatalog[this.petCatalogIndex];
+    if (!summary) {
+      return;
+    }
+    if (this.downloadedPet
+      && this.downloadedPet.version === summary.version) {
+      this.petCatalogStatus = '当前正在使用';
+      return;
+    }
+    this.cancelRequest();
+    this.petCatalogStatus = '正在核对运行清单';
+    this.petCatalogAction = '请稍候';
+    this.activeRequest = fetchPetDetail(
+      this.deviceToken,
+      summary.id,
+      {
+        onFailure: function(reason) {
+          this.activeRequest = null;
+          this.petCatalogStatus = this.connectionLabelForFailure(reason);
+          this.petCatalogAction = '重试安装';
+        }.bind(this),
+        onSuccess: function(result) {
+          this.activeRequest = null;
+          if (result.data.version !== summary.version) {
+            this.petCatalogStatus = '目录版本已变化 · 请刷新';
+            this.petCatalogAction = '重试安装';
+            return;
+          }
+          this.installCatalogPet(result.data);
+        }.bind(this)
+      }
+    );
+  },
+
+  installCatalogPet(pet) {
+    this.petCatalogAction = '正在安装';
+    this.petCatalogStatus = `正在准备 0/${pet.assetCount}`;
+    this.petInstaller = installPetBundle({
+      commit: function(selection, onSuccess, onFailure) {
+        let value;
+        try {
+          value = serializePetSelection(selection);
+        } catch (error) {
+          onFailure();
+          return;
+        }
+        storage.set({
+          fail: onFailure,
+          key: PET_SELECTION_STORAGE_KEY,
+          success: onSuccess,
+          value
+        });
+      },
+      files: watchPetFiles,
+      onFailure: function(reason) {
+        this.petInstaller = null;
+        this.petCatalogStatus = this.petInstallFailureLabel(reason);
+        this.petCatalogAction = reason === 'cancelled'
+          ? '下载并使用'
+          : '重试安装';
+      }.bind(this),
+      onProgress: function(completed, total) {
+        this.petCatalogStatus = `正在校验 ${completed}/${total}`;
+      }.bind(this),
+      onSuccess: function(result) {
+        this.petInstaller = null;
+        this.applyDownloadedPet(result.pet);
+        this.petCatalogStatus = '安装完成 · 当前正在使用';
+        this.petCatalogAction = '正在使用';
+      }.bind(this),
+      pet,
+      previousPet: this.downloadedPet,
+      transport: createWatchPetTransport(this.deviceToken)
+    });
+  },
+
+  cancelPetInstall() {
+    if (!this.petInstaller) {
+      return;
+    }
+    const installer = this.petInstaller;
+    this.petInstaller = null;
+    installer.cancel();
+  },
+
+  petInstallFailureLabel(reason) {
+    if (reason === 'cancelled') {
+      return '安装已取消，旧宠物保持不变';
+    }
+    if (reason === 'asset_integrity_failed'
+      || reason === 'stored_asset_integrity_failed'
+      || reason === 'manifest_integrity_failed') {
+      return '完整性校验失败，已回滚';
+    }
+    if (reason === 'selection_commit_failed') {
+      return '切换失败，已保留旧宠物';
+    }
+    return '安装失败，已保留旧宠物';
   },
 
   loadMemories() {
@@ -578,6 +856,7 @@ export default {
 
   cancelActiveWork() {
     this.cancelRequest();
+    this.cancelPetInstall();
     this.cancelRetryTimer();
     this.stopPetAnimation();
   },
@@ -597,14 +876,17 @@ export default {
   },
 
   playPetStateEntry() {
-    const animationName = petAnimationForState(this.state);
-    const oneShot = !getPetAnimation(animationName).loop;
+    const animationName = petAnimationForState(this.state, this.petRuntime);
+    const oneShot = !getPetAnimation(
+      animationName,
+      this.petRuntime
+    ).loop;
     this.startPetAnimation(animationName, oneShot);
   },
 
   startPetSteadyAnimation() {
     this.startPetAnimation(
-      petSteadyAnimationForState(this.state),
+      petSteadyAnimationForState(this.state, this.petRuntime),
       false
     );
   },
@@ -618,32 +900,41 @@ export default {
       return;
     }
     this.petActionActive = false;
-    if (this.visible && !this.memoryScreen) {
+    if (this.visible && !this.memoryScreen && !this.petScreen) {
       this.startPetSteadyAnimation();
     }
   },
 
   startPetAnimation(animationName, isAction) {
     this.cancelPetTimer();
-    this.petPlayback = createPetPlayback(animationName);
+    this.petPlayback = createPetPlayback(animationName, this.petRuntime);
     this.petActionActive = isAction;
     this.petFramePath = this.petPlayback.framePath;
-    if (this.visible && !this.memoryScreen) {
+    if (this.visible && !this.memoryScreen && !this.petScreen) {
       this.schedulePetFrame();
     }
   },
 
   schedulePetFrame() {
-    if (!this.petPlayback || !this.visible || this.memoryScreen) {
+    if (!this.petPlayback
+      || !this.visible
+      || this.memoryScreen
+      || this.petScreen) {
       return;
     }
     const delay = this.petPlayback.delayMs;
     this.petTimer = setTimeout(function() {
       this.petTimer = null;
-      if (!this.petPlayback || !this.visible || this.memoryScreen) {
+      if (!this.petPlayback
+        || !this.visible
+        || this.memoryScreen
+        || this.petScreen) {
         return;
       }
-      const next = advancePetPlayback(this.petPlayback);
+      const next = advancePetPlayback(
+        this.petPlayback,
+        this.petRuntime
+      );
       if (next.done) {
         this.petPlayback = null;
         this.petActionActive = false;

@@ -72,6 +72,9 @@ const elements = {
   touchToggle: document.querySelector('#touch-toggle'),
   touchOutline: document.querySelector('#touch-outline'),
   messageToggle: document.querySelector('#message-toggle'),
+  catalogToggle: document.querySelector('#catalog-toggle'),
+  catalogScreen: document.querySelector('#pet-catalog-screen'),
+  statusRow: document.querySelector('#status-row'),
   messageBubble: document.querySelector('#message-bubble'),
   replyRow: document.querySelector('#reply-row'),
   petHitArea: document.querySelector('#pet-hit-area'),
@@ -166,6 +169,19 @@ elements.messageToggle.addEventListener('change', (event) => {
   const hidden = !event.target.checked;
   elements.messageBubble.hidden = hidden;
   elements.replyRow.hidden = hidden;
+});
+
+elements.catalogToggle.addEventListener('change', (event) => {
+  const catalogVisible = event.target.checked;
+  elements.catalogScreen.hidden = !catalogVisible;
+  elements.statusRow.hidden = catalogVisible;
+  elements.petHitArea.hidden = catalogVisible;
+  elements.messageBubble.hidden = catalogVisible
+    || !elements.messageToggle.checked;
+  elements.replyRow.hidden = catalogVisible
+    || !elements.messageToggle.checked;
+  elements.touchOutline.hidden = catalogVisible
+    || !elements.touchToggle.checked;
 });
 
 elements.petHitArea.addEventListener('click', () => {

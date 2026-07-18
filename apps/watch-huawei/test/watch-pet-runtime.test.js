@@ -7,6 +7,7 @@ import test from 'node:test';
 import {
   advancePetPlayback,
   canTriggerPetTap,
+  createDownloadedPetRuntime,
   createPetPlayback,
   DEFAULT_PET_FRAME,
   DEFAULT_PET_ID,
@@ -15,6 +16,9 @@ import {
   petInteractionAnimation,
   petSteadyAnimationForState
 } from '../entry/src/main/js/MainAbility/common/watch-pet-runtime.js';
+import {
+  defaultPetCatalog
+} from '../../watchbuddy-api/src/pet-catalog.js';
 
 const REPOSITORY_ROOT = path.resolve(
   import.meta.dirname,
@@ -62,6 +66,22 @@ test('宠物点击使用单调的 800ms 防连点窗口', () => {
   assert.equal(canTriggerPetTap(2_000, 1_999), false);
 });
 
+test('下载宠物使用版本化私有 PNG 路径并保留动作映射', () => {
+  const pet = defaultPetCatalog.getPet('watchbuddy-sprout');
+  const runtime = createDownloadedPetRuntime(pet);
+  const playback = createPetPlayback('jumping', runtime);
+
+  assert.equal(runtime.id, pet.id);
+  assert.equal(runtime.version, pet.version);
+  assert.equal(
+    playback.framePath,
+    `internal://app/wbp-${pet.version.slice(7)}-jumping-0.png`
+  );
+  assert.equal(petAnimationForState('watching', runtime), 'review');
+  assert.equal(petInteractionAnimation('failure', runtime), 'failed');
+  assert.equal(getPetAnimation('idle', runtime).frames.length, 6);
+});
+
 test('HAP 内置 73 帧且与受控手表包逐文件一致', async () => {
   const manifest = JSON.parse(
     await readFile(APP_PET_MANIFEST, 'utf8')
@@ -89,9 +109,13 @@ test('HAP 内置 73 帧且与受控手表包逐文件一致', async () => {
 
 test('页面使用真实宠物并在隐藏、销毁和记忆页停止计时器', async () => {
   const pageRoot = path.join(APP_RESOURCE_ROOT, 'pages/index');
-  const [hml, source] = await Promise.all([
+  const [hml, source, fileAdapter] = await Promise.all([
     readFile(path.join(pageRoot, 'index.hml'), 'utf8'),
-    readFile(path.join(pageRoot, 'index.js'), 'utf8')
+    readFile(path.join(pageRoot, 'index.js'), 'utf8'),
+    readFile(path.join(
+      APP_RESOURCE_ROOT,
+      'common/watch-pet-files.js'
+    ), 'utf8')
   ]);
 
   assert.match(
@@ -115,4 +139,16 @@ test('页面使用真实宠物并在隐藏、销毁和记忆页停止计时器',
     source,
     /showMemories\(\) \{[\s\S]*?this\.stopPetAnimation\(\);/
   );
+  assert.match(hml, /value="宠物" onclick="showPets"/);
+  assert.match(hml, /class="pet-screen" if="\{\{petScreen\}\}"/);
+  assert.match(
+    source,
+    /cancelActiveWork\(\) \{[\s\S]*?this\.cancelPetInstall\(\);/
+  );
+  assert.match(source, /installPetBundle\(\{/);
+  assert.match(source, /serializePetSelection\(selection\)/);
+  assert.match(fileAdapter, /import file from '@system\.file';/);
+  assert.match(fileAdapter, /file\.writeArrayBuffer\(\{/);
+  assert.match(fileAdapter, /file\.readArrayBuffer\(\{/);
+  assert.match(fileAdapter, /file\.move\(\{/);
 });

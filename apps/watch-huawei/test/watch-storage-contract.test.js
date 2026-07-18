@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  deserializePetSelection,
   deserializeIdentity,
   deserializeNudge,
   ensureStorageValue,
   MAX_STORAGE_VALUE_BYTES,
   serializeIdentity,
-  serializeNudge
+  serializeNudge,
+  serializePetSelection
 } from "../entry/src/main/js/MainAbility/common/watch-storage-contract.js";
 
 const NOW = 1_750_000_000_000;
@@ -61,5 +63,20 @@ test("拒绝超过 127 字节的单个存储值", () => {
   assert.throws(
     () => ensureStorageValue("中".repeat(43)),
     /127/
+  );
+});
+
+test("宠物选择只持久化低于 128 字节的原子版本指针", () => {
+  const selection = {
+    petId: "watchbuddy-sprout",
+    version: "sha256-cb50b78fdd5b15b4"
+  };
+  const serialized = serializePetSelection(selection);
+
+  assert.equal(Buffer.byteLength(serialized) <= MAX_STORAGE_VALUE_BYTES, true);
+  assert.deepEqual(deserializePetSelection(serialized), selection);
+  assert.throws(
+    () => deserializePetSelection('{"i":"../pet","v":"latest"}'),
+    /指针/
   );
 });

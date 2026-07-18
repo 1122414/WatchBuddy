@@ -10,6 +10,7 @@ import { WatchBuddyService } from "./service.js";
 
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 8787;
+const DEFAULT_RATE_LIMIT_PER_MINUTE = 120;
 const MAX_REQUEST_BYTES = 7 * 1024;
 const MAX_RESPONSE_BYTES = 7 * 1024;
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{8,128}$/;
@@ -307,7 +308,7 @@ export function createWatchBuddyServer({
   logger = null,
   now = () => Date.now(),
   petCatalog = defaultPetCatalog,
-  rateLimitPerMinute = 60,
+  rateLimitPerMinute = DEFAULT_RATE_LIMIT_PER_MINUTE,
   service = new WatchBuddyService({ now }),
   serviceVersion = "0.1.0"
 } = {}) {

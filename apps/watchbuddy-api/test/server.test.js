@@ -346,6 +346,57 @@ test("宠物目录拒绝未鉴权、非法分页、路径穿越和未知资源",
   assert.equal(wrongMethod.headers.get("allow"), "GET");
 });
 
+test("默认单设备限流可容纳一次 73 帧串行宠物同步", async (t) => {
+  const server = createWatchBuddyServer();
+  t.after(() => close(server));
+  const baseUrl = await listen(server);
+  const registration = await registerDevice(baseUrl, {
+    idempotencyKey: "register-full-pet-sync"
+  });
+  const headers = {
+    authorization: `Bearer ${registration.body.deviceToken}`
+  };
+  const catalogResponse = await fetch(`${baseUrl}/v1/pets`, { headers });
+  const catalog = await catalogResponse.json();
+  assert.equal(catalogResponse.status, 200);
+  const pet = catalog.pets[0];
+
+  const detailResponse = await fetch(
+    `${baseUrl}${pet.metadataUrl}`,
+    { headers }
+  );
+  assert.equal(detailResponse.status, 200);
+
+  const descriptors = [];
+  let offset = 0;
+  let hasMore = true;
+  while (hasMore) {
+    const pageResponse = await fetch(
+      `${baseUrl}${pet.assetsUrl}?limit=20&offset=${offset}`,
+      { headers }
+    );
+    const page = await pageResponse.json();
+    assert.equal(pageResponse.status, 200);
+    descriptors.push(...page.assets);
+    offset = page.nextOffset;
+    hasMore = page.hasMore;
+  }
+  assert.equal(descriptors.length, 73);
+
+  for (const descriptor of descriptors) {
+    const response = await fetch(
+      `${baseUrl}${descriptor.base64Url}`,
+      { headers }
+    );
+    assert.equal(response.status, 200, descriptor.id);
+    assert.equal(
+      Buffer.byteLength(await response.text()) < 7 * 1024,
+      true,
+      descriptor.id
+    );
+  }
+});
+
 test("幂等键会重放相同回复并拒绝不同请求复用", async (t) => {
   const server = createWatchBuddyServer();
   t.after(() => close(server));
