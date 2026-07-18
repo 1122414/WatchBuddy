@@ -56,6 +56,8 @@ export function decideInitiative({
 
   if (candidate.source === "relationship_follow_up") {
     reasons.push("未完成事件已到跟进时间");
+  } else if (candidate.source === "random_social") {
+    reasons.push("进入低频随机关心窗口");
   } else if (candidate.source === "daily_routine") {
     reasons.push("处于日常互动窗口");
   } else {

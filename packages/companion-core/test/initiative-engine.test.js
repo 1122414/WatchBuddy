@@ -34,6 +34,23 @@ test("关系跟进候选在可打扰且有预算时发送", () => {
   assert.match(result.reasons.join(" "), /跟进时间/);
 });
 
+test("随机关心候选返回可解释触发原因", () => {
+  const result = decideInitiative({
+    candidate: {
+      message: "来打个招呼",
+      source: "random_social",
+      topic: "random_social_2026-07-19"
+    },
+    context,
+    initiativeState: createInitiativeState(),
+    localDate: "2026-07-19",
+    now
+  });
+
+  assert.equal(result.decision, "send");
+  assert.equal(result.reasons[0], "进入低频随机关心窗口");
+});
+
 test("用户忙碌后六小时内阻止主动消息", () => {
   const state = recordOutcome(createInitiativeState(), "busy", now);
   const result = decideInitiative({

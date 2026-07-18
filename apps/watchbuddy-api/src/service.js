@@ -21,6 +21,12 @@ import {
 const DEVICE_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 const MAX_REPLY_CHARACTERS = 64;
 const TOKEN_BYTES = 32;
+const FOLLOW_UP_DELAY_MS = 24 * 60 * 60_000;
+const RANDOM_SOCIAL_MESSAGES = Object.freeze([
+  "路过来看看，此刻要不要一起喘口气？",
+  "今天有没有一个小瞬间，让你想停一下？",
+  "来打个轻轻的招呼，你现在感觉还好吗？"
+]);
 
 const ACTION_OUTCOMES = Object.freeze({
   share: "engaged",
@@ -77,7 +83,44 @@ function nextLocalHourAt(timestamp, timezoneOffsetMinutes, targetHour) {
   return target.getTime() - offsetMilliseconds;
 }
 
-function candidateForLocalHour(hour, date) {
+function stableMessageIndex(deviceId, date) {
+  return createHash("sha256")
+    .update(`${deviceId}:${date}`)
+    .digest()[0] % RANDOM_SOCIAL_MESSAGES.length;
+}
+
+function followUpCandidate(device, timestamp) {
+  const memory = device.memories.list({
+    now: timestamp,
+    type: "unfinished_topic"
+  }).find((candidate) => (
+    candidate.sensitivity !== "sensitive"
+    && timestamp - candidate.updatedAt >= FOLLOW_UP_DELAY_MS
+  ));
+  if (!memory) {
+    return null;
+  }
+  return {
+    message: "上次没聊完的事，现在要继续吗？",
+    source: "relationship_follow_up",
+    topic: `memory_follow_up_${memory.id}`
+  };
+}
+
+function candidateForDevice(device, hour, date, timestamp) {
+  const followUp = followUpCandidate(device, timestamp);
+  if (followUp) {
+    return followUp;
+  }
+  if (hour >= 14 && hour < 18) {
+    return {
+      message: RANDOM_SOCIAL_MESSAGES[
+        stableMessageIndex(device.deviceId, date)
+      ],
+      source: "random_social",
+      topic: `random_social_${date}`
+    };
+  }
   const isEvening = hour >= 14;
   return {
     message: isEvening
@@ -203,7 +246,12 @@ export class WatchBuddyService {
       reasons: []
     };
     if (!device.pendingNudge) {
-      const candidate = candidateForLocalHour(hour, date);
+      const candidate = candidateForDevice(
+        device,
+        hour,
+        date,
+        timestamp
+      );
       initiative = decideInitiative({
         candidate,
         context: {

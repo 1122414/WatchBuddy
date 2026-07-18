@@ -112,6 +112,12 @@ test("状态接口生成通过 companion-core 校验的表端消息", () => {
 
   assert.equal(state.characterState, "idle");
   assert.equal(state.nudge.type, "COMPANION_NUDGE");
+  assert.equal(state.nudge.source, "daily_routine");
+  assert.deepEqual(state.initiative.reasons, [
+    "处于日常互动窗口",
+    "当前可被打扰",
+    "仍有当日主动预算"
+  ]);
   assert.equal(state.nudge.actions.length, 3);
   assert.equal(state.nextCheckAt, NOW + 5 * 60_000);
 });
@@ -172,6 +178,69 @@ test("每日主动预算达到两次后停止发送", () => {
   const budgetBlocked = service.getCompanionState(device);
   assert.equal(budgetBlocked.nudge, null);
   assert.equal(budgetBlocked.initiative.blockedBy, "daily_budget");
+});
+
+test("下午窗口生成稳定且可解释的随机关心", () => {
+  const afternoonInChina = Date.parse("2026-07-18T07:00:00.000Z");
+  const { service } = createService(afternoonInChina);
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+  const { service: secondService } = createService(afternoonInChina);
+  const secondRegistration = register(secondService);
+  const secondDevice = secondService.authenticate(
+    secondRegistration.deviceToken
+  );
+
+  const state = service.getCompanionState(device);
+  const repeated = secondService.getCompanionState(secondDevice);
+
+  assert.equal(state.nudge.source, "random_social");
+  assert.equal(state.nudge.message, repeated.nudge.message);
+  assert.deepEqual(state.initiative.reasons, [
+    "进入低频随机关心窗口",
+    "当前可被打扰",
+    "仍有当日主动预算"
+  ]);
+});
+
+test("普通未完成话题满一天后优先生成不泄露正文的关系跟进", () => {
+  const { advance, service } = createService();
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+  service.reply(device, {
+    memoryType: "unfinished_topic",
+    remember: true,
+    sensitivity: "private",
+    text: "不应该出现在主动提醒里的私密正文"
+  });
+
+  advance(24 * 60 * 60_000);
+  const state = service.getCompanionState(device);
+
+  assert.equal(state.nudge.source, "relationship_follow_up");
+  assert.equal(state.nudge.message, "上次没聊完的事，现在要继续吗？");
+  assert.equal(state.nudge.message.includes("私密正文"), false);
+  assert.equal(
+    state.initiative.reasons[0],
+    "未完成事件已到跟进时间"
+  );
+});
+
+test("敏感记忆不会进入主动关系跟进", () => {
+  const { advance, service } = createService();
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+  service.reply(device, {
+    memoryType: "unfinished_topic",
+    remember: true,
+    sensitivity: "sensitive",
+    text: "敏感事项"
+  });
+
+  advance(24 * 60 * 60_000);
+  const state = service.getCompanionState(device);
+
+  assert.equal(state.nudge.source, "daily_routine");
 });
 
 test("安静模式立即撤下消息并持续阻止主动互动", () => {
