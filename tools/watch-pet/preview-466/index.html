@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WatchBuddy 466 × 466 宠物预览器</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="preview-app">
+      <section class="controls" aria-label="预览控制">
+        <h1>Sprout（芽芽）</h1>
+        <p>466 × 466 应用页预览，不代表系统表盘。</p>
+
+        <label>
+          陪伴状态
+          <select id="state-select">
+            <option value="idle">idle · 空闲</option>
+            <option value="sleeping">sleeping · 睡觉</option>
+            <option value="daydreaming">daydreaming · 发呆</option>
+            <option value="watching">watching · 观察</option>
+            <option value="curious">curious · 好奇</option>
+            <option value="concerned">concerned · 关心</option>
+            <option value="chatting">chatting · 聊天</option>
+            <option value="giving_space">giving_space · 安静陪伴</option>
+          </select>
+        </label>
+
+        <label>
+          宠物显示尺寸
+          <input id="scale-range" type="range" min="96" max="200" value="176">
+          <output id="scale-output">176 px</output>
+        </label>
+
+        <label class="check-row">
+          <input id="touch-toggle" type="checkbox" checked>
+          显示触摸热区
+        </label>
+
+        <label class="check-row">
+          <input id="message-toggle" type="checkbox">
+          显示消息与回复区
+        </label>
+
+        <div class="action-buttons" aria-label="一次性动作">
+          <button type="button" data-action="tap">轻点 / 跳跃</button>
+          <button type="button" data-action="message">新消息 / 挥手</button>
+          <button type="button" data-action="loading">请求处理中</button>
+          <button type="button" data-action="failure">请求失败</button>
+        </div>
+      </section>
+
+      <section class="stage-column" aria-label="手表页面预览">
+        <div class="watch-screen" id="watch-screen">
+          <div class="safe-ring" aria-hidden="true"></div>
+
+          <div class="status-row">
+            <span class="status-dot">●</span>
+            <span id="state-label">空闲</span>
+            <span class="connection-label"> · 服务在线</span>
+          </div>
+
+          <button class="pet-hit-area" id="pet-hit-area" type="button" aria-label="轻点芽芽">
+            <img id="pet-frame" alt="Sprout 动画帧">
+          </button>
+
+          <div class="bubble" id="message-bubble" hidden>
+            今天到现在，哪一小段最值得留下？
+          </div>
+
+          <div class="reply-row" id="reply-row" hidden>
+            <span class="reply primary">跟你说说</span>
+            <span class="reply">晚点</span>
+            <span class="reply quiet">我在忙</span>
+          </div>
+
+          <div class="touch-outline" id="touch-outline" aria-hidden="true">
+            176 × 176 触摸热区
+          </div>
+        </div>
+
+        <p class="metrics" id="metrics">466 × 466 · idle · frame 1/6</p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -25,6 +25,16 @@ import {
   serializeIdentity,
   serializeNudge
 } from '../../common/watch-storage-contract.js';
+import {
+  advancePetPlayback,
+  canTriggerPetTap,
+  createPetPlayback,
+  DEFAULT_PET_FRAME,
+  getPetAnimation,
+  petAnimationForState,
+  petInteractionAnimation,
+  petSteadyAnimationForState
+} from '../../common/watch-pet-runtime.js';
 
 const IDENTITY_STORAGE_KEY = 'wb_identity';
 const PENDING_META_STORAGE_KEY = 'wb_pending_meta';
@@ -54,6 +64,7 @@ export default {
     state: 'idle',
     stateLabel: '空闲',
     characterClass: 'idle',
+    petFramePath: DEFAULT_PET_FRAME,
     messageVisible: false,
     message: '',
     actionOne: '',
@@ -92,6 +103,10 @@ export default {
     this.cachedNudgeReady = false;
     this.activeRequest = null;
     this.retryTimer = null;
+    this.petTimer = null;
+    this.petPlayback = null;
+    this.petActionActive = false;
+    this.lastPetTapAt = 0;
     this.restoreState();
     this.restoreCachedNudge();
     this.restorePendingReply();
@@ -100,6 +115,11 @@ export default {
 
   onShow() {
     this.visible = true;
+    if (this.messageVisible) {
+      this.startPetInteraction(petInteractionAnimation('message'));
+    } else {
+      this.playPetStateEntry();
+    }
     this.ensureConnected();
   },
 
@@ -205,6 +225,7 @@ export default {
   registerDevice() {
     this.cancelRequest();
     this.connectionLabel = '正在注册';
+    this.startPetInteraction(petInteractionAnimation('loading'));
     this.activeRequest = registerWatchBuddy({
       deviceId: this.deviceId,
       locale: 'zh-CN',
@@ -221,13 +242,17 @@ export default {
       onFailure: function(reason) {
         this.activeRequest = null;
         this.connectionLabel = this.connectionLabelForFailure(reason);
+        this.startPetInteraction(petInteractionAnimation('failure'));
       }.bind(this)
     });
   },
 
-  syncCompanionState() {
+  syncCompanionState(preservePetAction = false) {
     this.cancelRequest();
     this.connectionLabel = '正在连接';
+    if (!preservePetAction) {
+      this.startPetInteraction(petInteractionAnimation('loading'));
+    }
     this.activeRequest = fetchCompanionState(this.deviceToken, {
       onSuccess: function(result) {
         this.activeRequest = null;
@@ -247,11 +272,15 @@ export default {
           this.messageVisible = false;
           this.currentNudgeId = '';
         }
+        if (!this.messageVisible && !preservePetAction) {
+          this.finishPetInteraction();
+        }
         this.schedulePendingReply();
       }.bind(this),
       onFailure: function(reason) {
         this.activeRequest = null;
         this.connectionLabel = this.connectionLabelForFailure(reason);
+        this.startPetInteraction(petInteractionAnimation('failure'));
         this.schedulePendingReply();
       }.bind(this)
     });
@@ -282,6 +311,7 @@ export default {
     if (!STATE_LABELS[nextState]) {
       return;
     }
+    const stateChanged = this.state !== nextState;
     this.state = nextState;
     this.stateLabel = STATE_LABELS[nextState];
     this.characterClass = nextState === 'giving_space'
@@ -291,10 +321,22 @@ export default {
       key: 'watchbuddy_state',
       value: nextState
     });
+    if (stateChanged
+      && this.visible
+      && !this.memoryScreen
+      && !this.petActionActive) {
+      this.playPetStateEntry();
+    }
   },
 
   onCharacterTap() {
-    this.syncCompanionState();
+    const now = Date.now();
+    if (!canTriggerPetTap(this.lastPetTapAt, now)) {
+      return;
+    }
+    this.lastPetTapAt = now;
+    this.startPetInteraction(petInteractionAnimation('tap'));
+    this.syncCompanionState(true);
     this.vibrate();
   },
 
@@ -315,6 +357,7 @@ export default {
     this.currentNudgeId = nudge.nudgeId;
     this.currentNudgeCreatedAt = nudge.createdAt;
     this.messageVisible = true;
+    this.startPetInteraction(petInteractionAnimation('message'));
   },
 
   replyOne() {
@@ -343,6 +386,7 @@ export default {
     }, this.createLocalId('reply'));
     this.messageVisible = false;
     this.connectionLabel = '正在发送';
+    this.startPetInteraction(petInteractionAnimation('loading'));
     this.persistPendingReply();
     this.sendPendingReply();
   },
@@ -356,6 +400,7 @@ export default {
 
     this.cancelRequest();
     const pending = this.pendingReply;
+    this.startPetInteraction(petInteractionAnimation('loading'));
     this.activeRequest = replyToCompanion(
       this.deviceToken,
       pending.payload,
@@ -367,6 +412,7 @@ export default {
           this.deletePendingReply();
           this.connectionLabel = '回复已送达';
           this.setState(result.data.characterState);
+          this.finishPetInteraction();
         }.bind(this),
         onFailure: function(reason) {
           this.activeRequest = null;
@@ -387,6 +433,7 @@ export default {
           this.connectionLabel = reason === 'http_401'
             ? '令牌已失效'
             : '回复待重试';
+          this.startPetInteraction(petInteractionAnimation('failure'));
           this.schedulePendingReply();
         }.bind(this)
       }
@@ -414,11 +461,13 @@ export default {
 
   showMemories() {
     this.memoryScreen = true;
+    this.stopPetAnimation();
     this.loadMemories();
   },
 
   hideMemories() {
     this.memoryScreen = false;
+    this.playPetStateEntry();
     this.ensureConnected();
   },
 
@@ -530,6 +579,7 @@ export default {
   cancelActiveWork() {
     this.cancelRequest();
     this.cancelRetryTimer();
+    this.stopPetAnimation();
   },
 
   cancelRequest() {
@@ -543,6 +593,79 @@ export default {
     if (this.retryTimer !== null) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
+    }
+  },
+
+  playPetStateEntry() {
+    const animationName = petAnimationForState(this.state);
+    const oneShot = !getPetAnimation(animationName).loop;
+    this.startPetAnimation(animationName, oneShot);
+  },
+
+  startPetSteadyAnimation() {
+    this.startPetAnimation(
+      petSteadyAnimationForState(this.state),
+      false
+    );
+  },
+
+  startPetInteraction(animationName) {
+    this.startPetAnimation(animationName, true);
+  },
+
+  finishPetInteraction() {
+    if (!this.petActionActive) {
+      return;
+    }
+    this.petActionActive = false;
+    if (this.visible && !this.memoryScreen) {
+      this.startPetSteadyAnimation();
+    }
+  },
+
+  startPetAnimation(animationName, isAction) {
+    this.cancelPetTimer();
+    this.petPlayback = createPetPlayback(animationName);
+    this.petActionActive = isAction;
+    this.petFramePath = this.petPlayback.framePath;
+    if (this.visible && !this.memoryScreen) {
+      this.schedulePetFrame();
+    }
+  },
+
+  schedulePetFrame() {
+    if (!this.petPlayback || !this.visible || this.memoryScreen) {
+      return;
+    }
+    const delay = this.petPlayback.delayMs;
+    this.petTimer = setTimeout(function() {
+      this.petTimer = null;
+      if (!this.petPlayback || !this.visible || this.memoryScreen) {
+        return;
+      }
+      const next = advancePetPlayback(this.petPlayback);
+      if (next.done) {
+        this.petPlayback = null;
+        this.petActionActive = false;
+        this.startPetSteadyAnimation();
+        return;
+      }
+      this.petPlayback = next;
+      this.petFramePath = next.framePath;
+      this.schedulePetFrame();
+    }.bind(this), delay);
+  },
+
+  stopPetAnimation() {
+    this.cancelPetTimer();
+    this.petPlayback = null;
+    this.petActionActive = false;
+  },
+
+  cancelPetTimer() {
+    if (this.petTimer !== null) {
+      clearTimeout(this.petTimer);
+      this.petTimer = null;
     }
   },
 

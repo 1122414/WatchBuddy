@@ -108,6 +108,16 @@ npm run validate:pet -- /path/to/watch-pet-output
 - `assets/pets/watchbuddy-sprout/watch/`：73 帧、约 322 KiB 的手表专用离线资源包；
 - `assets/pets/watchbuddy-sprout/qa/`：动画预览、方向盲测、连续性和透明度证据。
 
+本地查看 466 × 466 圆屏、透明背景、触摸热区、状态动画和文字遮挡：
+
+```bash
+python3 -m http.server 4178 --bind 127.0.0.1
+```
+
+然后打开
+`http://127.0.0.1:4178/tools/watch-pet/preview-466/index.html`。
+预览器只验证应用页面布局，不代表系统表盘或 GT 6 Pro 真机结果。
+
 检查 HAP 构建所需的本机工具链：
 
 ```bash

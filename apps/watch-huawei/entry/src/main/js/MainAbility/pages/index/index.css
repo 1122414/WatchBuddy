@@ -43,62 +43,17 @@
   align-items: center;
 }
 
-.antenna {
-  position: absolute;
-  top: 4px;
-  width: 12px;
-  height: 28px;
-  border-radius: 6px;
-  background-color: #7bf2bf;
-}
-
-.face {
-  width: 154px;
-  height: 138px;
-  margin-top: 22px;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: 54px;
-  background-color: #7bf2bf;
-}
-
-.eyes {
-  width: 94px;
-  height: 38px;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.eye {
-  width: 22px;
-  height: 30px;
-  border-radius: 11px;
-  background-color: #101722;
-}
-
-.mouth {
-  width: 48px;
-  height: 8px;
-  margin-top: 18px;
-  border-radius: 4px;
-  background-color: #101722;
+.pet-frame {
+  width: 176px;
+  height: 176px;
 }
 
 .sleeping {
   opacity: 0.58;
 }
 
-.curious {
-  transform: rotate(4deg);
-}
-
-.concerned .face {
-  background-color: #f6c877;
-}
-
-.giving-space .face {
-  background-color: #7f8a9a;
+.giving-space {
+  opacity: 0.72;
 }
 
 .bubble {

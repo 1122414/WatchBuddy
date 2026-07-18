@@ -7,14 +7,7 @@
     </div>
 
     <div class="character {{characterClass}}" onclick="onCharacterTap">
-      <div class="antenna"></div>
-      <div class="face">
-        <div class="eyes">
-          <div class="eye"></div>
-          <div class="eye"></div>
-        </div>
-        <div class="mouth"></div>
-      </div>
+      <image class="pet-frame" src="{{petFramePath}}"></image>
     </div>
 
     <div class="bubble" if="{{messageVisible}}">
