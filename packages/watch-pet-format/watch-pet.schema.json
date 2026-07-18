@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://watchbuddy.local/schemas/watch-pet.schema.json",
+  "title": "WatchBuddy Watch Pet Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "displayName",
+    "description",
+    "renderer",
+    "source",
+    "frame",
+    "assets",
+    "animations",
+    "stateMap",
+    "interactionMap",
+    "fallbackFrame",
+    "budget"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "renderer": {
+      "const": "frame-sequence-v1"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "frame": {
+      "$ref": "#/$defs/frame"
+    },
+    "assets": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 88,
+      "items": {
+        "$ref": "#/$defs/asset"
+      }
+    },
+    "animations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "idle",
+        "runningRight",
+        "runningLeft",
+        "waving",
+        "jumping",
+        "failed",
+        "waiting",
+        "running",
+        "review"
+      ],
+      "properties": {
+        "idle": {
+          "$ref": "#/$defs/animation"
+        },
+        "runningRight": {
+          "$ref": "#/$defs/animation"
+        },
+        "runningLeft": {
+          "$ref": "#/$defs/animation"
+        },
+        "waving": {
+          "$ref": "#/$defs/animation"
+        },
+        "jumping": {
+          "$ref": "#/$defs/animation"
+        },
+        "failed": {
+          "$ref": "#/$defs/animation"
+        },
+        "waiting": {
+          "$ref": "#/$defs/animation"
+        },
+        "running": {
+          "$ref": "#/$defs/animation"
+        },
+        "review": {
+          "$ref": "#/$defs/animation"
+        }
+      }
+    },
+    "lookDirections": {
+      "type": "object",
+      "minProperties": 16,
+      "maxProperties": 16,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+      }
+    },
+    "stateMap": {
+      "$ref": "#/$defs/stateMap"
+    },
+    "interactionMap": {
+      "$ref": "#/$defs/interactionMap"
+    },
+    "fallbackFrame": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "budget": {
+      "$ref": "#/$defs/budget"
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "spriteVersionNumber",
+        "sourceUrl",
+        "author",
+        "license",
+        "attribution",
+        "sha256"
+      ],
+      "properties": {
+        "format": {
+          "const": "codex-pet-v2"
+        },
+        "spriteVersionNumber": {
+          "const": 2
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 512
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "license": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "url",
+            "redistributionAllowed"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "spdxId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 512
+            },
+            "redistributionAllowed": {
+              "const": true
+            }
+          }
+        },
+        "attribution": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height",
+        "displayWidth",
+        "displayHeight"
+      ],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 32,
+          "maximum": 192
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 32,
+          "maximum": 208
+        },
+        "displayWidth": {
+          "type": "integer",
+          "minimum": 64,
+          "maximum": 200
+        },
+        "displayHeight": {
+          "type": "integer",
+          "minimum": 64,
+          "maximum": 200
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^(frames|assets)/[a-z0-9][a-z0-9/_-]*\\.(png|webp)$",
+          "maxLength": 160
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        }
+      }
+    },
+    "animation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frames",
+        "durationsMs",
+        "loop"
+      ],
+      "properties": {
+        "frames": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+          }
+        },
+        "durationsMs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "integer",
+            "minimum": 40,
+            "maximum": 2000
+          }
+        },
+        "loop": {
+          "type": "boolean"
+        }
+      }
+    },
+    "stateMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sleeping",
+        "idle",
+        "daydreaming",
+        "watching",
+        "curious",
+        "concerned",
+        "chatting",
+        "giving_space"
+      ],
+      "properties": {
+        "sleeping": {
+          "$ref": "#/$defs/animationName"
+        },
+        "idle": {
+          "$ref": "#/$defs/animationName"
+        },
+        "daydreaming": {
+          "$ref": "#/$defs/animationName"
+        },
+        "watching": {
+          "$ref": "#/$defs/animationName"
+        },
+        "curious": {
+          "$ref": "#/$defs/animationName"
+        },
+        "concerned": {
+          "$ref": "#/$defs/animationName"
+        },
+        "chatting": {
+          "$ref": "#/$defs/animationName"
+        },
+        "giving_space": {
+          "$ref": "#/$defs/animationName"
+        }
+      }
+    },
+    "interactionMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tap",
+        "message",
+        "loading",
+        "failure"
+      ],
+      "properties": {
+        "tap": {
+          "$ref": "#/$defs/animationName"
+        },
+        "message": {
+          "$ref": "#/$defs/animationName"
+        },
+        "loading": {
+          "$ref": "#/$defs/animationName"
+        },
+        "failure": {
+          "$ref": "#/$defs/animationName"
+        }
+      }
+    },
+    "animationName": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "runningRight",
+        "runningLeft",
+        "waving",
+        "jumping",
+        "failed",
+        "waiting",
+        "running",
+        "review"
+      ]
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frameCount",
+        "totalBytes",
+        "maxFrameBytes"
+      ],
+      "properties": {
+        "frameCount": {
+          "type": "integer",
+          "minimum": 9,
+          "maximum": 88
+        },
+        "totalBytes": {
+          "type": "integer",
+          "minimum": 9,
+          "maximum": 2097152
+        },
+        "maxFrameBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        }
+      }
+    }
+  }
+}
