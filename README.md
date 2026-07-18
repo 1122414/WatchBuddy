@@ -43,7 +43,10 @@ apps/
 ├── watch-huawei/        # GT 6 Pro 独立表端；MVP 唯一用户侧应用
 └── mobile-android/      # 旧 Wear Engine 验证工程；不属于新 MVP 运行链路
 packages/
-└── companion-core/      # 可迁移到服务端的协议、角色、主动策略与记忆核心
+├── companion-core/      # 可迁移到服务端的协议、角色、主动策略与记忆核心
+└── watch-pet-format/    # 手表宠物清单、语义校验与资源包验证
+tools/
+└── watch-pet/           # Codex Pet v2 的构建期转换器与图片测试
 docs/
 ├── device-validation/   # GT 6 Pro 独立运行能力矩阵与真机证据
 └── 2026-07-17_mvp-execution.md
@@ -71,6 +74,32 @@ docs/
 ```bash
 npm test
 ```
+
+手表宠物转换器使用 Pillow 12.2 构建期依赖（MIT-CMU，不进入 HAP 或 API 运行时）：
+
+```bash
+python3 -m pip install -r tools/watch-pet/requirements.txt
+npm run test:pet-tools
+```
+
+把通过授权审查的 Codex Pet v2 转成手表资源：
+
+```bash
+npm run convert:pet -- \
+  --source-dir /path/to/codex-pet-v2 \
+  --output-dir /path/to/watch-pet-output \
+  --source-url https://example.com/pets/my-pet \
+  --author "Pet Author" \
+  --license-name "Redistribution License" \
+  --license-url https://example.com/pets/my-pet/license \
+  --attribution "Created by Pet Author."
+
+npm run validate:pet -- /path/to/watch-pet-output
+```
+
+转换器拒绝旧版/伪装 v2、无透明通道、错误网格、空必需格、非透明未使用格、未知授权和已有输出
+目录。成功结果包含 `watch-pet.json`、本地 PNG/WebP 小帧、`conversion-report.json` 与
+`preview-466.png`，原始 Codex 图集不会交给手表运行时解析。
 
 检查 HAP 构建所需的本机工具链：
 

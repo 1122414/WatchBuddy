@@ -4,6 +4,8 @@
 .hvigor/
 .local/
 node_modules/
+__pycache__/
+*.py[cod]
 local.properties
 *.iml
 *.log

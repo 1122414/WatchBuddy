@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "build:watch": "node scripts/build-watch-hap.mjs",
+    "convert:pet": "python3 tools/watch-pet/convert_codex_pet.py",
     "doctor:watch": "node scripts/check-watch-toolchain.mjs",
     "start:api": "node apps/watchbuddy-api/src/server.js",
-    "test": "node --test packages/companion-core/test/*.test.js packages/watch-pet-format/test/*.test.js apps/watch-huawei/test/*.test.js apps/watchbuddy-api/test/*.test.js"
+    "test": "node --test packages/companion-core/test/*.test.js packages/watch-pet-format/test/*.test.js apps/watch-huawei/test/*.test.js apps/watchbuddy-api/test/*.test.js",
+    "test:pet-tools": "python3 -m unittest discover -s tools/watch-pet -p 'test_*.py'",
+    "validate:pet": "node scripts/validate-watch-pet-bundle.mjs"
   },
   "engines": {
     "node": ">=22"

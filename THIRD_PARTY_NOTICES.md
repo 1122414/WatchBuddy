@@ -14,3 +14,13 @@ Source file SHA-256:
 `8c7f1100c840abdb237991b0d436ef9ab49a215269c5fecdb3dd59fe63a71471`
 
 The source file includes Huawei's Apache License 2.0 notice.
+
+## Pillow 12.2
+
+Pillow is used only by the build-time Codex Pet to WatchBuddy resource
+converter under `tools/watch-pet`. It is not bundled into the HAP or the
+WatchBuddy API runtime.
+
+Source: <https://python-pillow.github.io/>
+
+License expression: `MIT-CMU`.
