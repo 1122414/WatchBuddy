@@ -78,6 +78,10 @@ npm test
 npm run doctor:watch
 ```
 
+自检会识别 DevEco Studio 内置的 OHPM、Hvigor 和 Java，并确认
+HarmonyOS SDK 的 `toolchains`、`ets`、`js`、`native`、`previewer`
+组件是否完整。
+
 启动最小 WatchBuddy API：
 
 ```bash

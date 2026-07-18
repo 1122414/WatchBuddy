@@ -2,6 +2,7 @@ import {
   accessSync,
   constants,
   existsSync,
+  readdirSync,
   readFileSync
 } from "node:fs";
 import { homedir } from "node:os";
@@ -16,6 +17,13 @@ const devEcoCandidates = [
   join(homedir(), "Applications", "DevEco Studio.app")
 ];
 const androidStudioJava = "/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/java";
+const requiredSdkComponents = [
+  "toolchains",
+  "ets",
+  "js",
+  "native",
+  "previewer"
+];
 
 function findExecutable(command) {
   try {
@@ -55,6 +63,59 @@ function canRunJava(filePath) {
   }
 }
 
+function findBundledExecutable(devEcoPath, relativePath) {
+  if (!devEcoPath) {
+    return "";
+  }
+
+  const executablePath = join(devEcoPath, relativePath);
+  return isExecutable(executablePath) ? executablePath : "";
+}
+
+function inspectSdkHome() {
+  const candidates = [
+    process.env.DEVECO_SDK_HOME,
+    join(homedir(), "Library", "Huawei", "Sdk"),
+    join(homedir(), "Library", "OpenHarmony", "Sdk")
+  ].filter(Boolean);
+  let firstPartialSdk = null;
+
+  for (const candidate of candidates) {
+    if (!existsSync(candidate)) {
+      continue;
+    }
+
+    const possibleHomes = [
+      candidate,
+      ...readdirSync(candidate, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => join(candidate, entry.name))
+    ];
+
+    for (const possibleHome of possibleHomes) {
+      const missingComponents = requiredSdkComponents.filter(
+        (component) => !existsSync(join(possibleHome, component))
+      );
+      if (missingComponents.length === 0) {
+        return {
+          home: possibleHome,
+          missingComponents: []
+        };
+      }
+
+      firstPartialSdk ??= {
+        home: possibleHome,
+        missingComponents
+      };
+    }
+  }
+
+  return firstPartialSdk ?? {
+    home: "",
+    missingComponents: requiredSdkComponents
+  };
+}
+
 function readProjectConfig() {
   const configPath = new URL(
     "apps/watch-huawei/entry/src/main/config.json",
@@ -72,13 +133,22 @@ function readProjectConfig() {
 }
 
 const devEcoPath = devEcoCandidates.find(existsSync) ?? "";
-const sdkManagerPath = findExecutable("sdkmgr");
-const ohpmPath = findExecutable("ohpm");
-const hvigorPath = findExecutable("hvigorw") || findExecutable("hvigor");
+const ohpmPath = findExecutable("ohpm")
+  || findBundledExecutable(devEcoPath, "Contents/tools/ohpm/bin/ohpm");
+const hvigorPath = findExecutable("hvigorw")
+  || findExecutable("hvigor")
+  || findBundledExecutable(devEcoPath, "Contents/tools/hvigor/bin/hvigorw");
 const pathJava = findExecutable("java");
-const javaPath = canRunJava(pathJava)
-  ? pathJava
-  : (canRunJava(androidStudioJava) ? androidStudioJava : "");
+const devEcoJava = findBundledExecutable(
+  devEcoPath,
+  "Contents/jbr/Contents/Home/bin/java"
+);
+const javaPath = canRunJava(devEcoJava)
+  ? devEcoJava
+  : (canRunJava(pathJava)
+    ? pathJava
+    : (canRunJava(androidStudioJava) ? androidStudioJava : ""));
+const sdk = inspectSdkHome();
 const projectConfig = readProjectConfig();
 
 const checks = [
@@ -88,9 +158,13 @@ const checks = [
     detail: devEcoPath || "未安装"
   },
   {
-    name: "HarmonyOS SDK 管理器",
-    ok: Boolean(sdkManagerPath),
-    detail: sdkManagerPath || "PATH 中未找到 sdkmgr"
+    name: "HarmonyOS SDK",
+    ok: Boolean(sdk.home) && sdk.missingComponents.length === 0,
+    detail: sdk.home
+      ? `${sdk.home}${sdk.missingComponents.length > 0
+        ? `（缺少 ${sdk.missingComponents.join(", ")}）`
+        : ""}`
+      : "未安装"
   },
   {
     name: "OHPM",
@@ -131,12 +205,14 @@ for (const check of checks) {
 }
 
 const canBuild = Boolean(javaPath)
-  && (Boolean(devEcoPath) || Boolean(sdkManagerPath))
+  && Boolean(devEcoPath)
+  && Boolean(sdk.home)
+  && sdk.missingComponents.length === 0
   && Boolean(ohpmPath)
   && Boolean(hvigorPath);
 
 if (!canBuild) {
-  console.error("\n尚不能构建 HAP：请安装 DevEco Studio 或完整 HarmonyOS Command Line Tools。");
+  console.error("\n尚不能构建 HAP：请安装完整 HarmonyOS SDK 后重试。");
   process.exitCode = 1;
 } else {
   console.log("\n工具链已具备最小 HAP 构建条件。");
