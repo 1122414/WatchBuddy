@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "spriteVersionNumber": 2,
+  "run_dir": "/private/tmp/watchbuddy-sprout-hatch",
+  "spritesheet": "/private/tmp/watchbuddy-sprout-hatch/final/spritesheet-extended.webp",
+  "validation": "/private/tmp/watchbuddy-sprout-hatch/final/validation-extended.json",
+  "chroma_despill": "/private/tmp/watchbuddy-sprout-hatch/qa/chroma-despill-extended.json",
+  "contact_sheet": "/private/tmp/watchbuddy-sprout-hatch/qa/contact-sheet-extended.png",
+  "direction_sheet": "/private/tmp/watchbuddy-sprout-hatch/qa/look-directions.png",
+  "direction_semantics": "/private/tmp/watchbuddy-sprout-hatch/qa/direction-semantics.json",
+  "blind_direction_validation": "/private/tmp/watchbuddy-sprout-hatch/qa/direction-blind-validation.json",
+  "blind_review_resolution": "/private/tmp/watchbuddy-sprout-hatch/qa/blind-review-resolution.json",
+  "continuity": "/private/tmp/watchbuddy-sprout-hatch/qa/look-continuity.json",
+  "review": "/private/tmp/watchbuddy-sprout-hatch/qa/review.json",
+  "package": "/Users/geminchen/Documents/WatchBuddy/assets/pets/watchbuddy-sprout/source",
+  "repository": {
+    "source": "assets/pets/watchbuddy-sprout/source",
+    "watchBundle": "assets/pets/watchbuddy-sprout/watch",
+    "qa": "assets/pets/watchbuddy-sprout/qa"
+  }
+}

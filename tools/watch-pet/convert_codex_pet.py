@@ -85,6 +85,7 @@ LOOK_DIRECTIONS = (
     "315",
     "337.5",
 )
+NEUTRAL_CELL = (0, 6)
 
 
 class ConversionError(ValueError):
@@ -307,18 +308,22 @@ def load_and_validate_atlas(raw: bytes) -> Image.Image:
 
 
 def validate_atlas_cells(image: Image.Image) -> None:
-    used_by_row = {row: count for _, _, row, count, _, _ in STANDARD_ROWS}
-    used_by_row[9] = 8
-    used_by_row[10] = 8
+    used_by_row = {
+        row: set(range(count))
+        for _, _, row, count, _, _ in STANDARD_ROWS
+    }
+    used_by_row[NEUTRAL_CELL[0]].add(NEUTRAL_CELL[1])
+    used_by_row[9] = set(range(8))
+    used_by_row[10] = set(range(8))
 
     for row in range(11):
         used_columns = used_by_row[row]
         for column in range(8):
             alpha = crop_cell(image, row, column).getchannel("A")
             non_empty = alpha.getbbox() is not None
-            if column < used_columns and not non_empty:
+            if column in used_columns and not non_empty:
                 raise ConversionError(f"图集必需格为空: row={row}, column={column}")
-            if row < 9 and column >= used_columns and non_empty:
+            if row < 9 and column not in used_columns and non_empty:
                 raise ConversionError(
                     f"图集未使用格必须透明: row={row}, column={column}"
                 )

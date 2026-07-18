@@ -17,6 +17,7 @@ from convert_codex_pet import (
     ConversionError,
     ConversionOptions,
     LOOK_DIRECTIONS,
+    NEUTRAL_CELL,
     STANDARD_ROWS,
     convert_codex_pet,
 )
@@ -61,6 +62,15 @@ class ConvertCodexPetTest(unittest.TestCase):
                         255,
                     ),
                 )
+        if sprite_version == 2:
+            row, column = NEUTRAL_CELL
+            left = column * CELL_WIDTH + 48
+            top = row * CELL_HEIGHT + 36
+            draw.rounded_rectangle(
+                (left, top, left + 96, top + 128),
+                radius=24,
+                fill=(60, 148, 180, 255),
+            )
         image.save(self.source / "spritesheet.png", compress_level=1)
         (self.source / "pet.json").write_text(
             json.dumps(
@@ -138,11 +148,28 @@ class ConvertCodexPetTest(unittest.TestCase):
         with Image.open(self.source / "spritesheet.png") as loaded:
             image = loaded.convert("RGBA")
         draw = ImageDraw.Draw(image)
-        left = 6 * CELL_WIDTH
+        left = 7 * CELL_WIDTH
         draw.rectangle((left, 0, left + 10, 10), fill=(255, 0, 0, 255))
         image.save(self.source / "spritesheet.png", compress_level=1)
 
         with self.assertRaisesRegex(ConversionError, "未使用格必须透明"):
+            convert_codex_pet(self.options())
+        self.assertFalse(self.output.exists())
+
+    def test_rejects_missing_v2_neutral_cell(self) -> None:
+        with Image.open(self.source / "spritesheet.png") as loaded:
+            image = loaded.convert("RGBA")
+        row, column = NEUTRAL_CELL
+        draw = ImageDraw.Draw(image)
+        left = column * CELL_WIDTH
+        top = row * CELL_HEIGHT
+        draw.rectangle(
+            (left, top, left + CELL_WIDTH - 1, top + CELL_HEIGHT - 1),
+            fill=(0, 0, 0, 0),
+        )
+        image.save(self.source / "spritesheet.png", compress_level=1)
+
+        with self.assertRaisesRegex(ConversionError, "图集必需格为空"):
             convert_codex_pet(self.options())
         self.assertFalse(self.output.exists())
 

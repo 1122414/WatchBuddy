@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "reviewer": "independent-worker",
+  "stable_slots_warning": {
+    "row": "jumping",
+    "decision": "accept",
+    "reason": "The five-frame preview preserves a clear takeoff, rise, apex, descent, and landing arc with one complete character per frame, stable first/last baseline, and no clipping or scale pop."
+  },
+  "note": "All nine standard rows preserve Sprout's identity, transparent edges, animation semantics, and readable loops."
+}

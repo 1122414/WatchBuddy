@@ -1,0 +1,15 @@
+{
+  "decision": "accept",
+  "severity": "minor",
+  "failed_checks": [
+    "horizontal-1 A: 337.5 horizontal axis was ambiguous",
+    "horizontal-7 A: 202.5 horizontal axis was ambiguous"
+  ],
+  "labeled_evidence": [
+    "337.5 remains in the up-left quadrant through a subtle left face offset and returns smoothly to the 000 up cardinal.",
+    "202.5 remains in the down-left quadrant through the bowed face offset and exposed screen-right side module.",
+    "All four cardinal hard gates passed the three-reviewer blind consensus."
+  ],
+  "continuity_evidence": "The ordered 16-pose loop contains no direction reversal; continuity warnings are review-level metrics rather than structural failures.",
+  "reviewed_by": "parent"
+}

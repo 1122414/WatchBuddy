@@ -1,0 +1,685 @@
+{
+  "schemaVersion": 1,
+  "id": "watchbuddy-sprout",
+  "displayName": "Sprout（芽芽）",
+  "description": "WatchBuddy 的原创薄荷绿腕上 AI 伙伴。",
+  "renderer": "frame-sequence-v1",
+  "source": {
+    "format": "codex-pet-v2",
+    "spriteVersionNumber": 2,
+    "sourceUrl": "https://github.com/1122414/WatchBuddy/tree/main/assets/pets/watchbuddy-sprout/source",
+    "author": "WatchBuddy",
+    "license": {
+      "name": "WatchBuddy Asset License 1.0",
+      "url": "https://github.com/1122414/WatchBuddy/blob/main/assets/pets/watchbuddy-sprout/LICENSE.md",
+      "redistributionAllowed": true
+    },
+    "attribution": "Sprout（芽芽）, an original WatchBuddy mascot.",
+    "sha256": "724e14cc69c83502d1f363f0e33cd424f3db930d6abae90acdb34b0a1e03a040"
+  },
+  "frame": {
+    "width": 128,
+    "height": 139,
+    "displayWidth": 176,
+    "displayHeight": 176
+  },
+  "assets": [
+    {
+      "id": "idle-0",
+      "path": "frames/idle/000.webp",
+      "sha256": "03afb0ef93a42b56f9e3dafc4c4374458e9b08a67610c6ba62fa73a81427796e",
+      "bytes": 4626
+    },
+    {
+      "id": "idle-1",
+      "path": "frames/idle/001.webp",
+      "sha256": "6f7f3d5d34a9c23c7322b4256e37989f28ab3a3707a05974372b95c70342464e",
+      "bytes": 4662
+    },
+    {
+      "id": "idle-2",
+      "path": "frames/idle/002.webp",
+      "sha256": "52057b5557285a4e0cf101e3b47ec33ec1f3b6137b1f52ed723f42b2f3e52e81",
+      "bytes": 4472
+    },
+    {
+      "id": "idle-3",
+      "path": "frames/idle/003.webp",
+      "sha256": "e6ab6072351d601bd020a2451900b65e0fd5031d46ebf3b99078059b2d405bc6",
+      "bytes": 4676
+    },
+    {
+      "id": "idle-4",
+      "path": "frames/idle/004.webp",
+      "sha256": "36a9fdf31e2b9cbdef16a7564504cbf0f7f7e082071d526d44d0a3fd0a90d235",
+      "bytes": 4590
+    },
+    {
+      "id": "idle-5",
+      "path": "frames/idle/005.webp",
+      "sha256": "fbdb980f9fcdb5837b7fab922e5fbf32d4d70157d417b156839990f245e88def",
+      "bytes": 4586
+    },
+    {
+      "id": "running-right-0",
+      "path": "frames/running-right/000.webp",
+      "sha256": "29c04e9308798633277e43bae718f24814a056163e3ff5eeeead833009b85950",
+      "bytes": 4812
+    },
+    {
+      "id": "running-right-1",
+      "path": "frames/running-right/001.webp",
+      "sha256": "65d877a66b8b446e600753dd5950a0498a468a0c04c76c168710edff18761860",
+      "bytes": 4850
+    },
+    {
+      "id": "running-right-2",
+      "path": "frames/running-right/002.webp",
+      "sha256": "6fa85f6f12b3460e72ec3a26c61d0f4e377ffbe902f71b3b267f804c417321f8",
+      "bytes": 4890
+    },
+    {
+      "id": "running-right-3",
+      "path": "frames/running-right/003.webp",
+      "sha256": "b3d6b7405e073ded63429a1b2b710a4c09dc519c5b1565cdef0f9ff8ea895812",
+      "bytes": 4802
+    },
+    {
+      "id": "running-right-4",
+      "path": "frames/running-right/004.webp",
+      "sha256": "4a1886331415bbea9e57274f91e209c391611ac6036f4befb808c6fd4bba4021",
+      "bytes": 4436
+    },
+    {
+      "id": "running-right-5",
+      "path": "frames/running-right/005.webp",
+      "sha256": "6b03d2663f0d166dbd74f3054cddc61e8ba9e282e26333225e74ac5fa90f13ae",
+      "bytes": 4628
+    },
+    {
+      "id": "running-right-6",
+      "path": "frames/running-right/006.webp",
+      "sha256": "ba24b32f8e11a9708b2a45d8310773f7fe69c37acaade858941ce387d70afefa",
+      "bytes": 4732
+    },
+    {
+      "id": "running-right-7",
+      "path": "frames/running-right/007.webp",
+      "sha256": "70b85582c7f8888b7feefc0a41b36d407449a8859c2f496f09c539a8d1385dc0",
+      "bytes": 4434
+    },
+    {
+      "id": "running-left-0",
+      "path": "frames/running-left/000.webp",
+      "sha256": "f622dc4c9c0dfb91da77beeda1544e914777355d81cd903eaec31341a67bfa26",
+      "bytes": 4832
+    },
+    {
+      "id": "running-left-1",
+      "path": "frames/running-left/001.webp",
+      "sha256": "5e858c46877fa827ccc8624a4d59e7a70edd47f1ffb4435aa81edb62408cac16",
+      "bytes": 4806
+    },
+    {
+      "id": "running-left-2",
+      "path": "frames/running-left/002.webp",
+      "sha256": "e0c15b9c5d9ecea70a5ce5f76d681da6f5bf636c7d78a83e5307d121f8d27883",
+      "bytes": 4924
+    },
+    {
+      "id": "running-left-3",
+      "path": "frames/running-left/003.webp",
+      "sha256": "25fdb79af25e62324c6443b8906879105d6c20b406a7dde268ba853fae7a6de4",
+      "bytes": 4730
+    },
+    {
+      "id": "running-left-4",
+      "path": "frames/running-left/004.webp",
+      "sha256": "19325fb0f5f73ce64d65d63887a719bea8ab8b3ee9ab07ef6437f37ef2e1d20c",
+      "bytes": 4448
+    },
+    {
+      "id": "running-left-5",
+      "path": "frames/running-left/005.webp",
+      "sha256": "4e8201422e240d9b26910582c71c421409a4ca6aafa4463db35a14248f990403",
+      "bytes": 4634
+    },
+    {
+      "id": "running-left-6",
+      "path": "frames/running-left/006.webp",
+      "sha256": "646d0b7b59714523386520d1fa72517f87affe0f6dad507c558e62f82e912c46",
+      "bytes": 4724
+    },
+    {
+      "id": "running-left-7",
+      "path": "frames/running-left/007.webp",
+      "sha256": "95297b3c3b84ef8bd1e392a85267aa3788746f9275c53fd7d39ab9a838a2ccf7",
+      "bytes": 4424
+    },
+    {
+      "id": "waving-0",
+      "path": "frames/waving/000.webp",
+      "sha256": "91a0de1c975a6c37dd7d9bbbeac9864738285b3b01bf01f7481f9263ec2c2285",
+      "bytes": 4642
+    },
+    {
+      "id": "waving-1",
+      "path": "frames/waving/001.webp",
+      "sha256": "cab1a67a081a397c65ddd960df5e6dea0ad5accd241156edd6d43271f5ad90fe",
+      "bytes": 4838
+    },
+    {
+      "id": "waving-2",
+      "path": "frames/waving/002.webp",
+      "sha256": "39599d852603318b0d9e83d77f48a28f3e3ec5f092c0e7f83fc2b9267d3316eb",
+      "bytes": 4684
+    },
+    {
+      "id": "waving-3",
+      "path": "frames/waving/003.webp",
+      "sha256": "fa47a8ff1bbc55ee21ecfa9d8d8e5c77917acc1695c7b9ab0ff2c0e22e911b01",
+      "bytes": 4714
+    },
+    {
+      "id": "jumping-0",
+      "path": "frames/jumping/000.webp",
+      "sha256": "81bfeadb3bcb13d567aa5e3a4f6c3aecb07d87fa57719de5cb60bec028d29b3e",
+      "bytes": 3144
+    },
+    {
+      "id": "jumping-1",
+      "path": "frames/jumping/001.webp",
+      "sha256": "1851271b31b9ceb2ad64f0e577001d817de74d39051d2a9a09d892f598378033",
+      "bytes": 3340
+    },
+    {
+      "id": "jumping-2",
+      "path": "frames/jumping/002.webp",
+      "sha256": "c543e32efd8ebfdacca92dfbfeb8cfb6d05b0f5bd3fd7712c464d115ec705aa5",
+      "bytes": 3292
+    },
+    {
+      "id": "jumping-3",
+      "path": "frames/jumping/003.webp",
+      "sha256": "176fb122b601d8e30366845fdaef4a20f7687c330e7d0d5d814e29497889b48a",
+      "bytes": 3242
+    },
+    {
+      "id": "jumping-4",
+      "path": "frames/jumping/004.webp",
+      "sha256": "ae2d5492e9da2c7bee944fe67db5d2342afcd6a66c1c7da165ab5460c6041cbb",
+      "bytes": 3122
+    },
+    {
+      "id": "failed-0",
+      "path": "frames/failed/000.webp",
+      "sha256": "e28f4cdf5504464dbf61e1d60066b5da133a2996ff390a7fe738be6975ff2784",
+      "bytes": 4496
+    },
+    {
+      "id": "failed-1",
+      "path": "frames/failed/001.webp",
+      "sha256": "086ea62e36cebeeafc0f2ceb0922b88a96d3584d0aca0e5d66739c60656fa2a7",
+      "bytes": 4720
+    },
+    {
+      "id": "failed-2",
+      "path": "frames/failed/002.webp",
+      "sha256": "289db6f121a7a37e0ab94c772f6e586461bf9f2f3eb697d2c444dea6e196ebf7",
+      "bytes": 4528
+    },
+    {
+      "id": "failed-3",
+      "path": "frames/failed/003.webp",
+      "sha256": "a89e7fbec28a14a9383fadb804a97b7b0cbc773b474313dedd355f260b0efd95",
+      "bytes": 4742
+    },
+    {
+      "id": "failed-4",
+      "path": "frames/failed/004.webp",
+      "sha256": "553e13e0839052f68c62b7ba2ced2742ca5524dee8e3836d1d2c8b00c8f6663c",
+      "bytes": 4586
+    },
+    {
+      "id": "failed-5",
+      "path": "frames/failed/005.webp",
+      "sha256": "3cf2514fcba57f5051edcde5277de9dafa0aef95c951d8966fa4fe887a620d1e",
+      "bytes": 4762
+    },
+    {
+      "id": "failed-6",
+      "path": "frames/failed/006.webp",
+      "sha256": "57a89cb792fe6dbbb9014479f8936a968b31b918bba6a977304877f3a84d238b",
+      "bytes": 4476
+    },
+    {
+      "id": "failed-7",
+      "path": "frames/failed/007.webp",
+      "sha256": "be3ed0f5dfc5cdfebf022bfea0f13c8b9607367707541fe6ca82b1b6d7fc966c",
+      "bytes": 3794
+    },
+    {
+      "id": "waiting-0",
+      "path": "frames/waiting/000.webp",
+      "sha256": "0e075327eed929aa82e9daac2a0075884aacc8c2221919f322dc6dba0bdf573e",
+      "bytes": 4592
+    },
+    {
+      "id": "waiting-1",
+      "path": "frames/waiting/001.webp",
+      "sha256": "aa74489b0a7f3b5d5aa281ae3c5e04d0e4e34c0d6810ca3cf19d447ad4fc8684",
+      "bytes": 4798
+    },
+    {
+      "id": "waiting-2",
+      "path": "frames/waiting/002.webp",
+      "sha256": "04caccb446aad81e7e62d7f17745a3ec06d95b7d4e7c1a983c00349c617dec10",
+      "bytes": 4604
+    },
+    {
+      "id": "waiting-3",
+      "path": "frames/waiting/003.webp",
+      "sha256": "5e5d47773f1723d72fbda08ebe67edced2e9216d0c570af4d31541aee07f732a",
+      "bytes": 5116
+    },
+    {
+      "id": "waiting-4",
+      "path": "frames/waiting/004.webp",
+      "sha256": "34381e1f10e7f1090265a8d4812276b5ab1295af6db88d931d5dde36f942bb4d",
+      "bytes": 4652
+    },
+    {
+      "id": "waiting-5",
+      "path": "frames/waiting/005.webp",
+      "sha256": "3fbe4166e6707a01e790c2293233faa0f0b9b92b2630952b3a2d7c1a9ec2c94e",
+      "bytes": 4454
+    },
+    {
+      "id": "running-0",
+      "path": "frames/running/000.webp",
+      "sha256": "9cc5bea3bc73560d3539acfba5649d24a8e3da9d4751b05a41f9d4e6dcb983c0",
+      "bytes": 4692
+    },
+    {
+      "id": "running-1",
+      "path": "frames/running/001.webp",
+      "sha256": "54c3fc3000662bae13ac31edeffd5f34ab92542beb932eab0bb1f61a7e7ba218",
+      "bytes": 4626
+    },
+    {
+      "id": "running-2",
+      "path": "frames/running/002.webp",
+      "sha256": "125e0ba47618f5377fed720b9605aa885e2fdc94e638ac937826376ba54a28fd",
+      "bytes": 4600
+    },
+    {
+      "id": "running-3",
+      "path": "frames/running/003.webp",
+      "sha256": "46d0b9e4ef57c032479ee405e591da7cffd0cb01ce669d7a5b663a9f93f8c198",
+      "bytes": 4680
+    },
+    {
+      "id": "running-4",
+      "path": "frames/running/004.webp",
+      "sha256": "ce2fcca1a0075e3aa921eaaa6bf95e5e67b7f7a15f376899c6d7d609d7c1f715",
+      "bytes": 4544
+    },
+    {
+      "id": "running-5",
+      "path": "frames/running/005.webp",
+      "sha256": "c0b21a322d59187edbb9b22116c26dce5fdd4531904e7ca006c6624efe10d7d4",
+      "bytes": 4652
+    },
+    {
+      "id": "review-0",
+      "path": "frames/review/000.webp",
+      "sha256": "4ed6381d1c2feba8cb73d2990835a72f712818db62b03d3def400186b79c3eb7",
+      "bytes": 4664
+    },
+    {
+      "id": "review-1",
+      "path": "frames/review/001.webp",
+      "sha256": "e6a9ca16512d847727d4bdf9319f741130673e598e929360946dfff21b8551a5",
+      "bytes": 4542
+    },
+    {
+      "id": "review-2",
+      "path": "frames/review/002.webp",
+      "sha256": "4052a313d465d0ff83eef465d4c8b5a28460bd119b83584323d4386a3a1efd6d",
+      "bytes": 4544
+    },
+    {
+      "id": "review-3",
+      "path": "frames/review/003.webp",
+      "sha256": "73142e3bff5ccfa93c069fc854b65996baff58246afb43b82e3b06fff034427c",
+      "bytes": 4476
+    },
+    {
+      "id": "review-4",
+      "path": "frames/review/004.webp",
+      "sha256": "0a59afb80705468453d44712578f406c7eff5580bf73e981998321be38c8164e",
+      "bytes": 4856
+    },
+    {
+      "id": "review-5",
+      "path": "frames/review/005.webp",
+      "sha256": "d9b2a11ea4b434c76c977b94103786a31a982f5229603d067d43742eee838590",
+      "bytes": 4692
+    },
+    {
+      "id": "look-00",
+      "path": "frames/look/000.webp",
+      "sha256": "710d3c0cca86243d1336967b4672b6ef7d0f74ee1d08729bfe6a9e9c724e8262",
+      "bytes": 4832
+    },
+    {
+      "id": "look-01",
+      "path": "frames/look/001.webp",
+      "sha256": "31ea347b06c13e3845807798c99e8c077e46cd3e48a30c07132333e47c5c414b",
+      "bytes": 4780
+    },
+    {
+      "id": "look-02",
+      "path": "frames/look/002.webp",
+      "sha256": "3e3c9d5edc79c89314a6d72e06a0cc1deb877e235c04b61d9030b4d486745fac",
+      "bytes": 4746
+    },
+    {
+      "id": "look-03",
+      "path": "frames/look/003.webp",
+      "sha256": "93d1d64613c156cf3754bc0fb059f4941c567ef7bf0ab6b3e0911d02d868e748",
+      "bytes": 4662
+    },
+    {
+      "id": "look-04",
+      "path": "frames/look/004.webp",
+      "sha256": "92d4d6099b02f218dbc070b1a86d7386e56c621f666339a90c18c1c7041ed065",
+      "bytes": 4672
+    },
+    {
+      "id": "look-05",
+      "path": "frames/look/005.webp",
+      "sha256": "4e0188c964f08a3f5ec72be32054e4d93b597522e4c8891e5ca2c1849ff148dd",
+      "bytes": 4478
+    },
+    {
+      "id": "look-06",
+      "path": "frames/look/006.webp",
+      "sha256": "5daf8492845af13b868692c59a80b6c03cd7e9c295df17c04fd6711b38511f89",
+      "bytes": 4364
+    },
+    {
+      "id": "look-07",
+      "path": "frames/look/007.webp",
+      "sha256": "2423896c19bbbd60f771c5ba3937a97ba8933e3b97305868198475e199d72897",
+      "bytes": 4028
+    },
+    {
+      "id": "look-08",
+      "path": "frames/look/008.webp",
+      "sha256": "bf9a0d600baeeff98ddb36911864239861801795af1c070b2b1c80035ce19b85",
+      "bytes": 4434
+    },
+    {
+      "id": "look-09",
+      "path": "frames/look/009.webp",
+      "sha256": "01b27912565c006da1d90efcdaad47da73cb8dc98c004cd6147c2b1c0a046a0d",
+      "bytes": 4346
+    },
+    {
+      "id": "look-10",
+      "path": "frames/look/010.webp",
+      "sha256": "d03728d5e17c4aad42543b1c53b4d3350f051d0dba3d5d56edab5e345526710f",
+      "bytes": 4102
+    },
+    {
+      "id": "look-11",
+      "path": "frames/look/011.webp",
+      "sha256": "8e3b10d340d734456e0435bedc44de374910f7363d483f2c5c8148b757b5865b",
+      "bytes": 4134
+    },
+    {
+      "id": "look-12",
+      "path": "frames/look/012.webp",
+      "sha256": "2a574a60b0f204b481bc07585cc1d9019c98a61c61c0f9d1aa164ac50182b9cc",
+      "bytes": 4480
+    },
+    {
+      "id": "look-13",
+      "path": "frames/look/013.webp",
+      "sha256": "317a9fa0944dc968a23e76af15fadf1da14be218b0d39f6c5573c533200fd3ba",
+      "bytes": 4516
+    },
+    {
+      "id": "look-14",
+      "path": "frames/look/014.webp",
+      "sha256": "4e77b649b5b69475348686f9cf035eeb12d99517264fb3a52a3363a16fc97068",
+      "bytes": 4412
+    },
+    {
+      "id": "look-15",
+      "path": "frames/look/015.webp",
+      "sha256": "017e29d9aee6d92fda5ecc079982ae76fe1f2fa73dadb724024f2191b53dd314",
+      "bytes": 4700
+    }
+  ],
+  "animations": {
+    "idle": {
+      "frames": [
+        "idle-0",
+        "idle-1",
+        "idle-2",
+        "idle-3",
+        "idle-4",
+        "idle-5"
+      ],
+      "durationsMs": [
+        280,
+        110,
+        110,
+        140,
+        140,
+        320
+      ],
+      "loop": true
+    },
+    "runningRight": {
+      "frames": [
+        "running-right-0",
+        "running-right-1",
+        "running-right-2",
+        "running-right-3",
+        "running-right-4",
+        "running-right-5",
+        "running-right-6",
+        "running-right-7"
+      ],
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ],
+      "loop": true
+    },
+    "runningLeft": {
+      "frames": [
+        "running-left-0",
+        "running-left-1",
+        "running-left-2",
+        "running-left-3",
+        "running-left-4",
+        "running-left-5",
+        "running-left-6",
+        "running-left-7"
+      ],
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ],
+      "loop": true
+    },
+    "waving": {
+      "frames": [
+        "waving-0",
+        "waving-1",
+        "waving-2",
+        "waving-3"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        280
+      ],
+      "loop": false
+    },
+    "jumping": {
+      "frames": [
+        "jumping-0",
+        "jumping-1",
+        "jumping-2",
+        "jumping-3",
+        "jumping-4"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140,
+        280
+      ],
+      "loop": false
+    },
+    "failed": {
+      "frames": [
+        "failed-0",
+        "failed-1",
+        "failed-2",
+        "failed-3",
+        "failed-4",
+        "failed-5",
+        "failed-6",
+        "failed-7"
+      ],
+      "durationsMs": [
+        140,
+        140,
+        140,
+        140,
+        140,
+        140,
+        140,
+        240
+      ],
+      "loop": false
+    },
+    "waiting": {
+      "frames": [
+        "waiting-0",
+        "waiting-1",
+        "waiting-2",
+        "waiting-3",
+        "waiting-4",
+        "waiting-5"
+      ],
+      "durationsMs": [
+        150,
+        150,
+        150,
+        150,
+        150,
+        260
+      ],
+      "loop": true
+    },
+    "running": {
+      "frames": [
+        "running-0",
+        "running-1",
+        "running-2",
+        "running-3",
+        "running-4",
+        "running-5"
+      ],
+      "durationsMs": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        220
+      ],
+      "loop": true
+    },
+    "review": {
+      "frames": [
+        "review-0",
+        "review-1",
+        "review-2",
+        "review-3",
+        "review-4",
+        "review-5"
+      ],
+      "durationsMs": [
+        150,
+        150,
+        150,
+        150,
+        150,
+        280
+      ],
+      "loop": true
+    }
+  },
+  "stateMap": {
+    "sleeping": "idle",
+    "idle": "idle",
+    "daydreaming": "waiting",
+    "watching": "review",
+    "curious": "jumping",
+    "concerned": "waiting",
+    "chatting": "waving",
+    "giving_space": "idle"
+  },
+  "interactionMap": {
+    "tap": "jumping",
+    "message": "waving",
+    "loading": "running",
+    "failure": "failed"
+  },
+  "fallbackFrame": "idle-0",
+  "budget": {
+    "frameCount": 73,
+    "totalBytes": 329310,
+    "maxFrameBytes": 5116
+  },
+  "lookDirections": {
+    "000": "look-00",
+    "022.5": "look-01",
+    "045": "look-02",
+    "067.5": "look-03",
+    "090": "look-04",
+    "112.5": "look-05",
+    "135": "look-06",
+    "157.5": "look-07",
+    "180": "look-08",
+    "202.5": "look-09",
+    "225": "look-10",
+    "247.5": "look-11",
+    "270": "look-12",
+    "292.5": "look-13",
+    "315": "look-14",
+    "337.5": "look-15"
+  }
+}

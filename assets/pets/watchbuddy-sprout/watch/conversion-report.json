@@ -1,0 +1,18 @@
+{
+  "toolVersion": "1.0.0",
+  "source": {
+    "manifestSha256": "6bd6e2fd66bdcc927bb405a15b188476345e76623c97b850d024f4c89113c6f1",
+    "spritesheetSha256": "c066f03f0187482c673ec21460d2f8f1e5520eef4020fb8ef5047b5c61809386",
+    "packageSha256": "724e14cc69c83502d1f363f0e33cd424f3db930d6abae90acdb34b0a1e03a040"
+  },
+  "output": {
+    "manifestSha256": "a2976675a794d85f27063e08398f2e943ff09d7db7423e6550c88eccf45f803e",
+    "previewSha256": "3548d4d79f2b5772542f5324d4a43b7e77a9a4d8cb77f30966e51e76f769fabb",
+    "assetCount": 73,
+    "totalBytes": 329310,
+    "frameWidth": 128,
+    "frameHeight": 139,
+    "format": "webp",
+    "includesLookDirections": true
+  }
+}

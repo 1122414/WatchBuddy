@@ -98,8 +98,15 @@ npm run validate:pet -- /path/to/watch-pet-output
 ```
 
 转换器拒绝旧版/伪装 v2、无透明通道、错误网格、空必需格、非透明未使用格、未知授权和已有输出
-目录。成功结果包含 `watch-pet.json`、本地 PNG/WebP 小帧、`conversion-report.json` 与
-`preview-466.png`，原始 Codex 图集不会交给手表运行时解析。
+目录；当前 v2 契约中的 `row 0 / column 6` 中立帧属于必需格。成功结果包含
+`watch-pet.json`、本地 PNG/WebP 小帧、`conversion-report.json` 与 `preview-466.png`，
+原始 Codex 图集不会交给手表运行时解析。
+
+仓库已包含原创默认宠物 Sprout（芽芽）：
+
+- `assets/pets/watchbuddy-sprout/source/`：通过 hatch-pet QA 的 Codex Pet v2 源资源；
+- `assets/pets/watchbuddy-sprout/watch/`：73 帧、约 322 KiB 的手表专用离线资源包；
+- `assets/pets/watchbuddy-sprout/qa/`：动画预览、方向盲测、连续性和透明度证据。
 
 检查 HAP 构建所需的本机工具链：
 
