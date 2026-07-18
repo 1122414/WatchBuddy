@@ -47,7 +47,9 @@ export function validateNudge(nudge, now = Date.now()) {
   if (nudge.type !== MESSAGE_TYPES.NUDGE) {
     errors.push("type 必须是 COMPANION_NUDGE");
   }
-  if (typeof nudge.nudgeId !== "string" || nudge.nudgeId.length < 8) {
+  if (typeof nudge.nudgeId !== "string"
+    || nudge.nudgeId.length < 8
+    || nudge.nudgeId.length > 64) {
     errors.push("nudgeId 无效");
   }
   if (!INITIATIVE_SOURCES.includes(nudge.source)) {
@@ -76,7 +78,13 @@ export function validateNudge(nudge, now = Date.now()) {
   } else {
     const ids = new Set();
     for (const action of nudge.actions) {
-      if (!action || typeof action.id !== "string" || typeof action.label !== "string") {
+      if (!action
+        || typeof action.id !== "string"
+        || action.id.length < 1
+        || action.id.length > 24
+        || typeof action.label !== "string"
+        || codePointLength(action.label) < 1
+        || codePointLength(action.label) > 12) {
         errors.push("action 必须包含字符串 id 和 label");
         continue;
       }

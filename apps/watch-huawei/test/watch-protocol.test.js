@@ -84,6 +84,35 @@ test('超长消息和重复动作不会进入表端 UI', () => {
   );
 });
 
+test('超长消息 ID、动作 ID 和动作标签不会进入表端 UI', () => {
+  const longNudgeId = nudge({ nudgeId: `nudge_${'x'.repeat(65)}` });
+  const longActionId = nudge({
+    actions: [
+      { id: 'x'.repeat(25), label: '第一项' },
+      { id: 'later', label: '第二项' }
+    ]
+  });
+  const longActionLabel = nudge({
+    actions: [
+      { id: 'one', label: '很'.repeat(13) },
+      { id: 'later', label: '第二项' }
+    ]
+  });
+
+  assert.equal(
+    inspectIncomingMessage(JSON.stringify(longNudgeId), [], NOW).reason,
+    'invalid_nudge'
+  );
+  assert.equal(
+    inspectIncomingMessage(JSON.stringify(longActionId), [], NOW).reason,
+    'invalid_nudge'
+  );
+  assert.equal(
+    inspectIncomingMessage(JSON.stringify(longActionLabel), [], NOW).reason,
+    'invalid_nudge'
+  );
+});
+
 test('服务端 ACK 会终止对应回复的重试', () => {
   const ack = createDeliveryAck('nudge_12345678', 'responded', NOW);
   const result = inspectIncomingMessage(JSON.stringify(ack), [], NOW);

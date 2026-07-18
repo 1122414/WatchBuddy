@@ -1,31 +1,56 @@
-<div class="container">
-  <div class="status-row" onclick="checkServer">
-    <text class="status-dot">●</text>
-    <text class="status-label">{{stateLabel}}</text>
-    <text class="connection-label"> · {{connectionLabel}}</text>
+<div class="root">
+  <div class="container" if="{{!memoryScreen}}">
+    <div class="status-row" onclick="checkServer">
+      <text class="status-dot">●</text>
+      <text class="status-label">{{stateLabel}}</text>
+      <text class="connection-label"> · {{connectionLabel}}</text>
+    </div>
+
+    <div class="character {{characterClass}}" onclick="onCharacterTap">
+      <div class="antenna"></div>
+      <div class="face">
+        <div class="eyes">
+          <div class="eye"></div>
+          <div class="eye"></div>
+        </div>
+        <div class="mouth"></div>
+      </div>
+    </div>
+
+    <div class="bubble" if="{{messageVisible}}">
+      <text class="message">{{message}}</text>
+    </div>
+
+    <div class="actions" if="{{messageVisible}}">
+      <input class="action primary" type="button" value="{{actionOne}}" onclick="replyOne"></input>
+      <input class="action" type="button" value="{{actionTwo}}" onclick="replyTwo"></input>
+      <input class="action quiet" if="{{actionThree}}" type="button" value="{{actionThree}}" onclick="replyThree"></input>
+      <input class="action quiet" if="{{actionFour}}" type="button" value="{{actionFour}}" onclick="replyFour"></input>
+    </div>
+
+    <text class="hint" if="{{!messageVisible}}">轻点角色同步，轻点状态重试</text>
+    <input class="memory-entry" if="{{!messageVisible}}" type="button" value="记忆" onclick="showMemories"></input>
   </div>
 
-  <div class="character {{characterClass}}" onclick="onCharacterTap">
-    <div class="antenna"></div>
-    <div class="face">
-      <div class="eyes">
-        <div class="eye"></div>
-        <div class="eye"></div>
-      </div>
-      <div class="mouth"></div>
+  <div class="memory-screen" if="{{memoryScreen}}">
+    <text class="memory-title">{{memoryStatus}}</text>
+
+    <div class="memory-row" if="{{memoryOneVisible}}">
+      <text class="memory-text">{{memoryOne}}</text>
+      <input class="delete-memory" type="button" value="删" onclick="deleteMemoryOne"></input>
+    </div>
+    <div class="memory-row" if="{{memoryTwoVisible}}">
+      <text class="memory-text">{{memoryTwo}}</text>
+      <input class="delete-memory" type="button" value="删" onclick="deleteMemoryTwo"></input>
+    </div>
+    <div class="memory-row" if="{{memoryThreeVisible}}">
+      <text class="memory-text">{{memoryThree}}</text>
+      <input class="delete-memory" type="button" value="删" onclick="deleteMemoryThree"></input>
+    </div>
+
+    <div class="memory-actions">
+      <input class="memory-action danger" type="button" value="清空" onclick="clearAllMemories"></input>
+      <input class="memory-action" type="button" value="返回" onclick="hideMemories"></input>
     </div>
   </div>
-
-  <div class="bubble" if="{{messageVisible}}">
-    <text class="message">{{message}}</text>
-  </div>
-
-  <div class="actions" if="{{messageVisible}}">
-    <input class="action primary" type="button" value="{{actionOne}}" onclick="replyOne"></input>
-    <input class="action" type="button" value="{{actionTwo}}" onclick="replyTwo"></input>
-    <input class="action quiet" if="{{actionThree}}" type="button" value="{{actionThree}}" onclick="replyThree"></input>
-    <input class="action quiet" if="{{actionFour}}" type="button" value="{{actionFour}}" onclick="replyFour"></input>
-  </div>
-
-  <text class="hint" if="{{!messageVisible}}">轻点角色体验，轻点状态重试联网</text>
 </div>

@@ -84,7 +84,8 @@ export class WatchBuddyService {
 
     const existing = this.#devicesById.get(input.deviceId);
     if (existing) {
-      if (this.authenticate(currentDeviceToken) !== existing) {
+      if (!existing.revokedAt
+        && this.authenticate(currentDeviceToken) !== existing) {
         throw new TypeError(
           "deviceId 已注册，轮换令牌必须提供当前设备令牌"
         );

@@ -106,6 +106,7 @@ function isValidNudge(message) {
     && message.type === 'COMPANION_NUDGE'
     && typeof message.nudgeId === 'string'
     && message.nudgeId.length >= 8
+    && message.nudgeId.length <= 64
     && INITIATIVE_SOURCES.indexOf(message.source) >= 0
     && Number.isInteger(message.intensity)
     && message.intensity >= 0
@@ -129,6 +130,8 @@ function isValidAction(action) {
     && typeof action === 'object'
     && typeof action.id === 'string'
     && action.id.length > 0
+    && action.id.length <= 24
     && typeof action.label === 'string'
-    && action.label.length > 0;
+    && action.label.length > 0
+    && Array.from(action.label).length <= 12;
 }

@@ -83,6 +83,26 @@ test("拒绝未持有当前令牌的设备 ID 覆盖注册", () => {
   );
 });
 
+test("设备主动撤销后可以重新注册", () => {
+  const tokens = [
+    "first_device_token_123456789012345678901234567890",
+    "second_device_token_12345678901234567890123456789"
+  ];
+  let tokenIndex = 0;
+  const service = new WatchBuddyService({
+    now: () => NOW,
+    tokenFactory: () => tokens[tokenIndex++]
+  });
+  const first = register(service);
+  const device = service.authenticate(first.deviceToken);
+  service.revokeDevice(device);
+
+  const second = register(service);
+
+  assert.equal(second.deviceToken, tokens[1]);
+  assert.equal(service.authenticate(second.deviceToken).deviceId, device.deviceId);
+});
+
 test("状态接口生成通过 companion-core 校验的表端消息", () => {
   const { service } = createService();
   const registration = register(service);
