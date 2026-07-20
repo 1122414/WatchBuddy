@@ -15,12 +15,14 @@ import {
   initialCompanionState,
   recordOutcome,
   recordSent,
-  stateForLocalTime
+  stateForLocalTime,
+  validateNudge
 } from "../../../packages/companion-core/src/index.js";
 
 const DEVICE_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 const MAX_REPLY_CHARACTERS = 64;
 const TOKEN_BYTES = 32;
+const TOKEN_HASH_PATTERN = /^[a-f0-9]{64}$/;
 const FOLLOW_UP_DELAY_MS = 24 * 60 * 60_000;
 const RANDOM_SOCIAL_MESSAGES = Object.freeze([
   "路过来看看，此刻要不要一起喘口气？",
@@ -131,21 +133,172 @@ function candidateForDevice(device, hour, date, timestamp) {
   };
 }
 
+function restoreDevice(record, now) {
+  validateRegistration(record);
+  if (typeof record.locale !== "string"
+    || record.locale.length < 1
+    || !TOKEN_HASH_PATTERN.test(record.tokenHash ?? "")
+    || !Number.isSafeInteger(record.registeredAt)
+    || record.registeredAt <= 0
+    || (record.revokedAt !== null && (
+      !Number.isSafeInteger(record.revokedAt)
+      || record.revokedAt < record.registeredAt
+    ))
+    || !record.settings
+    || typeof record.settings.quietMode !== "boolean"
+    || !Array.isArray(record.memories)
+    || record.memories.length > 1000
+    || !isValidInitiativeState(record.initiativeState)
+    || !isValidCompanionState(record.state)) {
+    throw new TypeError("持久化设备状态无效");
+  }
+  let pendingNudge = record.pendingNudge ?? null;
+  if (pendingNudge) {
+    const errors = validateNudge(pendingNudge, pendingNudge.createdAt);
+    if (errors.length > 0) {
+      throw new TypeError("持久化主动消息无效");
+    }
+    if (pendingNudge.expiresAt <= now) {
+      pendingNudge = null;
+    }
+  }
+  const memories = new MemoryStore(record.memories);
+  memories.purgeExpired(now);
+  return {
+    deviceId: record.deviceId,
+    initiativeState: createInitiativeState(record.initiativeState),
+    locale: record.locale,
+    memories,
+    pendingNudge,
+    registeredAt: record.registeredAt,
+    revokedAt: record.revokedAt,
+    settings: {
+      quietMode: record.settings.quietMode
+    },
+    state: initialCompanionState(record.state),
+    timezoneOffsetMinutes: record.timezoneOffsetMinutes,
+    tokenHash: record.tokenHash
+  };
+}
+
+function isNullableTimestamp(value) {
+  return value === null
+    || (Number.isSafeInteger(value) && value > 0);
+}
+
+function isValidCompanionState(value) {
+  return value
+    && typeof value === "object"
+    && typeof value.activity === "string"
+    && Number.isFinite(value.energy)
+    && value.energy >= 0
+    && value.energy <= 1
+    && Number.isFinite(value.curiosity)
+    && value.curiosity >= 0
+    && value.curiosity <= 1
+    && Number.isFinite(value.socialNeed)
+    && value.socialNeed >= 0
+    && value.socialNeed <= 1
+    && isNullableTimestamp(value.lastInteractionAt)
+    && isNullableTimestamp(value.lastInitiativeAt);
+}
+
+function isValidInitiativeState(value) {
+  return value
+    && (value.localDate === null
+      || (typeof value.localDate === "string"
+        && /^\d{4}-\d{2}-\d{2}$/.test(value.localDate)))
+    && Number.isInteger(value.sentCount)
+    && value.sentCount >= 0
+    && value.sentCount <= 100
+    && isNullableTimestamp(value.lastNudgeAt)
+    && isNullableTimestamp(value.blockedUntil)
+    && Array.isArray(value.recentTopics)
+    && value.recentTopics.length <= 8
+    && value.recentTopics.every(
+      (topic) => typeof topic === "string" && topic.length <= 160
+    );
+}
+
+function snapshotDevice(device) {
+  return {
+    deviceId: device.deviceId,
+    initiativeState: device.initiativeState,
+    locale: device.locale,
+    memories: device.memories.list({ now: 0 }),
+    pendingNudge: device.pendingNudge,
+    registeredAt: device.registeredAt,
+    revokedAt: device.revokedAt,
+    settings: device.settings,
+    state: device.state,
+    timezoneOffsetMinutes: device.timezoneOffsetMinutes,
+    tokenHash: device.tokenHash
+  };
+}
+
 export class WatchBuddyService {
   #devicesById = new Map();
   #devicesByTokenHash = new Map();
   #idFactory;
   #now;
+  #stateStore;
   #tokenFactory;
 
   constructor({
     idFactory = () => randomUUID(),
     now = () => Date.now(),
+    stateStore = null,
     tokenFactory = () => randomBytes(TOKEN_BYTES).toString("base64url")
   } = {}) {
     this.#idFactory = idFactory;
     this.#now = now;
+    this.#stateStore = stateStore;
     this.#tokenFactory = tokenFactory;
+    this.#restore();
+  }
+
+  #restore() {
+    if (!this.#stateStore) {
+      return;
+    }
+    if (typeof this.#stateStore.load !== "function"
+      || typeof this.#stateStore.save !== "function") {
+      throw new TypeError("stateStore 必须实现 load/save");
+    }
+    const records = this.#stateStore.load();
+    if (!Array.isArray(records)) {
+      throw new TypeError("持久化设备集合无效");
+    }
+    const devicesById = new Map();
+    const devicesByTokenHash = new Map();
+    for (const record of records) {
+      const device = restoreDevice(record, this.#now());
+      if (devicesById.has(device.deviceId)
+        || (!device.revokedAt
+          && devicesByTokenHash.has(device.tokenHash))) {
+        throw new TypeError("持久化设备 ID 或令牌摘要重复");
+      }
+      devicesById.set(device.deviceId, device);
+      if (!device.revokedAt) {
+        devicesByTokenHash.set(device.tokenHash, device);
+      }
+    }
+    this.#devicesById = devicesById;
+    this.#devicesByTokenHash = devicesByTokenHash;
+  }
+
+  #persist() {
+    if (!this.#stateStore) {
+      return;
+    }
+    try {
+      this.#stateStore.save(
+        [...this.#devicesById.values()].map(snapshotDevice)
+      );
+    } catch (error) {
+      this.#restore();
+      throw error;
+    }
   }
 
   registerDevice(input, currentDeviceToken = "") {
@@ -190,11 +343,13 @@ export class WatchBuddyService {
     this.#devicesById.set(device.deviceId, device);
     this.#devicesByTokenHash.set(device.tokenHash, device);
 
-    return {
+    const registration = {
       deviceId: device.deviceId,
       deviceToken: token,
       registeredAt: device.registeredAt
     };
+    this.#persist();
+    return registration;
   }
 
   authenticate(deviceToken) {
@@ -210,6 +365,7 @@ export class WatchBuddyService {
     }
     device.revokedAt = this.#now();
     this.#devicesByTokenHash.delete(device.tokenHash);
+    this.#persist();
     return true;
   }
 
@@ -290,7 +446,7 @@ export class WatchBuddyService {
       }
     }
 
-    return {
+    const result = {
       characterState: device.state.activity,
       companionState: device.state,
       initiative: {
@@ -303,6 +459,8 @@ export class WatchBuddyService {
       settings: this.getSettings(device),
       serverTime: timestamp
     };
+    this.#persist();
+    return result;
   }
 
   getSettings(device) {
@@ -326,6 +484,7 @@ export class WatchBuddyService {
     if (input.quietMode) {
       device.pendingNudge = null;
     }
+    this.#persist();
     return this.getSettings(device);
   }
 
@@ -392,13 +551,15 @@ export class WatchBuddyService {
     );
     device.pendingNudge = null;
 
-    return {
+    const result = {
       accepted: true,
       characterState: device.state.activity,
       memory,
       nextCheckAt: timestamp + 5 * 60_000,
       reply: acceptedReply
     };
+    this.#persist();
+    return result;
   }
 
   listMemories(device) {
@@ -406,11 +567,19 @@ export class WatchBuddyService {
   }
 
   deleteMemory(device, memoryId) {
-    return device.memories.delete(memoryId);
+    const deleted = device.memories.delete(memoryId);
+    if (deleted) {
+      this.#persist();
+    }
+    return deleted;
   }
 
   clearMemories(device) {
-    return device.memories.clear();
+    const deleted = device.memories.clear();
+    if (deleted > 0) {
+      this.#persist();
+    }
+    return deleted;
   }
 
   #nextCheckAt(device, initiative, timestamp) {

@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
+import { JsonStateStore } from "../src/json-state-store.js";
 import { WatchBuddyService } from "../src/service.js";
 
 const NOW = Date.parse("2026-07-18T03:00:00.000Z");
@@ -371,5 +379,100 @@ test("拒绝非法注册、超长文字和混合回复", () => {
       text: "不能混合"
     }),
     /只能提交/
+  );
+});
+
+test("重启后恢复令牌摘要、设置、消息状态和记忆", () => {
+  const directory = mkdtempSync(join(tmpdir(), "watchbuddy-service-"));
+  const statePath = join(directory, "state.json");
+  let timestamp = NOW;
+  try {
+    const stateStore = new JsonStateStore(statePath);
+    const firstService = new WatchBuddyService({
+      idFactory: () => "persisted_memory_01",
+      now: () => timestamp,
+      stateStore,
+      tokenFactory: () => TOKEN
+    });
+    const registration = register(firstService);
+    const firstDevice = firstService.authenticate(registration.deviceToken);
+    const firstState = firstService.getCompanionState(firstDevice);
+    const reply = firstService.reply(firstDevice, {
+      actionId: "share",
+      nudgeId: firstState.nudge.nudgeId
+    });
+    firstService.reply(firstDevice, {
+      memoryType: "unfinished_topic",
+      remember: true,
+      sensitivity: "private",
+      text: "服务重启后还要记得"
+    });
+    firstService.updateSettings(firstDevice, {
+      quietMode: true
+    });
+
+    const serialized = readFileSync(statePath, "utf8");
+    assert.equal(serialized.includes(TOKEN), false);
+    assert.equal(serialized.includes("tokenHash"), true);
+
+    timestamp += 60_000;
+    const secondService = new WatchBuddyService({
+      now: () => timestamp,
+      stateStore
+    });
+    const restoredDevice = secondService.authenticate(TOKEN);
+
+    assert.equal(restoredDevice.deviceId, registration.deviceId);
+    assert.equal(restoredDevice.state.activity, reply.characterState);
+    assert.deepEqual(
+      secondService.getSettings(restoredDevice),
+      { quietMode: true }
+    );
+    assert.equal(
+      secondService.listMemories(restoredDevice)[0].summary,
+      "服务重启后还要记得"
+    );
+    const restoredState = secondService.getCompanionState(restoredDevice);
+    assert.equal(restoredState.nudge, null);
+    assert.equal(restoredState.initiative.blockedBy, "quiet_mode");
+  } finally {
+    rmSync(directory, {
+      force: true,
+      recursive: true
+    });
+  }
+});
+
+test("持久化失败时回滚本次内存状态", () => {
+  const records = [];
+  let shouldFail = false;
+  const stateStore = {
+    load() {
+      return structuredClone(records);
+    },
+    save(nextRecords) {
+      if (shouldFail) {
+        throw new Error("磁盘写入失败");
+      }
+      records.splice(0, records.length, ...structuredClone(nextRecords));
+    }
+  };
+  const service = new WatchBuddyService({
+    now: () => NOW,
+    stateStore,
+    tokenFactory: () => TOKEN
+  });
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+
+  shouldFail = true;
+  assert.throws(
+    () => service.updateSettings(device, { quietMode: true }),
+    /磁盘写入失败/
+  );
+  const restoredDevice = service.authenticate(registration.deviceToken);
+  assert.deepEqual(
+    service.getSettings(restoredDevice),
+    { quietMode: false }
   );
 });

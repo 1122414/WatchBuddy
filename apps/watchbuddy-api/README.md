@@ -46,3 +46,32 @@ npm run start:api
 ```
 
 默认监听 `127.0.0.1:8787`。
+
+本地开发默认使用内存状态。要验证服务重启恢复，显式配置状态文件：
+
+```sh
+WATCHBUDDY_STATE_FILE=.local/watchbuddy-state.json npm run start:api
+```
+
+状态文件使用临时文件写入、`fsync` 和原子改名，文件权限为 `0600`。内容包括设备令牌的
+SHA-256 摘要、陪伴状态、安静模式和用户记忆，不包含明文设备令牌；它仍属于敏感数据，
+不得提交 Git 或放入公开下载目录。
+
+## 容器部署
+
+从仓库根目录构建：
+
+```sh
+docker build -f apps/watchbuddy-api/Dockerfile -t watchbuddy-api .
+docker run --rm \
+  -p 8787:8787 \
+  -v watchbuddy-data:/data \
+  watchbuddy-api
+```
+
+生产环境必须把持久卷挂载到 `/data`，并由可信网关或托管平台在容器前终止 HTTPS。
+手表只能配置受信任的公网 `https://` 地址，不能直连容器的明文 HTTP 端口。
+
+当前 JSON 状态存储只支持单实例进程；不能让多个副本同时写同一文件。需要水平扩容前，
+应换成具备事务和并发控制的服务端数据库。容器文件已就绪，但仓库没有绑定或购买任何
+云平台，也没有替用户创建公网服务。

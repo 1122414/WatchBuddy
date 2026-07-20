@@ -178,11 +178,16 @@ npm run start:api
 - `DELETE /v1/memories/:id` 与 `DELETE /v1/memories`。
 
 注册和回复写操作要求 `Idempotency-Key`，设备接口使用 Bearer 令牌。请求和响应均限制在
-Lite Wearable 单包 7 KB 以内，记忆列表每页最多 20 条。当前存储仅供本地闭环验证，
-进程重启后会清空；持久化存储和 AI 适配器仍属于后续阶段。
+Lite Wearable 单包 7 KB 以内，记忆列表每页最多 20 条。本地开发默认使用内存状态；配置
+`WATCHBUDDY_STATE_FILE` 后，服务会用 `0600` 原子 JSON 文件保存设备令牌摘要、陪伴状态、
+设置与记忆并在重启后恢复。明文设备令牌不会写入文件。该存储只支持单实例，AI 适配器仍属于
+后续阶段。
 
 本地进程默认监听 `127.0.0.1:8787`；真机验证前仍需部署到受信任的公网 HTTPS 地址，
 不能把本地 HTTP 结果当作 GT 6 Pro 独立联网证据。
+
+仓库提供 `apps/watchbuddy-api/Dockerfile`。容器部署必须挂载持久卷到 `/data`，并由可信
+网关或托管平台终止 HTTPS；构建与运行命令见 `apps/watchbuddy-api/README.md`。
 
 表端工程使用 DevEco Studio 打开 `apps/watch-huawei`。构建和安装前需要配置
 HarmonyOS 手表应用、签名证书与真机调试权限；任何账号凭据、服务端密钥、签名文件与设备令牌

@@ -6,6 +6,7 @@ import http from "node:http";
 import { pathToFileURL } from "node:url";
 
 import { defaultPetCatalog } from "./pet-catalog.js";
+import { JsonStateStore } from "./json-state-store.js";
 import { WatchBuddyService } from "./service.js";
 
 const DEFAULT_HOST = "127.0.0.1";
@@ -627,13 +628,19 @@ export function createWatchBuddyServer({
 export async function startWatchBuddyServer({
   host = process.env.HOST ?? DEFAULT_HOST,
   logger = createJsonLogger(),
-  port = Number.parseInt(process.env.PORT ?? `${DEFAULT_PORT}`, 10)
+  port = Number.parseInt(process.env.PORT ?? `${DEFAULT_PORT}`, 10),
+  stateFile = process.env.WATCHBUDDY_STATE_FILE ?? ""
 } = {}) {
   if (!Number.isInteger(port) || port < 0 || port > 65_535) {
     throw new TypeError("PORT 必须是 0 到 65535 之间的整数");
   }
 
-  const server = createWatchBuddyServer({ logger });
+  const service = stateFile
+    ? new WatchBuddyService({
+      stateStore: new JsonStateStore(stateFile)
+    })
+    : new WatchBuddyService();
+  const server = createWatchBuddyServer({ logger, service });
 
   await new Promise((resolve, reject) => {
     server.once("error", reject);
