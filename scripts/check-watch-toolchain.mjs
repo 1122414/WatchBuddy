@@ -204,6 +204,22 @@ function readProjectConfig() {
       + "pets/watchbuddy-sprout",
     projectRoot
   ));
+  const networkClientPath = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/ets/"
+      + "network/WatchBuddyApi.ets",
+    projectRoot
+  ));
+  const secureTokenStorePath = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/ets/"
+      + "storage/SecureTokenStore.ets",
+    projectRoot
+  ));
+  const networkClientSource = existsSync(networkClientPath)
+    ? readFileSync(networkClientPath, "utf8")
+    : "";
+  const secureTokenStoreSource = existsSync(secureTokenStorePath)
+    ? readFileSync(secureTokenStorePath, "utf8")
+    : "";
 
   return {
     bundleName: appConfig.app.bundleName,
@@ -216,7 +232,13 @@ function readProjectConfig() {
       (permission) => permission.name === "ohos.permission.VIBRATE"
     ) ?? false,
     hasPetRuntime: existsSync(petRuntimePath),
+    hasDirectNetworkRuntime: networkClientSource.includes("@kit.NetworkKit")
+      && networkClientSource.includes("http.createHttp()")
+      && !networkClientSource.includes("@system.fetch"),
     hasRequiredSourceFiles: requiredSourceFiles.every(existsSync),
+    hasSecureTokenStore: secureTokenStoreSource.includes("@kit.AssetStoreKit")
+      && secureTokenStoreSource.includes("asset.Tag.SECRET")
+      && !secureTokenStoreSource.includes("@kit.ArkData"),
     hasWearEngineRuntimeFiles: prohibitedRuntimeFiles.some(existsSync),
     isStageMode: entryBuildProfile.apiType === "stageMode",
     petFrameCount: countPngFiles(petResourceRoot),
@@ -331,6 +353,20 @@ export function inspectWatchToolchain() {
       detail: projectConfig.hasInternetPermission
         ? "ohos.permission.INTERNET"
         : "未声明"
+    },
+    {
+      name: "手表直连网络",
+      ok: projectConfig.hasDirectNetworkRuntime,
+      detail: projectConfig.hasDirectNetworkRuntime
+        ? "Network Kit HTTPS"
+        : "Network Kit 客户端缺失"
+    },
+    {
+      name: "设备令牌安全存储",
+      ok: projectConfig.hasSecureTokenStore,
+      detail: projectConfig.hasSecureTokenStore
+        ? "Asset Store Kit"
+        : "安全存储缺失"
     },
     {
       name: "内置宠物运行时",

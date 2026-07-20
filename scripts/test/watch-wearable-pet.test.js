@@ -33,6 +33,22 @@ const modulePath = new URL(
   "entry/src/main/module.json5",
   wearableRoot
 );
+const networkClientPath = new URL(
+  "entry/src/main/ets/network/WatchBuddyApi.ets",
+  wearableRoot
+);
+const secureTokenStorePath = new URL(
+  "entry/src/main/ets/storage/SecureTokenStore.ets",
+  wearableRoot
+);
+const preferencesPath = new URL(
+  "entry/src/main/ets/storage/WatchBuddyPreferences.ets",
+  wearableRoot
+);
+const sessionPath = new URL(
+  "entry/src/main/ets/runtime/WatchBuddySession.ets",
+  wearableRoot
+);
 
 const EXPECTED_FRAMES = {
   failed: 8,
@@ -131,4 +147,33 @@ test("466 圆屏主页渲染动态宠物且不包含 Wear Engine", () => {
     true
   );
   assert.doesNotMatch(page, /WearEngine|wear-engine|peer-config/);
+});
+
+
+test("ArkTS 使用 Network Kit 直连且限制响应、超时和 HTTPS", () => {
+  const networkClient = readFileSync(networkClientPath, "utf8");
+  const session = readFileSync(sessionPath, "utf8");
+  assert.match(networkClient, /from '@kit\.NetworkKit'/);
+  assert.match(networkClient, /http\.createHttp\(\)/);
+  assert.match(networkClient, /MAX_RESPONSE_BYTES: number = 7 \* 1024/);
+  assert.match(networkClient, /REQUEST_TIMEOUT_MS: number = 8000/);
+  assert.match(networkClient, /baseUrl\.startsWith\('https:\/\/'\)/);
+  assert.doesNotMatch(networkClient, /@system\.fetch|WearEngine/);
+  assert.match(session, /new WatchBuddyApi\(WATCHBUDDY_API_BASE_URL\)/);
+  assert.doesNotMatch(session, /console\.(log|error).*deviceToken/);
+});
+
+
+test("设备令牌只进入 Asset Store Kit，Preferences 不保存令牌", () => {
+  const secretStore = readFileSync(secureTokenStorePath, "utf8");
+  const localPreferences = readFileSync(preferencesPath, "utf8");
+  assert.match(secretStore, /from '@kit\.AssetStoreKit'/);
+  assert.match(secretStore, /asset\.Tag\.SECRET/);
+  assert.match(
+    secretStore,
+    /asset\.Accessibility\.DEVICE_FIRST_UNLOCKED/
+  );
+  assert.match(secretStore, /asset\.SyncType\.NEVER/);
+  assert.doesNotMatch(secretStore, /@kit\.ArkData|preferences/);
+  assert.doesNotMatch(localPreferences, /deviceToken|device_token|TOKEN/);
 });

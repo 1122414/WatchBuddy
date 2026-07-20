@@ -1,3 +1,4 @@
+import { common } from '@kit.AbilityKit';
 import { vibrator } from '@kit.SensorServiceKit';
 import {
   advancePetPlayback,
@@ -9,6 +10,10 @@ import {
   petInteractionAnimation,
   petSteadyAnimationForState
 } from '../pet/PetRuntime';
+import {
+  SessionSyncResult,
+  WatchBuddySession
+} from '../runtime/WatchBuddySession';
 
 @Entry
 @Component
@@ -23,9 +28,15 @@ struct Index {
   private lastPetTapAt: number = 0;
   private actionActive: boolean = false;
   private demoStateIndex: number = 0;
+  private session: WatchBuddySession | null = null;
+  private syncing: boolean = false;
 
   aboutToAppear(): void {
     this.startAnimation(petSteadyAnimationForState(this.companionState), false);
+    const context: common.UIAbilityContext =
+      this.getUIContext().getHostContext() as common.UIAbilityContext;
+    this.session = new WatchBuddySession(context);
+    this.restoreSession();
   }
 
   aboutToDisappear(): void {
@@ -127,6 +138,93 @@ struct Index {
     this.startAnimation(entryAnimation, entryAnimation !== steadyAnimation);
   }
 
+  private async restoreSession(): Promise<void> {
+    if (this.session === null) {
+      return;
+    }
+    try {
+      const restoredState: string = await this.session.restore();
+      this.applyCompanionState(restoredState);
+      this.petHint = this.session.isConfigured()
+        ? '点同步连接服务'
+        : '待配置 HTTPS 服务';
+    } catch (error) {
+      this.petHint = '本地状态恢复失败';
+    }
+  }
+
+  private async syncNow(): Promise<void> {
+    if (this.session === null || this.syncing) {
+      return;
+    }
+    this.syncing = true;
+    this.petHint = '正在连接服务';
+    this.startAnimation(petInteractionAnimation('loading'), true);
+    try {
+      const result: SessionSyncResult = await this.session.sync();
+      this.applyCompanionState(result.characterState);
+      this.petHint = '服务在线';
+      const entryAnimation: string =
+        petAnimationForState(result.characterState);
+      const steadyAnimation: string =
+        petSteadyAnimationForState(result.characterState);
+      this.startAnimation(entryAnimation, entryAnimation !== steadyAnimation);
+    } catch (error) {
+      this.companionState = 'offline';
+      this.stateLabel = '离线陪伴';
+      this.petHint = this.connectionFailureLabel(error);
+      this.startAnimation(petInteractionAnimation('failure'), true);
+    } finally {
+      this.syncing = false;
+    }
+  }
+
+  private applyCompanionState(state: string): void {
+    this.companionState = state;
+    switch (state) {
+      case 'sleeping':
+        this.stateLabel = '睡眠中';
+        break;
+      case 'daydreaming':
+        this.stateLabel = '安静等待';
+        break;
+      case 'watching':
+        this.stateLabel = '认真观察';
+        break;
+      case 'curious':
+        this.stateLabel = '好奇';
+        break;
+      case 'concerned':
+        this.stateLabel = '关心你';
+        break;
+      case 'chatting':
+        this.stateLabel = '回复反馈';
+        break;
+      case 'giving_space':
+        this.stateLabel = '给你空间';
+        break;
+      default:
+        this.stateLabel = '空闲陪伴';
+        break;
+    }
+  }
+
+  private connectionFailureLabel(error: Object): string {
+    if (error instanceof Error) {
+      if (error.message === 'service_not_configured') {
+        return '待配置 HTTPS 服务';
+      }
+      if (error.message === 'http_401') {
+        return '身份已失效 · 请重试';
+      }
+      if (error.message === 'secure_store_unavailable'
+        || error.message === 'secure_store_verify_failed') {
+        return '安全存储不可用';
+      }
+    }
+    return '服务离线 · 芽芽仍可互动';
+  }
+
   build() {
     Stack() {
       Column() {
@@ -173,17 +271,30 @@ struct Index {
           .fontColor('#7BF2BF')
           .height(24)
 
-        Button('切换陪伴状态')
-          .type(ButtonType.Capsule)
-          .fontSize(15)
-          .fontColor('#F4F7FB')
-          .backgroundColor('#25344A')
-          .height(42)
-          .width(174)
-          .margin({ top: 4 })
-          .onClick(() => {
-            this.cycleDemoState();
-          })
+        Row({ space: 8 }) {
+          Button('同步')
+            .type(ButtonType.Capsule)
+            .fontSize(15)
+            .fontColor('#0C1018')
+            .backgroundColor('#7BF2BF')
+            .height(42)
+            .width(126)
+            .onClick(() => {
+              this.syncNow();
+            })
+
+          Button('状态演示')
+            .type(ButtonType.Capsule)
+            .fontSize(15)
+            .fontColor('#F4F7FB')
+            .backgroundColor('#25344A')
+            .height(42)
+            .width(126)
+            .onClick(() => {
+              this.cycleDemoState();
+            })
+        }
+        .margin({ top: 4 })
       }
       .alignItems(HorizontalAlign.Center)
       .width('100%')

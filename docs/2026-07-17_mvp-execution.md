@@ -114,7 +114,7 @@ WatchBuddy API
 ### 阶段 2：表端 HTTPS 改造
 
 - [x] 删除表端对 Wear Engine、手机包名和证书指纹的运行时依赖；
-- [x] 新建表端网络客户端与 API 数据映射；
+- [x] 新建 Network Kit 表端网络客户端与 API 数据映射；
 - [x] 将“手机已连接”替换为“在线、连接中、离线、重试中”；
 - [x] 快捷回复直接提交服务端；
 - [x] 缓存最近角色状态、未提交回复和最小会话摘要；
@@ -125,9 +125,15 @@ WatchBuddy API
 
 旧 Lite Wearable JS 源码和 Node.js 契约测试已完成，但它不是 GT 6 Pro 的正确交付工程。
 `apps/watch-huawei-wearable` 已按智能穿戴 ArkTS Stage 模型建立并成功生成 HAP；内置宠物渲染与
-互动已经迁移，网络、存储和受控宠物安装仍需迁移到新工程。此前 `00303168` 是命令行把
+互动、设备注册、状态同步和安全令牌存储已经迁移，受控宠物安装仍需迁移到新工程。此前
+`00303168` 是命令行把
 `DEVECO_SDK_HOME` 错指向
 `Contents/sdk/default` 导致；改为 `Contents/sdk` 后构建成功。
+
+ArkTS 网络请求固定使用 HTTPS、8 秒连接/读取超时和 7KiB 响应上限。设备令牌只写入
+Asset Store Kit，Preferences 仅保存非敏感设备 ID、注册幂等键和最近角色状态；安全存储不可用时
+不会降级成明文令牌。当前 `ApiConfig.ets` 仍为空，需有可访问的生产/测试 HTTPS 地址后才能做
+GT 6 Pro 真实注册与状态同步。
 
 ### 阶段 2A：应用内宠物资源闭环
 
@@ -266,8 +272,8 @@ WatchBuddy API
   `DEVECO_SDK_HOME` 必须指向 `Contents/sdk`，不能指向 `Contents/sdk/default`；
 - `npm run doctor:watch` 已完整通过，`npm run build:watch` 已成功生成包含 73 个芽芽帧的智能穿戴
   unsigned HAP；
-- 旧 JS 表端已接入注册、状态、快捷回复、记忆和受控宠物安装，且不再导入 Wear Engine；这些能力
-  正在迁移到 ArkTS，公网 HTTPS 和真机联网仍未验证；
+- 新 ArkTS 表端已接入 Network Kit 注册和角色状态同步，令牌使用 Asset Store Kit；快捷回复、记忆
+  与受控宠物安装仍待迁移，公网 HTTPS 和真机联网仍未验证；
 - Android APK 已构建安装，但不再属于目标架构；
 - Android APPID `118346425` 的 Wear Engine 申请已被驳回，审核意见建议手表直接联网同步服务端；
 - 当前 Codex Pet v2 是 8 × 11 图集并包含 16 个注视方向；8 × 9 只作为旧版兼容输入，不作为新资源标准；
