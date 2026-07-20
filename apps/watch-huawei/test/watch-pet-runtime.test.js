@@ -87,7 +87,7 @@ test('HAP 内置 73 帧且与受控手表包逐文件一致', async () => {
     await readFile(APP_PET_MANIFEST, 'utf8')
   );
   assert.equal(manifest.assets.length, 73);
-  assert.equal(manifest.budget.totalBytes, 1_237_298);
+  assert.equal(manifest.budget.totalBytes, 237_839);
 
   for (const asset of manifest.assets) {
     const relativeFrame = asset.path.replace(/^frames\//, '');

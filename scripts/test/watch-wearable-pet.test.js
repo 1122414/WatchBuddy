@@ -93,7 +93,7 @@ function pngDimensions(filePath) {
 }
 
 
-test("智能穿戴内置宠物包含全部 73 张透明标准帧", () => {
+test("智能穿戴内置宠物包含全部 73 张透明轻量帧", () => {
   let total = 0;
   for (const [state, expectedCount] of Object.entries(EXPECTED_FRAMES)) {
     const files = readdirSync(new URL(`${state}/`, petRoot))
@@ -115,10 +115,10 @@ test("智能穿戴内置宠物包含全部 73 张透明标准帧", () => {
       );
       const dimensions = pngDimensions(wearableFramePath);
       assert.deepEqual(dimensions, {
-        width: 128,
-        height: 139,
+        width: 96,
+        height: 104,
         bitDepth: 8,
-        colorType: 6
+        colorType: 3
       });
       assert.deepEqual(
         readFileSync(wearableFramePath),

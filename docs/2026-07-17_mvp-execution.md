@@ -129,7 +129,8 @@ WatchBuddy API
 
 华为官方 Lite Wearable 指南明确把 WATCH GT 6 列为 466 × 466、支持 API 20 的轻量级穿戴设备；
 该设备不能直接连接 DevEco Studio，必须手工签名并借助已配对手机上的华为运动健康和应用调测助手
-安装。当前一加 13T 的应用调测助手已经识别 GT 6 Pro，因此 `apps/watch-huawei` 是正确交付工程；
+安装。此前一加 13T 的应用调测助手已经识别 GT 6 Pro，并成功安装 API 17 最小探针，
+因此 `apps/watch-huawei` 是正确交付工程；
 `apps/watch-huawei-wearable` 只保留为已完成的 ArkTS 迁移实验，不作为 GT 6 Pro 安装包。
 
 Lite Wearable 主工程已实现内置宠物、`@system.fetch` 注册和状态同步、纯 JavaScript SHA-256、
@@ -228,10 +229,13 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
 
 - [x] 创建 HarmonyOS 手表应用标识，包名为 `com.watchbuddy.watch`；
 - [x] 配置调试证书、设备绑定 debug Profile 和本机手工签名，敏感材料未提交 Git；
-- [x] 构建 `WatchBuddy-0.1.0-debug-signed.hap`：6720326 字节，SHA-256
-  `dc1c175e2a62eb3654043569c415a983ef9f37a8d6c9721f8c4e63c9ea5afd52`；
+- [x] 构建历史完整包 `WatchBuddy-0.1.0-debug-signed.hap`：6720326 字节；
 - [x] 在一加 13T 安装华为运动健康和应用调测助手、配对 GT 6 Pro，并在 Lite Wearable 页面识别设备；
-- [ ] 由用户在应用调测助手的 Lite Wearable 应用管理中选择 HAP，安装到 GT 6 Pro；
+- [x] 安装 112 KiB、API 17、无权限和过滤器的最小探针，应用调测助手明确返回“安装成功”；
+- [x] 将 73 帧内置宠物压缩为 96 × 104 的 256 色透明 PNG，并生成
+  `WatchBuddy-0.1.1-debug-signed.hap`：3539448 字节，SHA-256
+  `8e14d2fbd2335603727813e66a664e9c686c53961d2c159fc08d5ec3459816f9`；
+- [ ] 用户更换手机并明确允许后，再复制 0.1.1 HAP；由用户在应用调测助手中安装到 GT 6 Pro；
 - [ ] 不启动 WatchBuddy 手机应用时完成注册、对话、回复、记忆与删除；
 - [ ] 断开手机蓝牙后重复网络测试并记录 GT 6 Pro 实际网络边界；
 - [ ] 验证断网、服务端错误、令牌失效、重复点击和应用重启；
@@ -293,25 +297,27 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
 ## 8. 当前已知事实
 
 - 华为《轻量级智能穿戴应用开发》明确覆盖 WATCH GT 系列，并列出 WATCH GT 6、466 × 466、
-  支持 API 20；GT 6 Pro 主路线必须是 Lite Wearable，而不是 ArkTS `wearable`；
+  支持 API 20；但应用调测助手对 API 20 完整包返回错误 40，API 17 最小探针已实际安装成功，
+  因此当前安装诊断基线使用 API 17，GT 6 Pro 主路线仍是 Lite Wearable；
 - 主工程为 `apps/watch-huawei`，设备类型 `liteWearable`、JavaScript FA 模型、包名
-  `com.watchbuddy.watch`、圆屏 `466*466`、target/compatible `6.0.0(20)`；
+  `com.watchbuddy.watch`、页面按 466 × 466 圆屏设计、target/compatible `5.0.5(17)`；
+  当前 0.1.1 诊断包不声明 `distroFilter` 或 `ohos.permission.INTERNET`；
 - 当前电脑已验证 DevEco Studio 6.0.2、OHPM、Hvigor、Java、Node.js 和预集成 SDK；
   `DEVECO_SDK_HOME` 使用 `Contents/sdk`；
-- `npm run doctor:watch` 已切回 Lite Wearable 并检查 FA 模型、466 × 466、HTTPS、73 帧芽芽、
-  受控安装、回复、安静模式和记忆控制；
-- `npm run build:watch` 已成功生成 6538689 字节的 `entry-default-unsigned.hap`，SHA-256 为
-  `5b126c15d2673eedbf029b615c6ddcefebddbff6c0af7b9e69ae639571b24622`；
-- Lite Wearable 表端使用 `@system.fetch`，公网 HTTPS 和真机联网仍未验证；
+- `npm run doctor:watch` 已检查 Lite Wearable FA、API 17、无过滤器/网络权限、73 帧芽芽、
+  独立运行、受控安装、回复、安静模式和记忆控制；
+- 历史 API 20 完整包为 6.72 MB；API 17 最小探针安装成功后，0.1.1 将 73 帧资源降为
+  96 × 104，并把签名 HAP 降至 3539448 字节；
+- Lite Wearable 表端源码保留 `@system.fetch`，但当前 0.1.1 HAP 未声明网络权限，只能进行
+  离线安装与宠物交互验收；公网 HTTPS 必须在单独恢复权限后验证；
 - Lite Wearable 不能直接连接 DevEco Studio，也不能自动签名；需通过已配对手机上的华为运动健康
-  和应用调测助手安装 HAP；当前一加 13T 已在 Lite Wearable 页面识别出目标 GT 6 Pro；
-- 2026-07-20 电脑 USB 只识别到一加 13T，`hdc list targets -v` 无目标；手机蓝牙配对手表不能把
-  GT 6 Pro 转成 HDC 目标，但不影响应用调测助手作为安装桥接；
+  和应用调测助手安装 HAP；旧手机已完成最小探针验证，用户正在更换手机，当前禁止复制或安装；
+- 手机蓝牙配对手表不能把 GT 6 Pro 转成 HDC 目标，但不影响应用调测助手作为安装桥接；
 - AGC 应用标识、调试证书和绑定目标设备的 debug Profile 已创建；本机私钥、证书、Profile 与口令
   均保存在仓库外，口令由 macOS 钥匙串管理；
 - `npm run build:watch:signed` 已校验 Lite BIN 签名头、Profile 数字签名、包名、证书、调试设备绑定
-  与 HAP 内嵌 BIN 一致性，并生成 6720326 字节的签名 HAP，SHA-256 为
-  `dc1c175e2a62eb3654043569c415a983ef9f37a8d6c9721f8c4e63c9ea5afd52`；
+  与 HAP 内嵌 BIN 一致性，并生成 3539448 字节的 0.1.1 签名 HAP，SHA-256 为
+  `8e14d2fbd2335603727813e66a664e9c686c53961d2c159fc08d5ec3459816f9`；
 - GT 6 Pro 官方规格的数据连接只列 NFC、Bluetooth 和 GNSS，没有列 Wi‑Fi、蜂窝或 eSIM；
   因此手机断开后的 HTTPS 缺少可识别的独立网络承载，严格独立在线目标大概率受硬件限制；
 - ArkTS `apps/watch-huawei-wearable` 已构建过 unsigned HAP 并迁移过部分能力，但只保留为实验原型；
@@ -320,7 +326,7 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
 - 当前 Codex Pet v2 是 8 × 11 图集并包含 16 个注视方向；8 × 9 只作为旧版兼容输入，不作为新资源标准；
 - 本机已有的 `chibi-skadi` 是 1536 × 1872 的旧资源且缺少 v2 标记，不能直接用于默认宠物交付；
 - 原创默认宠物 Sprout（芽芽）已完成 hatch-pet v2 图集、三人方向盲测、最终视觉 QA、授权说明与
-  手表资源转换；受控同步使用 73 帧、325871 字节的 256 色透明 PNG 轻量包；
+  手表资源转换；受控同步使用 73 帧、96 × 104、237839 字节的 256 色透明 PNG 轻量包；
 - Lite Wearable 与 ArkTS 原型均已用 Sprout PNG 逐帧渲染替换占位角色；主路线的状态、轻点、防抖、
   动作回落和页面销毁生命周期已通过 Node.js 契约测试，仍需 DevEco 构建与 GT 6 Pro 真机验证；
 - 466 × 466 浏览器预览已验证透明背景、176 × 176 触摸区和消息/回复区无重叠，但不能替代 HAP
@@ -339,7 +345,8 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
   并校验同源重定向、响应/解压预算、ZIP 路径、文件集合、v2 清单及完整 PNG/WebP 图集；站点分享页
   不能单独作为许可证证据；2026-07-20 复核的站点通用条款禁止再分发，尚待获得一只页面单独开放
   许可或权利人书面授权的站点 v2 宠物后加入目录；
-- Lite Wearable signed HAP 已构建并完成静态签名链路校验；应用调测助手安装、HTTPS、后台、语音
+- Lite Wearable 最小探针已通过应用调测助手安装；包含完整业务代码和 73 帧宠物的 0.1.1 HAP
+  已构建并完成静态签名链路校验，但尚未复制到用户的新手机。完整包安装、HTTPS、后台、语音
   与传感器仍需直接证据。ArkTS 原型构建记录保留，但不能用于 GT 6 Pro 交付。
 
 ## 9. 宠物资源设计决策

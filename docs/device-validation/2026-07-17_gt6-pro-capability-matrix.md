@@ -11,17 +11,17 @@
 | 项目 | 当前证据 | 结论 |
 |---|---|---|
 | 目标设备 | 用户持有 HUAWEI WATCH GT 6 Pro | 继续作为真机目标 |
-| 官方开发分类 | 华为《轻量级智能穿戴应用开发》列出 WATCH GT 系列，并在适配表中列出 WATCH GT 6、466 × 466、支持 API 20 | GT 6 Pro 使用 Lite Wearable 路线，不使用 ArkTS `wearable` 路线 |
+| 官方开发分类 | 华为指南列出 WATCH GT 6、466 × 466、支持 API 20；应用调测助手对 API 20 完整包返回错误 40，而 API 17 最小探针安装成功 | GT 6 Pro 使用 Lite Wearable 路线；当前安装诊断基线为 API 17 |
 | 主工程 | `apps/watch-huawei` | Lite Wearable JavaScript FA 主路径 |
 | 实验工程 | `apps/watch-huawei-wearable` | 保留 ArkTS 迁移原型，不作为 GT 6 Pro 安装包，不删除 |
 | 包名 | `com.watchbuddy.watch` | 保持不变 |
 | 设备类型 | `deviceType: ["liteWearable"]` | 与官方设备分类一致 |
-| 屏幕 | `circle`、`466*466` | 与官方 WATCH GT 6 适配表一致 |
-| 网络 API | `ohos.permission.INTERNET` + `@system.fetch` | 源码和 SDK 支持 HTTPS，实际网络承载仍需真机验证 |
+| 屏幕 | 页面按 466 × 466 圆屏设计；0.1.1 不声明 `distroFilter` | 保留圆屏 UI，避免调测助手错误 40 |
+| 网络 API | 源码保留 `@system.fetch`；0.1.1 不声明 `ohos.permission.INTERNET` | 当前 HAP 只验收离线安装和宠物，联网权限后续单独验证 |
 | 手机业务依赖 | 主工程无 Wear Engine、手机 peer 或 WatchBuddy 手机 App | 符合“没有 WatchBuddy 手机配套 App”边界 |
-| 本机构建 | `npm run build:watch:signed` 生成 6720326 字节签名 HAP，SHA-256 `dc1c175e…5afd52` | Lite Wearable 编译、手工签名和静态校验通过，待安装 |
+| 本机构建 | `npm run build:watch:signed` 生成 3539448 字节的 0.1.1 签名 HAP，SHA-256 `8e14d2fb…59816f9` | Lite Wearable 编译、手工签名和静态校验通过，待完整包安装 |
 
-## 当前连接与安装通道
+## 最近验证的连接与安装通道
 
 | 检查项 | 2026-07-20 结果 | 判定 |
 |---|---|---|
@@ -29,7 +29,8 @@
 | HDC 目标 | `hdc list targets -v` 无输出 | DevEco 当前没有可直接调试的手机或手表目标 |
 | 手机—手表 | 用户确认一加 13T 通过蓝牙连接 GT 6 Pro | 对日常配对有用，但不能把手表转发成 HDC 目标 |
 | Lite Wearable 调测 | Lite Wearable 不能直接连接 DevEco Studio；需手工签名，并由已配对手机上的华为运动健康和应用调测助手安装 HAP | 无线调试或 USB/HDC 不是 GT 6 Pro 的安装路线 |
-| 当前手机兼容性 | 一加 13T 的应用调测助手已在 Lite Wearable 页面识别 GT 6 Pro，并成功取得用于 AGC 注册的设备标识 | 当前手机可承担开发安装桥接，尚待实际安装 HAP |
+| 旧手机兼容性 | 一加 13T 的应用调测助手识别 GT 6 Pro，并成功安装 API 17 最小探针 | 非华为手机可承担该安装桥接 |
+| 当前手机状态 | 用户正在更换手机，并明确要求暂不向手机安装或复制任何内容 | 等用户明确允许后再检查新手机 |
 
 应用调测助手和运动健康只是华为规定的开发安装工具，不是 WatchBuddy 手机端。不过，如果运行期
 HTTPS 也必须依靠已配对手机提供系统网络，这仍然不满足“手机关机后在线”的严格独立联网定义。
@@ -46,8 +47,9 @@ eSIM。基于该规格，手机断开后的任意 HTTPS 目前没有可识别的
 | 配对状态下 HTTPS | 保持手机配对，手表调用公网 `GET /health` | 待安装和公网端点 | 记录网络是否经系统配对链路 |
 | 手机断开后 HTTPS | 关闭手机蓝牙或手机关机后再次调用 `GET /health` | 高风险，官方规格无独立网络承载 | 失败即明确标记 GT 6 Pro 不满足严格在线独立性，不引入手机 App |
 | 无 WatchBuddy 手机 App | 不安装或启动 Android/iOS WatchBuddy | 主工程已满足，待真机流程确认 | 不回退到 Wear Engine |
-| 调试签名 | AGC debug Profile 绑定 `com.watchbuddy.watch`、开发证书和目标 GT 6 Pro；签名 HAP 已生成 | 已完成，敏感材料均在仓库外 | 不提交证书、私钥、Profile 或口令 |
-| HAP 安装 | 应用调测助手“Lite Wearable > 应用管理”选择 `WatchBuddy-0.1.0-debug-signed.hap` | 待用户本人操作手机 | 安装前明确告知用户，Codex 不操作手机 |
+| 调试签名 | AGC debug Profile 绑定 `com.watchbuddy.watch`、开发证书和目标 GT 6 Pro；0.1.1 签名 HAP 已生成 | 已完成，敏感材料均在仓库外 | 不提交证书、私钥、Profile 或口令 |
+| 最小探针安装 | 应用调测助手安装 112 KiB、API 17、无权限和过滤器的探针 | 安装成功 | 证明签名、Profile、设备注册和安装桥接有效 |
+| 完整 HAP 安装 | 应用调测助手选择 `WatchBuddy-0.1.1-debug-signed.hap` | 尚未复制到新手机 | 用户明确允许后再操作，先验收离线宠物 |
 
 ## MVP 功能验收
 

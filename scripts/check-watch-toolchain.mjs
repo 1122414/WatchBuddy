@@ -386,9 +386,9 @@ export function inspectWatchToolchain() {
       detail: projectConfig.deviceTypes.join(", ")
     },
     {
-      name: "HarmonyOS 目标版本",
-      ok: projectConfig.targetSdkVersion === "6.0.0(20)"
-        && projectConfig.compatibleSdkVersion === "6.0.0(20)"
+      name: "已验证安装基线",
+      ok: projectConfig.targetSdkVersion === "5.0.5(17)"
+        && projectConfig.compatibleSdkVersion === "5.0.5(17)"
         && projectConfig.runtimeOS === "HarmonyOS",
       detail: `${projectConfig.targetSdkVersion}（兼容 ${projectConfig.compatibleSdkVersion}）`
     },
@@ -398,11 +398,11 @@ export function inspectWatchToolchain() {
       detail: projectConfig.isFaMode ? "faMode" : "配置错误"
     },
     {
-      name: "GT 6 圆屏",
-      ok: projectConfig.hasCircleScreen && projectConfig.hasWatchResolution,
-      detail: projectConfig.hasCircleScreen && projectConfig.hasWatchResolution
-        ? "circle / 466*466"
-        : "配置错误"
+      name: "GT 6 安装兼容过滤器",
+      ok: !projectConfig.hasCircleScreen && !projectConfig.hasWatchResolution,
+      detail: !projectConfig.hasCircleScreen && !projectConfig.hasWatchResolution
+        ? "未声明（避免调测助手错误 40）"
+        : "诊断基线不应声明 distroFilter"
     },
     {
       name: "Lite Wearable 表端入口",
@@ -426,11 +426,11 @@ export function inspectWatchToolchain() {
         : "无 Wear Engine/手机 peer"
     },
     {
-      name: "网络权限",
-      ok: projectConfig.hasInternetPermission,
+      name: "离线安装权限基线",
+      ok: !projectConfig.hasInternetPermission,
       detail: projectConfig.hasInternetPermission
-        ? "ohos.permission.INTERNET"
-        : "未声明"
+        ? "诊断基线不应声明 ohos.permission.INTERNET"
+        : "未声明（网络源码保留，当前包离线）"
     },
     {
       name: "手表直连网络",

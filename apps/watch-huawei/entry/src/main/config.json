@@ -3,8 +3,8 @@
     "bundleName": "com.watchbuddy.watch",
     "vendor": "WatchBuddy",
     "version": {
-      "code": 1000000,
-      "name": "0.1.0"
+      "code": 1000001,
+      "name": "0.1.1"
     }
   },
   "deviceConfig": {},
@@ -17,25 +17,6 @@
       "moduleName": "entry",
       "moduleType": "entry"
     },
-    "distroFilter": {
-      "screenShape": {
-        "policy": "include",
-        "value": [
-          "circle"
-        ]
-      },
-      "screenWindow": {
-        "policy": "include",
-        "value": [
-          "466*466"
-        ]
-      }
-    },
-    "reqPermissions": [
-      {
-        "name": "ohos.permission.INTERNET"
-      }
-    ],
     "abilities": [
       {
         "name": ".MainAbility",

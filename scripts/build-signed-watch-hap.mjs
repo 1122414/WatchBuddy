@@ -39,8 +39,12 @@ const signingMaterial = {
 const keychainService = "WatchBuddy HarmonyOS Signing";
 const keychainAccount = "watchbuddy";
 const expectedBundleName = "com.watchbuddy.watch";
+const appVersion = JSON.parse(readFileSync(
+  join(watchProjectRoot, "entry", "src", "main", "config.json"),
+  "utf8"
+)).app.version.name;
 const outputPath = process.env.WATCHBUDDY_SIGNED_OUTPUT
-  || join(homedir(), "Downloads", "WatchBuddy-0.1.0-debug-signed.hap");
+  || join(homedir(), "Downloads", `WatchBuddy-${appVersion}-debug-signed.hap`);
 
 function findFiles(directory, predicate) {
   if (!existsSync(directory)) {

@@ -18,7 +18,7 @@ test("默认目录只公开经过校验的 Sprout 宠物", () => {
   assert.equal(pets[0].id, "watchbuddy-sprout");
   assert.match(pets[0].version, /^sha256-[a-f0-9]{16}$/);
   assert.match(pets[0].manifestSha256, /^[a-f0-9]{64}$/);
-  assert.equal(pets[0].budget.totalBytes, 325_871);
+  assert.equal(pets[0].budget.totalBytes, 237_839);
   assert.equal(pets[0].assetCount, 73);
   assert.equal(pets[0].preview.assetId, "idle-0");
 });
