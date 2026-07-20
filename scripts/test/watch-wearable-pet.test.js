@@ -260,3 +260,49 @@ test("圆屏宠物库恢复已安装宠物并保留内置宠物降级", () => {
   assert.match(runtime, /file:\/\/\$\{this\.directory\}/);
   assert.match(runtime, /createDownloadedPetRuntime/);
 });
+
+
+test("ArkTS 陪伴状态严格校验消息、动作、安静模式和过期时间", () => {
+  const apiModels = readFileSync(apiModelsPath, "utf8");
+  assert.match(apiModels, /payload\.type !== 'COMPANION_NUDGE'/);
+  assert.match(apiModels, /payload\.expiresAt <= serverTime/);
+  assert.match(apiModels, /payload\.actions\.length < 2/);
+  assert.match(apiModels, /actionIds\.includes\(action\.id\)/);
+  assert.match(apiModels, /typeof payload\.settings\.quietMode !== 'boolean'/);
+  assert.match(apiModels, /parseMemoryPagePayload/);
+});
+
+
+test("ArkTS 快捷回复先持久化幂等请求并执行最多三次有界重试", () => {
+  const networkClient = readFileSync(networkClientPath, "utf8");
+  const session = readFileSync(sessionPath, "utf8");
+  const localPreferences = readFileSync(preferencesPath, "utf8");
+  assert.match(networkClient, /'\/v1\/companion\/reply'/);
+  assert.match(networkClient, /'Idempotency-Key'/);
+  assert.match(session, /MAX_REPLY_ATTEMPTS: number = 3/);
+  assert.match(session, /REPLY_RETRY_BASE_MS: number = 400/);
+  assert.ok(
+    session.indexOf("savePendingQuickReply(pending)")
+      < session.indexOf("deliverPendingQuickReply(pending, true)")
+  );
+  assert.match(session, /loadPendingQuickReply\(\)/);
+  assert.match(session, /Math\.pow\(2, pending\.attempts - 1\)/);
+  assert.match(localPreferences, /PENDING_REPLY_KEY/);
+  assert.doesNotMatch(localPreferences, /deviceToken|device_token|TOKEN/);
+});
+
+
+test("ArkTS 圆屏支持直接快捷回复、安静模式和记忆删除确认", () => {
+  const page = readFileSync(pagePath, "utf8");
+  const networkClient = readFileSync(networkClientPath, "utf8");
+  assert.match(page, /await this\.session\.replyToNudge\(/);
+  assert.match(page, /回复会直接从手表发送/);
+  assert.match(page, /await this\.session\.setQuietMode/);
+  assert.match(page, /await this\.session\.memories\(3, 0\)/);
+  assert.match(page, /await this\.session\.deleteMemory\(memoryId\)/);
+  assert.match(page, /再次点按以清空全部记忆/);
+  assert.match(page, /await this\.session\.clearMemories\(\)/);
+  assert.match(networkClient, /'\/v1\/settings'/);
+  assert.match(networkClient, /`\/v1\/memories\/\$\{memoryId\}`/);
+  assert.match(networkClient, /http\.RequestMethod\.DELETE/);
+});

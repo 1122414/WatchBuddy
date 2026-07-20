@@ -25,6 +25,60 @@ interface CompanionStatePayload {
   characterState: string;
   serverTime: number;
   nextCheckAt: number;
+  settings: SettingsPayload;
+  nudge: CompanionNudgePayload | null;
+}
+
+interface SettingsPayload {
+  quietMode: boolean;
+}
+
+interface NudgeActionPayload {
+  id: string;
+  label: string;
+}
+
+interface CompanionNudgePayload {
+  schemaVersion: number;
+  type: string;
+  nudgeId: string;
+  source: string;
+  intensity: number;
+  characterState: string;
+  message: string;
+  actions: Array<NudgeActionPayload>;
+  createdAt: number;
+  expiresAt: number;
+}
+
+interface ReplyPayload {
+  accepted: boolean;
+  characterState: string;
+  nextCheckAt: number;
+  reply: Object;
+}
+
+interface MemoryPayload {
+  id: string;
+  type: string;
+  summary: string;
+  sensitivity: string;
+  updatedAt: number;
+}
+
+interface MemoryPagePayload {
+  memories: Array<MemoryPayload>;
+  hasMore: boolean;
+  nextOffset: number;
+}
+
+interface DeleteMemoryPayload {
+  deleted: boolean;
+  memoryId: string;
+}
+
+interface ClearMemoriesPayload {
+  deleted: number;
 }
 
 interface PetAssetDescriptorPayload {
@@ -185,11 +239,109 @@ export class CompanionSnapshot {
   characterState: string;
   serverTime: number;
   nextCheckAt: number;
+  quietMode: boolean;
+  nudge: CompanionNudge | null;
 
-  constructor(characterState: string, serverTime: number, nextCheckAt: number) {
+  constructor(
+    characterState: string,
+    serverTime: number,
+    nextCheckAt: number,
+    quietMode: boolean,
+    nudge: CompanionNudge | null
+  ) {
     this.characterState = characterState;
     this.serverTime = serverTime;
     this.nextCheckAt = nextCheckAt;
+    this.quietMode = quietMode;
+    this.nudge = nudge;
+  }
+}
+
+export class NudgeAction {
+  id: string;
+  label: string;
+
+  constructor(id: string, label: string) {
+    this.id = id;
+    this.label = label;
+  }
+}
+
+export class CompanionNudge {
+  nudgeId: string;
+  message: string;
+  actions: Array<NudgeAction>;
+  createdAt: number;
+  expiresAt: number;
+
+  constructor(
+    nudgeId: string,
+    message: string,
+    actions: Array<NudgeAction>,
+    createdAt: number,
+    expiresAt: number
+  ) {
+    this.nudgeId = nudgeId;
+    this.message = message;
+    this.actions = actions;
+    this.createdAt = createdAt;
+    this.expiresAt = expiresAt;
+  }
+}
+
+export class SettingsResult {
+  quietMode: boolean;
+
+  constructor(quietMode: boolean) {
+    this.quietMode = quietMode;
+  }
+}
+
+export class ReplyResult {
+  characterState: string;
+  nextCheckAt: number;
+
+  constructor(characterState: string, nextCheckAt: number) {
+    this.characterState = characterState;
+    this.nextCheckAt = nextCheckAt;
+  }
+}
+
+export class MemoryItem {
+  id: string;
+  type: string;
+  summary: string;
+  sensitivity: string;
+  updatedAt: number;
+
+  constructor(
+    id: string,
+    type: string,
+    summary: string,
+    sensitivity: string,
+    updatedAt: number
+  ) {
+    this.id = id;
+    this.type = type;
+    this.summary = summary;
+    this.sensitivity = sensitivity;
+    this.updatedAt = updatedAt;
+  }
+}
+
+export class MemoryPage {
+  memories: Array<MemoryItem>;
+  hasMore: boolean;
+  nextOffset: number;
+
+  constructor(
+    memories: Array<MemoryItem>,
+    hasMore: boolean,
+    nextOffset: number
+  ) {
+    this.memories = memories;
+    this.hasMore = hasMore;
+    this.nextOffset = nextOffset;
   }
 }
 
@@ -560,14 +712,106 @@ export function parseCompanionStatePayload(value: string): CompanionSnapshot {
     || !isCharacterState(payload.characterState)
     || !Number.isSafeInteger(payload.serverTime)
     || !Number.isSafeInteger(payload.nextCheckAt)
-    || payload.nextCheckAt <= payload.serverTime) {
+    || payload.nextCheckAt <= payload.serverTime
+    || !payload.settings
+    || typeof payload.settings.quietMode !== 'boolean') {
     throw new Error('invalid_response');
   }
+  const nudge: CompanionNudge | null =
+    parseCompanionNudge(payload.nudge, payload.serverTime);
   return new CompanionSnapshot(
     payload.characterState,
     payload.serverTime,
-    payload.nextCheckAt
+    payload.nextCheckAt,
+    payload.settings.quietMode,
+    nudge
   );
+}
+
+export function parseSettingsPayload(value: string): SettingsResult {
+  const payload: SettingsPayload = JSON.parse(value) as SettingsPayload;
+  if (!payload
+    || Object.keys(payload).length !== 1
+    || typeof payload.quietMode !== 'boolean') {
+    throw new Error('invalid_response');
+  }
+  return new SettingsResult(payload.quietMode);
+}
+
+export function parseReplyPayload(value: string): ReplyResult {
+  const payload: ReplyPayload = JSON.parse(value) as ReplyPayload;
+  if (!payload
+    || payload.accepted !== true
+    || !isCharacterState(payload.characterState)
+    || !Number.isSafeInteger(payload.nextCheckAt)
+    || !payload.reply
+    || typeof payload.reply !== 'object') {
+    throw new Error('invalid_response');
+  }
+  return new ReplyResult(payload.characterState, payload.nextCheckAt);
+}
+
+export function parseMemoryPagePayload(
+  value: string,
+  expectedOffset: number
+): MemoryPage {
+  const payload: MemoryPagePayload =
+    JSON.parse(value) as MemoryPagePayload;
+  if (!payload
+    || !Array.isArray(payload.memories)
+    || payload.memories.length > 20
+    || typeof payload.hasMore !== 'boolean'
+    || !Number.isInteger(payload.nextOffset)
+    || payload.nextOffset !== expectedOffset + payload.memories.length
+    || (payload.hasMore && payload.memories.length === 0)) {
+    throw new Error('invalid_response');
+  }
+  const memories: Array<MemoryItem> = [];
+  const memoryIds: Array<string> = [];
+  for (let index: number = 0; index < payload.memories.length; index += 1) {
+    const candidate: MemoryPayload = payload.memories[index];
+    if (!isValidMemory(candidate) || memoryIds.includes(candidate.id)) {
+      throw new Error('invalid_response');
+    }
+    memoryIds.push(candidate.id);
+    memories.push(new MemoryItem(
+      candidate.id,
+      candidate.type,
+      candidate.summary,
+      candidate.sensitivity,
+      candidate.updatedAt
+    ));
+  }
+  return new MemoryPage(
+    memories,
+    payload.hasMore,
+    payload.nextOffset
+  );
+}
+
+export function parseDeleteMemoryPayload(
+  value: string,
+  expectedMemoryId: string
+): boolean {
+  const payload: DeleteMemoryPayload =
+    JSON.parse(value) as DeleteMemoryPayload;
+  if (!payload
+    || payload.deleted !== true
+    || payload.memoryId !== expectedMemoryId) {
+    throw new Error('invalid_response');
+  }
+  return true;
+}
+
+export function parseClearMemoriesPayload(value: string): number {
+  const payload: ClearMemoriesPayload =
+    JSON.parse(value) as ClearMemoriesPayload;
+  if (!payload
+    || !Number.isInteger(payload.deleted)
+    || payload.deleted < 0) {
+    throw new Error('invalid_response');
+  }
+  return payload.deleted;
 }
 
 export function parsePetCatalogPayload(value: string): PetCatalog {
@@ -982,6 +1226,88 @@ function isHttpsUrl(value: string): boolean {
     && value.length <= 512
     && /^https:\/\/[^/?#]+(?:[/?#]|$)/.test(value)
     && !value.includes('@');
+}
+
+function parseCompanionNudge(
+  payload: CompanionNudgePayload | null,
+  serverTime: number
+): CompanionNudge | null {
+  if (payload === null) {
+    return null;
+  }
+  if (!payload
+    || payload.schemaVersion !== 1
+    || payload.type !== 'COMPANION_NUDGE'
+    || typeof payload.nudgeId !== 'string'
+    || payload.nudgeId.length < 8
+    || payload.nudgeId.length > 64
+    || !isInitiativeSource(payload.source)
+    || !Number.isInteger(payload.intensity)
+    || payload.intensity < 0
+    || payload.intensity > 4
+    || !isCharacterState(payload.characterState)
+    || typeof payload.message !== 'string'
+    || payload.message.length < 1
+    || payload.message.length > 76
+    || !Number.isSafeInteger(payload.createdAt)
+    || !Number.isSafeInteger(payload.expiresAt)
+    || payload.createdAt > serverTime
+    || payload.expiresAt <= serverTime
+    || !Array.isArray(payload.actions)
+    || payload.actions.length < 2
+    || payload.actions.length > 4) {
+    throw new Error('invalid_response');
+  }
+  const actions: Array<NudgeAction> = [];
+  const actionIds: Array<string> = [];
+  for (let index: number = 0; index < payload.actions.length; index += 1) {
+    const action: NudgeActionPayload = payload.actions[index];
+    if (!action
+      || typeof action.id !== 'string'
+      || !/^[A-Za-z0-9_-]{1,24}$/.test(action.id)
+      || typeof action.label !== 'string'
+      || action.label.length < 1
+      || action.label.length > 24
+      || actionIds.includes(action.id)) {
+      throw new Error('invalid_response');
+    }
+    actionIds.push(action.id);
+    actions.push(new NudgeAction(action.id, action.label));
+  }
+  return new CompanionNudge(
+    payload.nudgeId,
+    payload.message,
+    actions,
+    payload.createdAt,
+    payload.expiresAt
+  );
+}
+
+function isInitiativeSource(value: string): boolean {
+  return value === 'daily_routine'
+    || value === 'random_social'
+    || value === 'relationship_follow_up'
+    || value === 'user_state'
+    || value === 'companion_internal';
+}
+
+function isValidMemory(payload: MemoryPayload): boolean {
+  return !!payload
+    && typeof payload.id === 'string'
+    && payload.id.length >= 8
+    && payload.id.length <= 128
+    && !payload.id.includes('/')
+    && (payload.type === 'event'
+      || payload.type === 'preference'
+      || payload.type === 'unfinished_topic'
+      || payload.type === 'ritual')
+    && typeof payload.summary === 'string'
+    && payload.summary.trim().length > 0
+    && payload.summary.length <= 128
+    && (payload.sensitivity === 'normal'
+      || payload.sensitivity === 'private'
+      || payload.sensitivity === 'sensitive')
+    && Number.isSafeInteger(payload.updatedAt);
 }
 
 function allValuesIncluded(

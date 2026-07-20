@@ -229,6 +229,15 @@ function readProjectConfig() {
       + "pet/PetIntegrity.ets",
     projectRoot
   ));
+  const pagePath = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/ets/pages/Index.ets",
+    projectRoot
+  ));
+  const sessionPath = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/ets/"
+      + "runtime/WatchBuddySession.ets",
+    projectRoot
+  ));
   const networkClientSource = existsSync(networkClientPath)
     ? readFileSync(networkClientPath, "utf8")
     : "";
@@ -243,6 +252,12 @@ function readProjectConfig() {
     : "";
   const petIntegritySource = existsSync(petIntegrityPath)
     ? readFileSync(petIntegrityPath, "utf8")
+    : "";
+  const pageSource = existsSync(pagePath)
+    ? readFileSync(pagePath, "utf8")
+    : "";
+  const sessionSource = existsSync(sessionPath)
+    ? readFileSync(sessionPath, "utf8")
     : "";
 
   return {
@@ -264,6 +279,12 @@ function readProjectConfig() {
       && petFilesSource.includes("renameSync")
       && petIntegritySource.includes("@kit.CryptoArchitectureKit")
       && petIntegritySource.includes("createMd('SHA256')"),
+    hasCompanionControls:
+      pageSource.includes("replyToNudge")
+      && pageSource.includes("toggleQuietMode")
+      && pageSource.includes("requestClearMemories")
+      && sessionSource.includes("MAX_REPLY_ATTEMPTS")
+      && sessionSource.includes("savePendingQuickReply"),
     hasDirectNetworkRuntime: networkClientSource.includes("@kit.NetworkKit")
       && networkClientSource.includes("http.createHttp()")
       && !networkClientSource.includes("@system.fetch"),
@@ -414,6 +435,13 @@ export function inspectWatchToolchain() {
       detail: projectConfig.hasControlledPetInstaller
         ? "分页下载 + SHA-256 + 原子切换 + 回滚"
         : "ArkTS 安装链路缺失"
+    },
+    {
+      name: "陪伴回复与记忆控制",
+      ok: projectConfig.hasCompanionControls,
+      detail: projectConfig.hasCompanionControls
+        ? "幂等回复 + 安静模式 + 记忆删除"
+        : "ArkTS 陪伴控制缺失"
     },
     {
       name: "宠物触感权限",

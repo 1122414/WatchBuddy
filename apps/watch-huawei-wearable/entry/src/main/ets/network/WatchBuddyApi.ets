@@ -9,18 +9,26 @@ import {
   isValidPetAssetId,
   isValidPetId,
   isValidPetVersion,
+  MemoryPage,
+  parseClearMemoriesPayload,
   parseCompanionStatePayload,
+  parseDeleteMemoryPayload,
   parseHealthPayload,
+  parseMemoryPagePayload,
   parsePetAssetPagePayload,
   parsePetAssetPayload,
   parsePetCatalogPayload,
   parsePetDetailPayload,
   parseRegistrationPayload,
+  parseReplyPayload,
+  parseSettingsPayload,
   PetAssetDescriptor,
   PetAssetDownload,
   PetAssetPage,
   PetCatalog,
-  PetDetail
+  PetDetail,
+  ReplyResult,
+  SettingsResult
 } from './ApiModels';
 
 const MAX_RESPONSE_BYTES: number = 7 * 1024;
@@ -37,6 +45,19 @@ interface RegistrationBody {
   deviceId: string;
   locale: string;
   timezoneOffsetMinutes: number;
+}
+
+interface SettingsBody {
+  quietMode: boolean;
+}
+
+interface QuickReplyBody {
+  nudgeId: string;
+  actionId: string;
+}
+
+interface TextReplyBody {
+  text: string;
 }
 
 class JsonResponse {
@@ -121,6 +142,128 @@ export class WatchBuddyApi {
     );
     requireStatus(response, 200);
     return parseCompanionStatePayload(response.body);
+  }
+
+  async updateSettings(
+    deviceToken: string,
+    quietMode: boolean
+  ): Promise<SettingsResult> {
+    requireDeviceToken(deviceToken);
+    const body: SettingsBody = { quietMode };
+    const response: JsonResponse = await this.requestJson(
+      '/v1/settings',
+      http.RequestMethod.PUT,
+      JSON.stringify(body),
+      deviceToken,
+      ''
+    );
+    requireStatus(response, 200);
+    return parseSettingsPayload(response.body);
+  }
+
+  async quickReply(
+    deviceToken: string,
+    nudgeId: string,
+    actionId: string,
+    idempotencyKey: string
+  ): Promise<ReplyResult> {
+    requireDeviceToken(deviceToken);
+    if (!/^[A-Za-z0-9_-]{8,64}$/.test(nudgeId)
+      || !/^[A-Za-z0-9_-]{1,24}$/.test(actionId)
+      || !isValidIdempotencyKey(idempotencyKey)) {
+      throw new Error('invalid_request');
+    }
+    const body: QuickReplyBody = { nudgeId, actionId };
+    const response: JsonResponse = await this.requestJson(
+      '/v1/companion/reply',
+      http.RequestMethod.POST,
+      JSON.stringify(body),
+      deviceToken,
+      idempotencyKey
+    );
+    requireStatus(response, 200);
+    return parseReplyPayload(response.body);
+  }
+
+  async textReply(
+    deviceToken: string,
+    text: string,
+    idempotencyKey: string
+  ): Promise<ReplyResult> {
+    requireDeviceToken(deviceToken);
+    const normalized: string = text.trim();
+    if (normalized.length < 1
+      || normalized.length > 128
+      || !isValidIdempotencyKey(idempotencyKey)) {
+      throw new Error('invalid_request');
+    }
+    const body: TextReplyBody = { text: normalized };
+    const response: JsonResponse = await this.requestJson(
+      '/v1/companion/reply',
+      http.RequestMethod.POST,
+      JSON.stringify(body),
+      deviceToken,
+      idempotencyKey
+    );
+    requireStatus(response, 200);
+    return parseReplyPayload(response.body);
+  }
+
+  async memories(
+    deviceToken: string,
+    limit: number,
+    offset: number
+  ): Promise<MemoryPage> {
+    requireDeviceToken(deviceToken);
+    if (!Number.isInteger(limit)
+      || limit < 1
+      || limit > 20
+      || !Number.isInteger(offset)
+      || offset < 0
+      || offset > 100000) {
+      throw new Error('invalid_request');
+    }
+    const response: JsonResponse = await this.requestJson(
+      `/v1/memories?limit=${limit}&offset=${offset}`,
+      http.RequestMethod.GET,
+      '',
+      deviceToken,
+      ''
+    );
+    requireStatus(response, 200);
+    return parseMemoryPagePayload(response.body, offset);
+  }
+
+  async deleteMemory(
+    deviceToken: string,
+    memoryId: string
+  ): Promise<boolean> {
+    requireDeviceToken(deviceToken);
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(memoryId)) {
+      throw new Error('invalid_request');
+    }
+    const response: JsonResponse = await this.requestJson(
+      `/v1/memories/${memoryId}`,
+      http.RequestMethod.DELETE,
+      '',
+      deviceToken,
+      ''
+    );
+    requireStatus(response, 200);
+    return parseDeleteMemoryPayload(response.body, memoryId);
+  }
+
+  async clearMemories(deviceToken: string): Promise<number> {
+    requireDeviceToken(deviceToken);
+    const response: JsonResponse = await this.requestJson(
+      '/v1/memories',
+      http.RequestMethod.DELETE,
+      '',
+      deviceToken,
+      ''
+    );
+    requireStatus(response, 200);
+    return parseClearMemoriesPayload(response.body);
   }
 
   async petCatalog(deviceToken: string): Promise<PetCatalog> {
@@ -285,6 +428,10 @@ function requireDeviceToken(deviceToken: string): void {
   }
 }
 
+function isValidIdempotencyKey(value: string): boolean {
+  return /^[A-Za-z0-9._:-]{8,128}$/.test(value);
+}
+
 function createHeaders(
   deviceToken: string,
   hasBody: boolean,
@@ -303,6 +450,19 @@ function createHeaders(
       Accept: 'application/json',
       'Content-Type': 'application/json',
       'Idempotency-Key': idempotencyKey
+    };
+  }
+  if (hasBody && deviceToken.length > 0) {
+    return {
+      Accept: 'application/json',
+      Authorization: `Bearer ${deviceToken}`,
+      'Content-Type': 'application/json'
+    };
+  }
+  if (hasBody) {
+    return {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
     };
   }
   if (deviceToken.length > 0) {
