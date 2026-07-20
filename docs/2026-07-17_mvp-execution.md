@@ -295,7 +295,7 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
 - 华为《轻量级智能穿戴应用开发》明确覆盖 WATCH GT 系列，并列出 WATCH GT 6、466 × 466、
   支持 API 20；GT 6 Pro 主路线必须是 Lite Wearable，而不是 ArkTS `wearable`；
 - 主工程为 `apps/watch-huawei`，设备类型 `liteWearable`、JavaScript FA 模型、包名
-  `com.watchbuddy.watch`、圆屏 `466*466`、target/compatible `5.0.5(17)`；
+  `com.watchbuddy.watch`、圆屏 `466*466`、target/compatible `6.0.0(20)`；
 - 当前电脑已验证 DevEco Studio 6.0.2、OHPM、Hvigor、Java、Node.js 和预集成 SDK；
   `DEVECO_SDK_HOME` 使用 `Contents/sdk`；
 - `npm run doctor:watch` 已切回 Lite Wearable 并检查 FA 模型、466 × 466、HTTPS、73 帧芽芽、

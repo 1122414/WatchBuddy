@@ -387,8 +387,8 @@ export function inspectWatchToolchain() {
     },
     {
       name: "HarmonyOS 目标版本",
-      ok: projectConfig.targetSdkVersion === "5.0.5(17)"
-        && projectConfig.compatibleSdkVersion === "5.0.5(17)"
+      ok: projectConfig.targetSdkVersion === "6.0.0(20)"
+        && projectConfig.compatibleSdkVersion === "6.0.0(20)"
         && projectConfig.runtimeOS === "HarmonyOS",
       detail: `${projectConfig.targetSdkVersion}（兼容 ${projectConfig.compatibleSdkVersion}）`
     },
