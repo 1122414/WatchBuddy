@@ -16,7 +16,7 @@ const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const watchProjectRoot = join(
   repositoryRoot,
   "apps",
-  "watch-huawei-wearable"
+  "watch-huawei"
 );
 const buildOutputRoot = join(watchProjectRoot, "entry", "build");
 

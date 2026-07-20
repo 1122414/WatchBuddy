@@ -78,7 +78,6 @@ export default {
   data: {
     state: 'idle',
     stateLabel: '空闲',
-    characterClass: 'idle',
     petFramePath: DEFAULT_PET_FRAME,
     messageVisible: false,
     message: '',
@@ -425,9 +424,6 @@ export default {
     const stateChanged = this.state !== nextState;
     this.state = nextState;
     this.stateLabel = STATE_LABELS[nextState];
-    this.characterClass = nextState === 'giving_space'
-      ? 'giving-space'
-      : nextState;
     storage.set({
       key: 'watchbuddy_state',
       value: nextState

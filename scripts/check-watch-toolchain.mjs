@@ -155,24 +155,19 @@ export function inspectSdkHome(candidates = sdkCandidates()) {
 }
 
 function readProjectConfig() {
-  const appConfigPath = new URL(
-    "apps/watch-huawei-wearable/AppScope/app.json5",
-    projectRoot
-  );
-  const moduleConfigPath = new URL(
-    "apps/watch-huawei-wearable/entry/src/main/module.json5",
+  const configPath = new URL(
+    "apps/watch-huawei/entry/src/main/config.json",
     projectRoot
   );
   const buildProfilePath = new URL(
-    "apps/watch-huawei-wearable/build-profile.json5",
+    "apps/watch-huawei/build-profile.json5",
     projectRoot
   );
   const entryBuildProfilePath = new URL(
-    "apps/watch-huawei-wearable/entry/build-profile.json5",
+    "apps/watch-huawei/entry/build-profile.json5",
     projectRoot
   );
-  const appConfig = JSON.parse(readFileSync(appConfigPath, "utf8"));
-  const moduleConfig = JSON.parse(readFileSync(moduleConfigPath, "utf8"));
+  const config = JSON.parse(readFileSync(configPath, "utf8"));
   const buildProfile = JSON.parse(readFileSync(buildProfilePath, "utf8"));
   const entryBuildProfile = JSON.parse(
     readFileSync(entryBuildProfilePath, "utf8")
@@ -180,69 +175,71 @@ function readProjectConfig() {
   const product = buildProfile.app.products.find(
     (candidate) => candidate.name === "default"
   );
-  const requiredSourceFiles = [
-    "entryability/EntryAbility.ets",
-    "pages/Index.ets"
-  ].map((relativePath) => new URL(
-    `apps/watch-huawei-wearable/entry/src/main/ets/${relativePath}`,
+  const requiredPageFiles = [
+    "index.js",
+    "index.hml",
+    "index.css"
+  ].map((fileName) => new URL(
+    `apps/watch-huawei/entry/src/main/js/MainAbility/pages/index/${fileName}`,
     projectRoot
   ));
   const prohibitedRuntimeFiles = [
-    "peer-config.ets",
-    "wear-engine-manager.ets",
-    "WearEngine.ets"
-  ].map((fileName) => new URL(
-    `apps/watch-huawei-wearable/entry/src/main/ets/${fileName}`,
+    "peer-config.js",
+    "wear-engine-manager.js",
+    "sdk/litewearable/wearengine.js"
+  ].map((relativePath) => new URL(
+    `apps/watch-huawei/entry/src/main/js/MainAbility/common/${relativePath}`,
     projectRoot
   ));
   const petRuntimePath = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/ets/pet/PetRuntime.ets",
+    "apps/watch-huawei/entry/src/main/js/MainAbility/common/"
+      + "watch-pet-runtime.js",
     projectRoot
   ));
   const petResourceRoot = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/resources/rawfile/"
+    "apps/watch-huawei/entry/src/main/js/MainAbility/common/images/"
       + "pets/watchbuddy-sprout",
     projectRoot
   ));
   const networkClientPath = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/ets/"
-      + "network/WatchBuddyApi.ets",
+    "apps/watch-huawei/entry/src/main/js/MainAbility/common/"
+      + "watch-api-client.js",
     projectRoot
   ));
-  const secureTokenStorePath = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/ets/"
-      + "storage/SecureTokenStore.ets",
+  const apiContractPath = fileURLToPath(new URL(
+    "apps/watch-huawei/entry/src/main/js/MainAbility/common/"
+      + "watch-api-contract.js",
     projectRoot
   ));
   const petInstallerPath = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/ets/"
-      + "pet/PetInstaller.ets",
+    "apps/watch-huawei/entry/src/main/js/MainAbility/common/"
+      + "watch-pet-installer.js",
     projectRoot
   ));
   const petFilesPath = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/ets/"
-      + "pet/PetFiles.ets",
+    "apps/watch-huawei/entry/src/main/js/MainAbility/common/"
+      + "watch-pet-files.js",
     projectRoot
   ));
   const petIntegrityPath = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/ets/"
-      + "pet/PetIntegrity.ets",
+    "apps/watch-huawei/entry/src/main/js/MainAbility/common/"
+      + "watch-pet-integrity.js",
     projectRoot
   ));
   const pagePath = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/ets/pages/Index.ets",
+    "apps/watch-huawei/entry/src/main/js/MainAbility/pages/index/index.js",
     projectRoot
   ));
-  const sessionPath = fileURLToPath(new URL(
-    "apps/watch-huawei-wearable/entry/src/main/ets/"
-      + "runtime/WatchBuddySession.ets",
+  const outboxPath = fileURLToPath(new URL(
+    "apps/watch-huawei/entry/src/main/js/MainAbility/common/"
+      + "watch-outbox.js",
     projectRoot
   ));
   const networkClientSource = existsSync(networkClientPath)
     ? readFileSync(networkClientPath, "utf8")
     : "";
-  const secureTokenStoreSource = existsSync(secureTokenStorePath)
-    ? readFileSync(secureTokenStorePath, "utf8")
+  const apiContractSource = existsSync(apiContractPath)
+    ? readFileSync(apiContractPath, "utf8")
     : "";
   const petInstallerSource = existsSync(petInstallerPath)
     ? readFileSync(petInstallerPath, "utf8")
@@ -256,44 +253,46 @@ function readProjectConfig() {
   const pageSource = existsSync(pagePath)
     ? readFileSync(pagePath, "utf8")
     : "";
-  const sessionSource = existsSync(sessionPath)
-    ? readFileSync(sessionPath, "utf8")
+  const outboxSource = existsSync(outboxPath)
+    ? readFileSync(outboxPath, "utf8")
     : "";
 
   return {
-    bundleName: appConfig.app.bundleName,
+    bundleName: config.app.bundleName,
     compatibleSdkVersion: product?.compatibleSdkVersion,
-    deviceTypes: moduleConfig.module.deviceTypes,
-    hasInternetPermission: moduleConfig.module.requestPermissions?.some(
+    deviceTypes: config.module.deviceType,
+    hasCircleScreen: config.module.distroFilter?.screenShape?.value?.includes(
+      "circle"
+    ) ?? false,
+    hasInternetPermission: config.module.reqPermissions?.some(
       (permission) => permission.name === "ohos.permission.INTERNET"
     ) ?? false,
-    hasVibratePermission: moduleConfig.module.requestPermissions?.some(
-      (permission) => permission.name === "ohos.permission.VIBRATE"
+    hasWatchResolution: config.module.distroFilter?.screenWindow?.value?.includes(
+      "466*466"
     ) ?? false,
     hasPetRuntime: existsSync(petRuntimePath),
     hasControlledPetInstaller:
       petInstallerSource.includes("MAX_PET_DOWNLOAD_ATTEMPTS")
-      && petInstallerSource.includes("savePetSelection")
-      && petInstallerSource.includes("verifyPetAsset")
-      && petFilesSource.includes("@kit.CoreFileKit")
-      && petFilesSource.includes("renameSync")
-      && petIntegritySource.includes("@kit.CryptoArchitectureKit")
-      && petIntegritySource.includes("createMd('SHA256')"),
+      && petInstallerSource.includes("commitSelection")
+      && petInstallerSource.includes("finishFailure")
+      && petFilesSource.includes("move(")
+      && petFilesSource.includes("remove(")
+      && petIntegritySource.includes("sha256Hex")
+      && petIntegritySource.includes("PNG_MAGIC"),
     hasCompanionControls:
-      pageSource.includes("replyToNudge")
+      pageSource.includes("replyToCompanion")
       && pageSource.includes("toggleQuietMode")
-      && pageSource.includes("requestClearMemories")
-      && sessionSource.includes("MAX_REPLY_ATTEMPTS")
-      && sessionSource.includes("savePendingQuickReply"),
-    hasDirectNetworkRuntime: networkClientSource.includes("@kit.NetworkKit")
-      && networkClientSource.includes("http.createHttp()")
-      && !networkClientSource.includes("@system.fetch"),
-    hasRequiredSourceFiles: requiredSourceFiles.every(existsSync),
-    hasSecureTokenStore: secureTokenStoreSource.includes("@kit.AssetStoreKit")
-      && secureTokenStoreSource.includes("asset.Tag.SECRET")
-      && !secureTokenStoreSource.includes("@kit.ArkData"),
+      && pageSource.includes("clearMemories")
+      && outboxSource.includes("MAX_REPLY_ATTEMPTS")
+      && outboxSource.includes("serializePendingReply"),
+    hasDirectNetworkRuntime: networkClientSource.includes("@system.fetch")
+      && networkClientSource.includes("fetch.fetch(")
+      && apiContractSource.includes("startsWith('https://')"),
+    hasPetTouchRuntime: pageSource.includes("@system.vibrator")
+      && pageSource.includes("vibrator.vibrate"),
+    hasRequiredSourceFiles: requiredPageFiles.every(existsSync),
     hasWearEngineRuntimeFiles: prohibitedRuntimeFiles.some(existsSync),
-    isStageMode: entryBuildProfile.apiType === "stageMode",
+    isFaMode: entryBuildProfile.apiType === "faMode",
     petFrameCount: countPngFiles(petResourceRoot),
     runtimeOS: product?.runtimeOS,
     targetSdkVersion: product?.targetSdkVersion
@@ -370,27 +369,34 @@ export function inspectWatchToolchain() {
       detail: projectConfig.bundleName
     },
     {
-      name: "智能穿戴设备类型",
-      ok: projectConfig.deviceTypes.includes("wearable"),
+      name: "Lite Wearable 设备类型",
+      ok: projectConfig.deviceTypes.includes("liteWearable"),
       detail: projectConfig.deviceTypes.join(", ")
     },
     {
       name: "HarmonyOS 目标版本",
-      ok: projectConfig.targetSdkVersion === "6.0.2(22)"
-        && projectConfig.compatibleSdkVersion === "5.0.2(14)"
+      ok: projectConfig.targetSdkVersion === "5.0.5(17)"
+        && projectConfig.compatibleSdkVersion === "5.0.5(17)"
         && projectConfig.runtimeOS === "HarmonyOS",
       detail: `${projectConfig.targetSdkVersion}（兼容 ${projectConfig.compatibleSdkVersion}）`
     },
     {
-      name: "ArkTS Stage 模型",
-      ok: projectConfig.isStageMode,
-      detail: projectConfig.isStageMode ? "stageMode" : "配置错误"
+      name: "Lite Wearable FA 模型",
+      ok: projectConfig.isFaMode,
+      detail: projectConfig.isFaMode ? "faMode" : "配置错误"
     },
     {
-      name: "ArkTS 表端入口",
+      name: "GT 6 圆屏",
+      ok: projectConfig.hasCircleScreen && projectConfig.hasWatchResolution,
+      detail: projectConfig.hasCircleScreen && projectConfig.hasWatchResolution
+        ? "circle / 466*466"
+        : "配置错误"
+    },
+    {
+      name: "Lite Wearable 表端入口",
       ok: projectConfig.hasRequiredSourceFiles,
       detail: projectConfig.hasRequiredSourceFiles
-        ? "EntryAbility/Index 完整"
+        ? "JS/HML/CSS 完整"
         : "文件缺失"
     },
     {
@@ -411,22 +417,15 @@ export function inspectWatchToolchain() {
       name: "手表直连网络",
       ok: projectConfig.hasDirectNetworkRuntime,
       detail: projectConfig.hasDirectNetworkRuntime
-        ? "Network Kit HTTPS"
-        : "Network Kit 客户端缺失"
-    },
-    {
-      name: "设备令牌安全存储",
-      ok: projectConfig.hasSecureTokenStore,
-      detail: projectConfig.hasSecureTokenStore
-        ? "Asset Store Kit"
-        : "安全存储缺失"
+        ? "@system.fetch HTTPS"
+        : "Lite Wearable HTTPS 客户端缺失"
     },
     {
       name: "内置宠物运行时",
       ok: projectConfig.hasPetRuntime
         && projectConfig.petFrameCount === 73,
       detail: projectConfig.hasPetRuntime
-        ? `ArkTS + ${projectConfig.petFrameCount} 帧`
+        ? `JavaScript + ${projectConfig.petFrameCount} 帧`
         : "运行时缺失"
     },
     {
@@ -434,21 +433,21 @@ export function inspectWatchToolchain() {
       ok: projectConfig.hasControlledPetInstaller,
       detail: projectConfig.hasControlledPetInstaller
         ? "分页下载 + SHA-256 + 原子切换 + 回滚"
-        : "ArkTS 安装链路缺失"
+        : "Lite Wearable 安装链路缺失"
     },
     {
       name: "陪伴回复与记忆控制",
       ok: projectConfig.hasCompanionControls,
       detail: projectConfig.hasCompanionControls
         ? "幂等回复 + 安静模式 + 记忆删除"
-        : "ArkTS 陪伴控制缺失"
+        : "Lite Wearable 陪伴控制缺失"
     },
     {
-      name: "宠物触感权限",
-      ok: projectConfig.hasVibratePermission,
-      detail: projectConfig.hasVibratePermission
-        ? "ohos.permission.VIBRATE"
-        : "未声明"
+      name: "宠物触感运行时",
+      ok: projectConfig.hasPetTouchRuntime,
+      detail: projectConfig.hasPetTouchRuntime
+        ? "@system.vibrator"
+        : "触感调用缺失"
     }
   ];
 
@@ -473,7 +472,7 @@ export function printWatchToolchainReport(report) {
 
   if (!report.canBuild) {
     console.error(
-      "\n尚不能构建 HAP：请检查 DevEco Studio、智能穿戴工程和 "
+      "\n尚不能构建 HAP：请检查 DevEco Studio、Lite Wearable 工程和 "
       + "HarmonyOS/OpenHarmony 预集成 SDK 目录。"
     );
     return;

@@ -1,0 +1,2 @@
+This file intentionally keeps the Lite Wearable rawfile resource directory non-empty.
+DevEco Studio 6 legacy packaging expects the generated resources directory to exist.

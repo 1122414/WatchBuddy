@@ -6,7 +6,7 @@
       <text class="connection-label"> · {{connectionLabel}}</text>
     </div>
 
-    <div class="character {{characterClass}}" onclick="onCharacterTap">
+    <div class="character" onclick="onCharacterTap">
       <image class="pet-frame" src="{{petFramePath}}"></image>
     </div>
 
@@ -63,7 +63,7 @@
     </div>
 
     <div class="pet-actions">
-      <input class="pet-action primary" type="button" value="{{petCatalogAction}}" onclick="selectCatalogPet"></input>
+      <input class="pet-action-primary" type="button" value="{{petCatalogAction}}" onclick="selectCatalogPet"></input>
       <input class="pet-action" type="button" value="返回" onclick="hidePets"></input>
     </div>
   </div>
