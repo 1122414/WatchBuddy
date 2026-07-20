@@ -1,76 +1,76 @@
 # HUAWEI WATCH GT 6 Pro 手表独立能力矩阵
 
-> 日期：2026-07-17
-> 判定原则：WatchBuddy 手机应用、Wear Engine 或其他用户侧设备不得参与最终运行链路。
+> 初始日期：2026-07-17
+> 最近校准：2026-07-20
+> 判定原则：WatchBuddy 只有手表端应用，不依赖 WatchBuddy 手机应用或 Wear Engine。
 
 ## 目标设备与当前工程
 
 | 项目 | 当前证据 | 结论 |
 |---|---|---|
-| 目标设备 | 用户持有 HUAWEI WATCH GT 6 Pro | 唯一用户侧运行设备 |
-| 表端包名 | `apps/watch-huawei/entry/src/main/config.json` 为 `com.watchbuddy.watch` | 保持不变 |
-| 设备形态 | `deviceType` 为 `liteWearable` | 使用 Lite Wearable JS 工程 |
-| 屏幕适配 | `screenShape=circle`、`screenWindow=466*466` | 与目标圆屏一致 |
-| 表端 UI | 已实现角色、状态、消息与快捷回复 | 可复用 |
-| GT 6 能力级别 | 华为当前 Lite Wearable 文档列出 WATCH GT 6 为 API 20 | 设备支持，仍需真机验证 |
-| 工程 SDK 级别 | 华为 2026-07-17 官方 Lite Wearable 示例仍使用 `5.0.5(17)` | 与官方示例保持一致 |
-| 当前表端传输 | 运行入口已改用 `@system.fetch` 完成注册、状态、回复和记忆请求，不再导入 Wear Engine | 代码完成，待构建/真机 |
-| 独立构建工具链 | DevEco Studio 6.0.2、内置 OHPM、Hvigor、Java 和 Node.js 已识别；HarmonyOS/HMS SDK 仅缺 `js`，Hvigor 返回 `00303168` | 部分通过，需在 SDK Manager 补齐 `js` |
-| 真机安装通道 | 华为文档明确 Lite Wearable 不能直连 DevEco Studio，需应用调测助手安装 | 安装阶段需要用户操作 |
+| 目标设备 | 用户持有 HUAWEI WATCH GT 6 Pro；官方产品页标明 HarmonyOS 6 | 使用智能穿戴路线 |
+| 官方开发分类 | 华为将 HarmonyOS 5.1 及以上穿戴设备归为“智能穿戴”，使用 ArkTS 与 ArkUI | 不再把 GT 6 Pro 当作 Lite Wearable |
+| 主工程 | `apps/watch-huawei-wearable` | 新的智能穿戴主路径 |
+| 历史工程 | `apps/watch-huawei` | 暂存旧 Lite Wearable JS 实现，迁移完成前不删除 |
+| 包名 | `com.watchbuddy.watch` | 保持不变 |
+| 设备类型 | `deviceTypes: ["wearable"]` | 正确 |
+| 应用模型 | ArkTS Stage 模型 | 正确 |
+| SDK | target `6.0.2(22)`，compatible `5.0.2(14)` | 使用 API 22 编译并保持基础兼容 |
+| 网络权限 | `ohos.permission.INTERNET` | 已声明，待真机 HTTPS |
+| 最小 HAP | `npm run build:watch` 成功生成 unsigned HAP | 本机构建通过 |
+| 手机依赖 | 新工程没有 Wear Engine 或手机 peer | 符合手表端独立应用定义 |
+
+“独立应用”表示 WatchBuddy 的 UI、业务逻辑、存储和网络请求都在手表应用或服务端完成。手表最终
+使用 Wi‑Fi、蜂窝网络或系统提供的联网路径，需由 GT 6 Pro 真机判定；即使设备联网路径经过已配对
+手机，也不得要求安装、启动或保活 WatchBuddy 手机应用。
 
 ## 独立运行硬门槛
 
 | 能力 | 验证方法 | 当前状态 | 失败处理 |
 |---|---|---|---|
-| 最小 HAP 构建 | 使用正式 Lite Wearable 工具链构建 debug HAP | 待验证 | 修复工具链，不切手机 |
-| 表端应用安装 | GT 6 Pro 应用列表出现 WatchBuddy | 待验证 | 修复签名/安装 |
-| 表端独立启动 | 仅从手表打开 WatchBuddy | 待验证 | 修复 HAP |
-| HTTPS 请求 | 手表调用 `GET /health` | 待验证 | 查明网络/API限制 |
-| 脱离手机联网 | 手机关机或断开蓝牙后重复 HTTPS 请求 | 待验证 | 若设备不支持，记录硬阻塞 |
-| HTTPS POST | 手表提交 JSON 并收到响应 | 待验证 | 修复协议/权限 |
-| 设备令牌存储 | 重启应用后令牌仍可用 | 待验证 | 使用表端安全存储 |
-| 超时与离线提示 | 断网时有限时失败且界面显示离线 | 待验证 | 不允许假在线 |
-| 前台轮询功耗 | 依据 `nextCheckAt` 有界请求 | 待验证 | 降低频率 |
-| 息屏/后台提醒 | 应用关闭或息屏后收到测试提醒 | 待验证 | 不支持则下次打开呈现 |
+| 最小 HAP 构建 | `npm run build:watch` | 已通过（unsigned） | 保持可重复构建 |
+| 调试/发布签名 | DevEco/AGC 配置 `com.watchbuddy.watch` 签名 | 待验证 | 不提交密钥 |
+| 表端应用安装 | GT 6 Pro 应用列表出现 WatchBuddy | 待验证 | 核对产品、签名与安装通道 |
+| 表端独立启动 | 仅从手表打开 WatchBuddy | 待验证 | 修复 HAP 或兼容级别 |
+| HTTPS GET | 手表调用 `GET /health` | 待迁移/真机 | 使用 Network Kit，不引入手机 App |
+| HTTPS POST | 手表提交注册或回复 JSON | 待迁移/真机 | 校验超时、鉴权与幂等 |
+| 设备令牌存储 | 重启应用后令牌仍可用 | 待迁移/真机 | 使用 Preferences/安全存储 |
+| 离线提示 | 断网时有限时失败且界面显示离线 | 待迁移/真机 | 不允许假在线 |
+| 无配套 App | 不安装或启动 WatchBuddy Android/iOS App | 待真机验收 | 不回退到 Wear Engine |
+| 手机断开测试 | 关闭蓝牙后再次访问服务端 | 能力 Spike | 若设备无独立网络，只记录设备边界 |
+| 息屏/后台提醒 | 应用关闭或息屏后收到测试提醒 | 能力 Spike | 不支持则下次打开呈现 |
 
-阶段 0 只有“脱离手机联网”通过才算完成。网络仍经由 WatchBuddy 手机端或 Wear Engine 转发不算通过。
-
-`@system.fetch` 官方文档说明默认支持 HTTPS；Lite Wearable FAQ 还规定请求头不超过 2KB、传输层
-单包不超过 7KB。当前表端按这两个上限设计，但是否通过手机网络代理仍必须通过关闭手机后的真机测试判定。
+阶段 0 的硬要求是“不需要 WatchBuddy 手机应用或 Wear Engine”。“手机断开后仍联网”属于设备
+网络能力验证，不再作为手表端独立应用定义的前提。
 
 ## MVP 功能验收
 
 | 能力 | 真机证据要求 | 当前状态 |
 |---|---|---|
-| 角色主页 | 466 × 466 圆屏无裁切，七种状态可辨识 | 代码存在，待真机 |
-| 服务端注册 | 手表获得可撤销设备令牌 | 源码与契约测试通过，待真机 |
-| 对话 | 手表请求服务端并显示回应 | 源码与契约测试通过，待真机 |
-| 快捷回复 | 手表直接向服务端提交选择 | 源码与契约测试通过，待真机 |
-| 主动策略 | 服务端返回日常、随机关心或关系跟进原因和 `nextCheckAt`；敏感记忆不用于主动跟进 | 源码与契约测试通过，待真机 |
-| 安静模式 | 手表设置后服务端立即抑制 | 源码与契约测试通过，待真机 |
-| 记忆列表 | 手表查看事件/偏好/未完成话题 | 源码与契约测试通过，待真机 |
-| 删除记忆 | 按条删除和全部清空均可验证 | 源码与契约测试通过，待真机 |
-| 离线恢复 | 未提交回复有界重试、不重复 | 源码与契约测试通过，待真机 |
-| 服务端失败降级 | 固定模板，不暴露密钥或内部错误 | 待实现 |
+| 角色主页 | 466 × 466 圆屏无裁切，状态可辨识 | 旧 JS 已有，ArkTS 待迁移 |
+| 内置宠物 | 离线可见、可点击、切页停止动画 | 资源已有，ArkTS 待迁移 |
+| 服务端注册 | 手表获得可撤销设备令牌 | 服务端通过，ArkTS 待迁移 |
+| 对话与快捷回复 | 手表直连服务端并显示回应 | 服务端通过，ArkTS 待迁移 |
+| 安静模式 | 手表设置后服务端立即抑制 | 服务端通过，ArkTS 待迁移 |
+| 记忆控制 | 查看、按条删除和全部清空 | 服务端通过，ArkTS 待迁移 |
+| 离线恢复 | 未提交回复有界重试且不重复 | 旧 JS 通过，ArkTS 待迁移 |
+| 服务端失败降级 | 固定模板，不暴露密钥或内部错误 | 待完成 |
 
 ## 宠物系统能力矩阵
 
 | 能力 | 当前证据 | 当前状态 | 硬验收 |
 |---|---|---|---|
-| 应用内宠物 | 首页已改为 176 × 176 Sprout PNG 逐帧资源；浏览器圆屏预览无文字重叠 | 源码完成，待 HAP/真机 | 466 × 466 无裁切、可点击、切页停止动画 |
-| Codex v2 输入 | 当前 hatch-pet 契约为 8 × 11、1536 × 2288、`spriteVersionNumber: 2`，并在第 0 行第 6 列包含中立帧 | 契约已核对并用真实产物回归 | schema、像素、透明度、帧和摘要全部通过 |
-| 旧版输入 | 本机 `chibi-skadi` 为 8 × 9、1536 × 1872 且缺少 v2 标记 | 仅作拒绝/迁移样本 | 不得静默当作 v2 |
-| 手表资源格式 | 已有 Schema、纯 JS 语义校验、v2 转换器、小帧摘要、大小报告和 466 × 466 预览 | 构建期完成，表端待接入 | 可版本化、可校验、离线可读 |
-| 默认宠物 | Sprout（芽芽）完成 QA；HAP 源码目录内置 73 个 PNG 帧，共 1237298 字节 | 源码内置，待构建/离线真机 | HAP 内置、离线可见、动画生命周期和真机布局通过 |
-| 状态动画 | 状态、轻点、消息、处理中和失败已映射到逐帧动画；一次性动作后回到稳定循环 | 源码与契约测试通过 | 状态映射、一次性动作、降级和生命周期测试通过 |
-| 资源渲染 | 官方 HML Image 支持本地动态 `src`；本工程浏览器预览和资源摘要通过，Lite Wearable HAP 尚未编译 | 部分通过 | 目标帧率稳定、内存和功耗可接受 |
-| 服务端目录 | API 已提供鉴权后的列表、紧凑清单、分页摘要和按 ID 下载；默认只发布已审核的 Sprout | 服务端完成，待表端/真机 | 仅返回审核后元数据和固定摘要 |
-| codex-pets.net 导入 | 构建期导入器已限制官方 HTTPS 路径、同源重定向、包/解压预算、ZIP 路径、v2 清单、图集与许可证白名单；站点页面没有单宠物许可证字段 | 导入边界完成，待明确授权的站点 v2 宠物 | 不让手表直连，不接受未知授权或任意 URL |
-| 动态资源下载 | 表端现有网络层只处理小型 JSON | 未验证 | 临时下载、SHA-256、原子切换、缓存和回滚通过真机 |
-| 系统表盘常驻 | 官方路线为独立 Theme Studio Pro 466 × 466 表盘主题，支持打包序列帧与简单触摸；没有证据表明其可运行 WatchBuddy HAP、任意 HTTPS 或动态宠物资源 | 文档边界已确认，尚无表盘产物/真机证据 | 独立创建、导出并在 GT 6 Pro 验证；完整 AI 功能留在应用内 |
+| Codex v2 输入 | hatch-pet 契约为 8 × 11、1536 × 2288、`spriteVersionNumber: 2` | 工具测试通过 | schema、像素、透明度、帧和摘要通过 |
+| 默认宠物 | Sprout（芽芽）已有 73 个手表 PNG 帧 | 旧 JS 内置，ArkTS 迁移中 | HAP 内置、离线可见、来源可追溯 |
+| 状态动画 | idle、waiting、review、jumping、waving、running、failed 等映射已定义 | 旧 JS 测试通过 | ArkTS 动画生命周期和真机帧率通过 |
+| 受控目录 | 服务端提供鉴权列表、清单、分页摘要和按 ID 下载 | 服务端完成 | 手表只读取 WatchBuddy 审核目录 |
+| codex-pets.net 导入 | 构建期导入器限制 HTTPS 来源、预算、ZIP 路径、v2 清单与许可证 | 工具完成 | 不让手表直接执行或信任第三方包 |
+| 动态安装 | 旧 JS 已实现临时写入、SHA‑256、全部成功后切换和失败回滚 | ArkTS 待迁移 | 真机验证文件、摘要、缓存与原子切换 |
+| 芽芽公开授权 | 当前自定义许可证不是 CC-BY-4.0 | 阻塞公开发布 | 必须取得用户明确授权后才可改许可/上传 |
+| 系统表盘 | Theme Studio Pro 是独立主题路线 | 不属于当前 HAP | 不把应用页面冒充成系统表盘 |
 
-宠物 MVP 的可交付边界是 WatchBuddy 应用主页内的内置宠物。动态换宠物和系统表盘常驻不能用桌面
-浏览器预览或 Node.js 单元测试替代 Lite Wearable SDK/真机结果。
+宠物 MVP 的第一交付边界是 WatchBuddy 应用主页内的内置宠物。动态换宠物只有在 ArkTS 实现、
+完整性回滚和真机文件能力通过后才开放。
 
 ## 扩展能力 Spike
 
@@ -90,23 +90,24 @@
 | Android APK 构建、安装、启动成功 | 历史提交 `eef4bef` | 仅保留为历史证据 |
 | Wear Engine 双向协议已实现 | 历史提交 `c9f8765` | 退出表端运行路径 |
 | Android APPID | `118346425` | 不用于手表独立架构 |
-| Wear Engine 申请 | 华为审核驳回，指出手表回复依赖手机 App 活跃，建议手表联网直达服务端 | 不再重新申请 |
+| Wear Engine 申请 | 华为审核指出手机 App 需活跃，并建议手表联网直达服务端 | 不再重新申请 |
+| Lite Wearable JS 工程 | `apps/watch-huawei` | 只作为迁移来源，不用于 GT 6 Pro 交付 |
 
 ## 最终判定
 
 只有下列证据同时存在，才能声称 WatchBuddy 可直接安装并独立运行在 GT 6 Pro：
 
 1. 可重复构建的签名 HAP、版本号、大小和 SHA-256；
-2. GT 6 Pro 上的安装成功记录；
-3. 手机关机或断开连接时的独立 HTTPS 成功记录；
-4. 手表完成注册、对话、回复、记忆和删除的端到端记录；
+2. GT 6 Pro 上的安装和独立启动记录；
+3. 不启动 WatchBuddy 手机应用时的 HTTPS 成功记录；
+4. 手表完成注册、对话、回复、宠物互动、记忆和删除的端到端记录；
 5. 表端运行代码中不存在 Wear Engine 或手机 peer 依赖；
 6. 离线、重启、令牌失效和服务端错误均有真机结果。
 
 ## 官方依据
 
-- [华为：轻量级智能穿戴应用开发](https://developer.huawei.com/consumer/cn/doc/best-practices/bpta-lite-wearable-guide)
-- [华为：`@system.fetch` 数据请求](https://developer.huawei.com/consumer/cn/doc/harmonyos-references-v5/js-apis-system-fetch-V5)
-- [华为官方 Lite Wearable 示例工程](https://gitcode.com/harmonyos_samples/BestPracticeSnippets/tree/master/LiteWearable)
-- [华为：表盘主题与 Theme Studio Pro 工具](https://developer.huawei.com/consumer/cn/doc/content/themes-tools-0000001104440212)
-- [华为：Theme Studio Pro 466 × 466 表盘样式](https://developer.huawei.com/consumer/en/doc/content/style-customize-pro-0000001583807170)
+- [华为：HUAWEI WATCH GT 6 Pro](https://consumer.huawei.com/cn/wearables/watch-gt6-pro/)
+- [华为：穿戴设备应用开发概览](https://developer.huawei.com/consumer/cn/multidevice/wearables/)
+- [华为：穿戴应用开发入门](https://developer.huawei.com/consumer/cn/multidevice/wearables/get-started/)
+- [华为：智能穿戴应用开发](https://developer.huawei.com/consumer/cn/multidevice/wearables/smart/)
+- [华为：Theme Studio Pro 工具](https://developer.huawei.com/consumer/cn/doc/content/themes-tools-0000001104440212)

@@ -14,9 +14,9 @@ WatchBuddy 必须以手表端独立应用为核心：
 - 手表端通过 HTTPS 直接访问 WatchBuddy 服务端；
 - 服务端可以承担 AI 推理、主动策略和持久记忆，但用户不需要操作第二台设备；
 - 手表离线时允许进入明确的离线模式，不允许静默回退到手机；
-- 手机关机、关闭蓝牙或离开通信范围后，核心功能仍需通过 GT 6 Pro 自身可用的网络路径工作。
+- 不安装、不启动、不保活 WatchBuddy 手机应用；手表使用自身或系统提供的网络路径直连服务端。
 
-如果 GT 6 Pro 不向第三方 Lite Wearable 应用开放独立网络、后台提醒、录音或播放能力，
+如果 GT 6 Pro 不向第三方智能穿戴应用开放网络、后台提醒、录音或播放能力，
 必须如实记录设备限制。不得为了让测试通过而重新引入手机端兜底。
 
 ## 2. MVP 范围
@@ -82,17 +82,18 @@ WatchBuddy API
 
 ### 阶段 0：独立运行能力 Spike
 
-- [ ] 安装并验证 DevEco Studio 6.0.0 以上、Lite Wearable SDK 与 Hvigor；
-- [ ] 创建与 `com.watchbuddy.watch` 匹配的 HarmonyOS 手表应用与调试签名；
-- [ ] 构建一个不含 Wear Engine 的最小 HAP；
-- [ ] 按官方 Lite Wearable 流程，通过应用调测助手把最小 HAP 安装到 GT 6 Pro；
+- [x] 安装并验证 DevEco Studio 6.0.2、HarmonyOS 智能穿戴 SDK 与 Hvigor；
+- [x] 创建 `deviceTypes: ["wearable"]`、ArkTS Stage 模型且包名为 `com.watchbuddy.watch` 的工程；
+- [x] 构建一个不含 Wear Engine 的 unsigned HAP；
+- [ ] 配置调试签名并按智能穿戴官方流程把 HAP 安装到 GT 6 Pro；
 - [ ] 手表通过 HTTPS `GET /health` 获得服务端响应；
-- [ ] 手机关机或断开蓝牙后重复 HTTPS 测试；
+- [ ] 不启动 WatchBuddy 手机应用时重复 HTTPS 测试；
+- [ ] 断开手机蓝牙后验证 GT 6 Pro 是否仍有可用网络，并记录设备边界；
 - [ ] 验证令牌安全存储、请求超时和离线提示；
 - [ ] 分别验证前台、息屏和应用关闭后的网络/任务生命周期。
 
-硬门槛：只有“手机不参与时手表可直连 HTTPS”通过，才进入阶段 1。失败时记录设备限制并停止，
-不得切回 Wear Engine。
+硬门槛：只有“不依赖 WatchBuddy 手机应用或 Wear Engine 时手表可直连 HTTPS”通过，才完成
+阶段 0。手机断开后的联网结果用于记录 GT 6 Pro 网络能力，不改变手表端独立应用定义。
 
 ### 阶段 1：服务端最小闭环
 
@@ -122,10 +123,10 @@ WatchBuddy API
 
 硬门槛：仓库搜索不得再发现表端运行代码导入 Wear Engine 或 peer 配置。
 
-表端源码和 Node.js 契约测试已完成。DevEco 6.0.2 内置 HarmonyOS/HMS SDK 当前仅缺少
-`js` 组件；同目录下完整的 OpenHarmony `js` 不能替代 HarmonyOS 工程组件。Hvigor 已据此返回
-`00303168 Configuration Error: SDK component missing`，因此 DevEco 编译、Lite Wearable
-运行时兼容性、沙箱存储和 466 × 466 真机布局仍未验收。
+旧 Lite Wearable JS 源码和 Node.js 契约测试已完成，但它不是 GT 6 Pro 的正确交付工程。
+`apps/watch-huawei-wearable` 已按智能穿戴 ArkTS Stage 模型建立并成功生成 HAP；角色、网络、
+存储和受控宠物安装仍需迁移到新工程。此前 `00303168` 是命令行把 `DEVECO_SDK_HOME` 错指向
+`Contents/sdk/default` 导致；改为 `Contents/sdk` 后构建成功。
 
 ### 阶段 2A：应用内宠物资源闭环
 
@@ -155,7 +156,7 @@ WatchBuddy API
 - [x] 目录清单和每个资源文件均提供版本、长度与 SHA-256；
 - [x] 表端先下载到临时版本，全部校验成功后原子切换；失败时继续使用上一个完整版本；
 - [ ] 设置宠物数量、单宠物大小、总缓存和请求频率上限，并提供 LRU 清理；
-- [ ] 真机证明二进制下载、持久文件、动态图片路径和传输大小均受 Lite Wearable 支持。
+- [ ] 真机证明 Network Kit 下载、应用沙箱文件、动态图片路径和传输大小均受智能穿戴支持。
 
 硬门槛：只有动态文件能力和完整性回滚通过真机验证，才开放在线换宠物。否则 MVP 仅提供随 HAP
 发布的审核后宠物包，目录可以先用于选择下个构建版本。
@@ -177,14 +178,14 @@ WatchBuddy API
 
 ### 阶段 4：主动提醒、语音与状态感知 Spike
 
-- [ ] 验证 GT 6 Pro Lite Wearable 第三方应用可用的 Push/通知/后台任务能力；
+- [ ] 验证 GT 6 Pro 智能穿戴第三方应用可用的 Push/通知/后台任务能力；
 - [ ] 若支持，验证应用关闭和息屏后的主动提醒；
 - [ ] 若不支持，MVP 明确限定为下次打开应用时呈现，不用手机兜底；
 - [ ] 验证表端麦克风、录音权限、音频上传和播放；
 - [ ] 验证至少一种来自手表自身的活动或传感器入口；
 - [ ] 所有不支持项写入能力矩阵和产品限制。
 - [x] 单独核对第三方应用能否创建、发布或运行交互式系统表盘；
-- [x] 确认表盘必须作为 Theme Studio Pro 的独立主题产物验证，不能把 Lite Wearable HAP
+- [x] 确认表盘必须作为 Theme Studio Pro 的独立主题产物验证，不能把智能穿戴 HAP
   冒充系统表盘；MVP 保留应用主页，不使用悬浮窗或手机端伪装常驻。
 
 ### 阶段 5：签名、安装与真机交付
@@ -193,7 +194,8 @@ WatchBuddy API
 - [ ] 配置调试或发布签名，敏感材料不提交 Git；
 - [ ] 构建 HAP 并记录文件大小、版本和 SHA-256；
 - [ ] 安装到当前 HUAWEI WATCH GT 6 Pro；
-- [ ] 手机关机或断开连接后完成注册、对话、回复、记忆与删除；
+- [ ] 不启动 WatchBuddy 手机应用时完成注册、对话、回复、记忆与删除；
+- [ ] 断开手机蓝牙后重复网络测试并记录 GT 6 Pro 实际网络边界；
 - [ ] 验证断网、服务端错误、令牌失效、重复点击和应用重启；
 - [ ] 输出安装说明、能力矩阵和真机试用记录。
 
@@ -203,7 +205,7 @@ WatchBuddy API
 
 - [ ] GT 6 Pro 应用列表中出现 WatchBuddy；
 - [ ] WatchBuddy 可从手表独立启动；
-- [ ] 手表在手机关机/断开时成功访问服务端；
+- [ ] 手表在不启动 WatchBuddy 手机应用时成功访问服务端；
 - [ ] 手表发送回复后收到服务端回应；
 - [ ] 角色和最近状态在应用重启后恢复；
 - [ ] 默认宠物离线可见，动画和点击反馈在应用生命周期内正确停止与恢复；
@@ -220,20 +222,22 @@ WatchBuddy API
 
 - 同意 DevEco Studio、HarmonyOS SDK 或设备调试协议；
 - 在 AGC 创建 HarmonyOS 手表应用并确认包名、设备类型与协议；
-- 在安装阶段使用已配对华为手机上的应用调测助手选择 HAP，并在手表上确认安装或敏感权限；
+- 在安装阶段按智能穿戴官方调测流程连接 GT 6 Pro，并在手表上确认安装或敏感权限；
 - 选择最终服务部署环境与计费方案。
 
 除上述必须由用户确认的动作外，构建、测试、文档和本地配置由项目自动化完成。需要操作手表时，
 必须提前说明具体操作和目的。不得操作用户手机。
 
-手机仅作为 Lite Wearable 官方规定的 HAP 安装通道，不安装或运行 WatchBuddy 手机端，也不参与
-WatchBuddy 的联网、对话、提醒、语音、传感器或记忆。安装后的独立运行验收必须关闭手机或断开蓝牙。
+不安装或运行 WatchBuddy 手机端，也不让它参与 WatchBuddy 的联网、对话、提醒、语音、传感器或
+记忆。若 GT 6 Pro 的官方调测或系统网络路径需要已配对手机，只允许用户本人完成必要操作；这不等于
+引入 WatchBuddy 配套 App。
 
 ## 7. 已有资产与退出旧路线
 
 ### 可复用
 
-- `apps/watch-huawei` 的角色 UI、状态样式和本地存储；
+- `apps/watch-huawei` 的角色 UI、状态、协议和受控宠物安装逻辑，仅作为 ArkTS 迁移来源；
+- `apps/watch-huawei-wearable` 的正确智能穿戴工程、构建脚本和 HAP 输出；
 - `packages/companion-core` 的状态、协议、主动策略和记忆模型；
 - 现有协议测试中的长度、过期、重复和幂等约束。
 
@@ -244,21 +248,20 @@ WatchBuddy 的联网、对话、提醒、语音、传感器或记忆。安装后
 - 手机 ASR/TTS、手机活动采样和手机端记忆界面；
 - Android APPID `118346425` 及已驳回的 Wear Engine 申请材料。
 
-旧工程在手表独立路线通过阶段 0 前不得删除；阶段 0 通过后再以单独中文提交进行归档或移除。
+旧 Lite Wearable 工程在新 ArkTS 工程完成 HAP 构建、真机安装和功能迁移前不得删除；迁移通过后
+再以单独中文提交归档或移除。
 
 ## 8. 当前已知事实
 
-- 当前表端配置为 `liteWearable`、圆屏 466 × 466，包名 `com.watchbuddy.watch`；
-- 华为当前文档标明 WATCH GT 6 的设备能力级别为 API 20；当前官方 Lite Wearable 示例工程仍使用
-  `targetSdkVersion/compatibleSdkVersion = 5.0.5(17)`，本工程与官方示例保持一致；
-- Lite Wearable 提供 `@system.fetch`，默认支持 HTTPS；华为文档给出的限制为请求头不超过 2KB、
-  传输层单包不超过 7KB；
-- Lite Wearable 不能直接连接 DevEco Studio，官方真机安装流程依赖应用调测助手和已配对华为手机；
-- 当前电脑已安装并验证 DevEco Studio 6.0.2，内置 OHPM、Hvigor、Java 和 Node.js 可识别；
-  内置 HarmonyOS 6.0.2/HMS SDK 的 `toolchains`、`ets`、`native`、`previewer` 已存在，
-  仅缺少 `js`。手动 Hvigor 构建已用 `00303168` 确认该缺失会阻止 HAP 构建；
-- 当前表端运行入口已接入 `@system.fetch` 注册、状态、快捷回复和记忆 API，包含紧凑本地缓存与
-  三次有界重试，且不再导入 Wear Engine；公网 HTTPS 服务地址、HAP 构建和真机联网仍未验证；
+- GT 6 Pro 官方产品页标明 HarmonyOS 6；华为将 HarmonyOS 5.1 及以上穿戴设备归为“智能穿戴”，
+  使用 ArkTS 与 ArkUI。旧 `liteWearable` JS 工程不是目标设备的正确交付路线；
+- 新主工程为 `apps/watch-huawei-wearable`，设备类型 `wearable`、ArkTS Stage 模型、包名
+  `com.watchbuddy.watch`，target `6.0.2(22)`、compatible `5.0.2(14)`；
+- 当前电脑已验证 DevEco Studio 6.0.2、OHPM、Hvigor、Java、Node.js 和预集成 SDK；
+  `DEVECO_SDK_HOME` 必须指向 `Contents/sdk`，不能指向 `Contents/sdk/default`；
+- `npm run doctor:watch` 已完整通过，`npm run build:watch` 已成功生成智能穿戴 unsigned HAP；
+- 旧 JS 表端已接入注册、状态、快捷回复、记忆和受控宠物安装，且不再导入 Wear Engine；这些能力
+  正在迁移到 ArkTS，公网 HTTPS 和真机联网仍未验证；
 - Android APK 已构建安装，但不再属于目标架构；
 - Android APPID `118346425` 的 Wear Engine 申请已被驳回，审核意见建议手表直接联网同步服务端；
 - 当前 Codex Pet v2 是 8 × 11 图集并包含 16 个注视方向；8 × 9 只作为旧版兼容输入，不作为新资源标准；
@@ -269,13 +272,9 @@ WatchBuddy 的联网、对话、提醒、语音、传感器或记忆。安装后
   消息、处理中、失败、页面隐藏和记忆页生命周期均有 Node.js 契约测试；
 - 466 × 466 浏览器预览已验证透明背景、176 × 176 触摸区和消息/回复区无重叠，但不能替代 HAP
   编译或 GT 6 Pro 真机结果；
-- 服务端已提供鉴权后的受控宠物列表、紧凑渲染清单、分页资源摘要与按 ID 下载接口；所有 JSON
-  响应受 7KB 上限约束，单帧提供长度、ETag 和 SHA-256，并支持 Lite Wearable 可读取的
-  Base64 JSON；当前只发布已审核的 Sprout PNG 轻量包；
-- DevEco 6.0.2 随附 API 声明确认 Lite Wearable 的 `@system.fetch` 响应不提供
-  ArrayBuffer，而 `@system.file` 保留 `writeArrayBuffer`、`readArrayBuffer` 和 `move`；
-  随附媒体文档列出的 Lite Wearable 图片格式为 BMP/JPEG/PNG，因此动态同步不使用 WebP；
-- 表端已接入手动触发的宠物目录浏览、Base64 解码、纯 JavaScript SHA-256、PNG 魔数/长度校验、
+- 服务端已提供鉴权后的受控宠物列表、紧凑渲染清单、分页资源摘要与按 ID 下载接口；单帧提供长度、
+  ETag 和 SHA-256；当前只发布已审核的 Sprout PNG 轻量包；
+- 旧 JS 表端已接入手动触发的宠物目录浏览、Base64 解码、纯 JavaScript SHA-256、PNG 魔数/长度校验、
   临时文件回读、版本化移动和紧凑选择指针；瞬时网络错误最多重试三次，格式/摘要错误不重试；
   73 帧全部成功后才切换，失败或页面隐藏时回滚；
 - 动态宠物缓存限制为一个 2MiB 活跃版本，更新过程最多占用 4MiB，新版本提交后清理旧版本；
@@ -284,7 +283,7 @@ WatchBuddy 的联网、对话、提醒、语音、传感器或记忆。安装后
 - 已提供 codex-pets.net 构建期受控导入器，仅允许官方 HTTPS 下载路径和已识别的可再分发许可证，
   并校验同源重定向、响应/解压预算、ZIP 路径、文件集合、v2 清单及完整 PNG/WebP 图集；站点分享页
   不能单独作为许可证证据，尚待获得一只明确授权的站点 v2 宠物后加入目录；
-- 手表 HAP 构建、签名、安装、独立 HTTPS、后台、语音与传感器均仍需直接证据。
+- 智能穿戴 unsigned HAP 构建已通过；签名、GT 6 Pro 安装、HTTPS、后台、语音与传感器仍需直接证据。
 
 ## 9. 宠物资源设计决策
 
@@ -306,7 +305,7 @@ Codex v2 源包的真源是当前 hatch-pet 契约：
 
 WatchBuddy 不在手表上直接解释这个桌面端格式。构建期转换器先完整校验源包，再生成
 `watch-pet.json` 和手表专用小帧。目标尺寸、格式、透明度和帧数必须由 466 × 466 预览、HAP
-大小报告与 Lite Wearable 运行验证共同决定，不能先凭经验固定。旧 8 × 9 资源只能进入显式的
+大小报告与智能穿戴真机验证共同决定，不能先凭经验固定。旧 8 × 9 资源只能进入显式的
 兼容迁移分支，不能冒充 v2，也不能阻止 v2 注视方向进入源资产归档。
 
 ### 9.3 状态映射
@@ -352,24 +351,24 @@ watch-pet.json + 受控本地帧
 
 ### 9.5 动态同步的降级路径
 
-Lite Wearable 的动态二进制下载、可持久文件目录和运行时图片路径仍待 SDK/真机证明。因此先完成
-内置默认宠物与构建期多宠物打包。若动态能力不通过，服务器仍可展示可用目录，但用户选择会进入
-下一个 HAP 版本，不以手机、Wear Engine、Base64 大 JSON 或未经校验的远程图片绕过平台限制。
+智能穿戴的 Network Kit 下载、应用沙箱持久文件和运行时图片路径仍待 ArkTS 实现与真机证明。
+因此先完成内置默认宠物与构建期多宠物打包。若动态能力不通过，服务器仍可展示可用目录，但用户
+选择会进入下一个 HAP 版本，不以手机、Wear Engine 或未经校验的远程图片绕过平台限制。
 
 ### 9.6 依据
 
 - [Codex Pets v2 页面](https://codex-pets.net/)：当前站点说明 v2 宠物新增中立姿势与 16 个方向；
 - 当前安装的 hatch-pet v2 契约：定义 8 × 11 图集、11 行语义与严格 QA；
 - [华为穿戴设备开发概览](https://developer.huawei.com/consumer/cn/multidevice/wearables/)：
-  Lite Wearable 使用轻量化 UI 与低功耗能力；
-- [华为轻量级穿戴开发指南](https://developer.huawei.com/consumer/cn/doc/best-practices/bpta-lite-wearable-guide)：
-  用于后续 SDK、组件、资源和真机能力核验。
+  区分智能穿戴与轻量级智能穿戴；
+- [华为智能穿戴应用开发](https://developer.huawei.com/consumer/cn/multidevice/wearables/smart/)：
+  用于 ArkTS、ArkUI、SDK、资源和真机能力核验。
 
 ## 10. 系统表盘 Spike 结论
 
-华为将“轻量级智能穿戴应用”和“表盘主题”定义为两条独立交付路线。系统表盘需要使用
+华为将“智能穿戴应用”和“表盘主题”定义为两条独立交付路线。系统表盘需要使用
 Theme Studio Pro 创建 466 × 466 表盘工程，同时处理常亮与息屏/AOD 状态，再单独导出、测试和发布；
-它不是 `apps/watch-huawei` 生成的 Lite Wearable HAP。
+它不是 `apps/watch-huawei-wearable` 生成的智能穿戴 HAP。
 
 官方主题文档给出了序列帧图片和按钮触摸能力，因此可以继续验证“打包进表盘的简化宠物动画与轻点
 反馈”。但当前没有官方证据证明表盘主题能运行 WatchBuddy JS 应用、直接调用任意 HTTPS API、
@@ -382,7 +381,7 @@ Theme Studio Pro 创建 466 × 466 表盘工程，同时处理常亮与息屏/AO
 
 官方依据：
 
-- [华为：轻量级智能穿戴开发](https://developer.huawei.com/consumer/cn/multidevice/wearables/lite/)；
+- [华为：智能穿戴开发](https://developer.huawei.com/consumer/cn/multidevice/wearables/smart/)；
 - [华为：表盘主题与 Theme Studio Pro 工具](https://developer.huawei.com/consumer/cn/doc/content/themes-tools-0000001104440212)；
 - [华为：Theme Studio Pro 466 × 466 表盘样式](https://developer.huawei.com/consumer/en/doc/content/style-customize-pro-0000001583807170)；
 - [华为：SourceImage 序列帧与触摸行为](https://developer.huawei.com/consumer/cn/doc/sourceimage-0000001073857910)。

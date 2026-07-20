@@ -13,7 +13,11 @@ import {
 } from "./check-watch-toolchain.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
-const watchProjectRoot = join(repositoryRoot, "apps", "watch-huawei");
+const watchProjectRoot = join(
+  repositoryRoot,
+  "apps",
+  "watch-huawei-wearable"
+);
 const buildOutputRoot = join(watchProjectRoot, "entry", "build");
 
 function findHapFiles(directory) {

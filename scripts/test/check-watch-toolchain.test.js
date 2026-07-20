@@ -7,21 +7,29 @@ import test from "node:test";
 import { inspectSdkHome } from "../check-watch-toolchain.mjs";
 
 
-const COMPONENTS = ["toolchains", "ets", "js", "native", "previewer"];
+const HMS_COMPONENTS = ["toolchains", "ets", "native", "previewer"];
 
 
-test("识别 DevEco 内置 HarmonyOS hms SDK 组件目录", () => {
+test("识别 DevEco 预集成的智能穿戴 SDK 根目录", () => {
   const root = mkdtempSync(join(tmpdir(), "watchbuddy-sdk-"));
   try {
-    const sdkHome = join(root, "default");
-    for (const component of COMPONENTS) {
-      mkdirSync(join(sdkHome, "hms", component), { recursive: true });
+    for (const component of HMS_COMPONENTS) {
+      mkdirSync(
+        join(root, "default", "hms", component),
+        { recursive: true }
+      );
     }
+    mkdirSync(join(root, "default", "openharmony", "js"), {
+      recursive: true
+    });
+    mkdirSync(join(root, "default", "openharmony", "toolchains"), {
+      recursive: true
+    });
 
-    const result = inspectSdkHome([sdkHome]);
+    const result = inspectSdkHome([root]);
 
-    assert.equal(result.home, sdkHome);
-    assert.equal(result.componentHome, join(sdkHome, "hms"));
+    assert.equal(result.home, root);
+    assert.equal(result.componentHome, join(root, "default"));
     assert.deepEqual(result.missingComponents, []);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -29,43 +37,51 @@ test("识别 DevEco 内置 HarmonyOS hms SDK 组件目录", () => {
 });
 
 
-test("部分 SDK 精确报告缺失的 JavaScript 组件", () => {
+test("部分 SDK 精确报告缺失的 OpenHarmony JavaScript 组件", () => {
   const root = mkdtempSync(join(tmpdir(), "watchbuddy-sdk-"));
   try {
-    const sdkHome = join(root, "default");
-    for (const component of COMPONENTS.filter((name) => name !== "js")) {
-      mkdirSync(join(sdkHome, "hms", component), { recursive: true });
+    for (const component of HMS_COMPONENTS) {
+      mkdirSync(
+        join(root, "default", "hms", component),
+        { recursive: true }
+      );
     }
+    mkdirSync(join(root, "default", "openharmony", "toolchains"), {
+      recursive: true
+    });
 
-    const result = inspectSdkHome([sdkHome]);
+    const result = inspectSdkHome([root]);
 
-    assert.equal(result.home, sdkHome);
-    assert.equal(result.componentHome, join(sdkHome, "hms"));
-    assert.deepEqual(result.missingComponents, ["js"]);
+    assert.equal(result.home, root);
+    assert.equal(result.componentHome, join(root, "default"));
+    assert.deepEqual(result.missingComponents, ["default/openharmony/js"]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
 
-test("HarmonyOS 工程不能把完整 OpenHarmony 目录当成 HMS SDK", () => {
+test("兼容旧的 default SDK 环境变量路径并归一到 SDK 根目录", () => {
   const root = mkdtempSync(join(tmpdir(), "watchbuddy-sdk-"));
   try {
-    const sdkHome = join(root, "default");
-    for (const component of COMPONENTS) {
+    for (const component of HMS_COMPONENTS) {
       mkdirSync(
-        join(sdkHome, "openharmony", component),
+        join(root, "default", "hms", component),
         { recursive: true }
       );
     }
-    for (const component of COMPONENTS.filter((name) => name !== "js")) {
-      mkdirSync(join(sdkHome, "hms", component), { recursive: true });
-    }
+    mkdirSync(join(root, "default", "openharmony", "js"), {
+      recursive: true
+    });
+    mkdirSync(join(root, "default", "openharmony", "toolchains"), {
+      recursive: true
+    });
 
-    const result = inspectSdkHome([sdkHome]);
+    const result = inspectSdkHome([join(root, "default")]);
 
-    assert.equal(result.componentHome, join(sdkHome, "hms"));
-    assert.deepEqual(result.missingComponents, ["js"]);
+    assert.equal(result.home, root);
+    assert.equal(result.componentHome, join(root, "default"));
+    assert.deepEqual(result.missingComponents, []);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

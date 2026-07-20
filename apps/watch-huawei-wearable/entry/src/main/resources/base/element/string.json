@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "WatchBuddy 智能穿戴应用"
+    },
+    {
+      "name": "entry_ability_desc",
+      "value": "WatchBuddy 主页面"
+    },
+    {
+      "name": "entry_ability_label",
+      "value": "WatchBuddy"
+    }
+  ]
+}

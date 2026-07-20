@@ -6,7 +6,7 @@ import {
   readFileSync
 } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
@@ -18,12 +18,13 @@ const devEcoCandidates = [
   join(homedir(), "Applications", "DevEco Studio.app")
 ];
 const androidStudioJava = "/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/java";
-const requiredSdkComponents = [
-  "toolchains",
-  "ets",
-  "js",
-  "native",
-  "previewer"
+const requiredSdkEntries = [
+  ["default", "hms", "toolchains"],
+  ["default", "hms", "ets"],
+  ["default", "hms", "native"],
+  ["default", "hms", "previewer"],
+  ["default", "openharmony", "js"],
+  ["default", "openharmony", "toolchains"]
 ];
 
 function findExecutable(command) {
@@ -94,41 +95,36 @@ export function inspectSdkHome(candidates = sdkCandidates()) {
 
     const possibleHomes = [
       candidate,
+      candidate.endsWith("/default") ? dirname(candidate) : "",
       ...readdirSync(candidate, { withFileTypes: true })
         .filter((entry) => (
           entry.isDirectory()
-          && !["hms", "openharmony"].includes(entry.name)
+          && entry.name !== "default"
         ))
         .map((entry) => join(candidate, entry.name))
-    ];
+    ].filter(Boolean);
 
     for (const possibleHome of possibleHomes) {
-      const componentHomes = [
-        possibleHome,
-        join(possibleHome, "hms")
-      ];
-      for (const componentHome of componentHomes) {
-        const missingComponents = requiredSdkComponents.filter(
-          (component) => !existsSync(join(componentHome, component))
-        );
-        if (missingComponents.length === 0) {
-          return {
-            componentHome,
-            home: possibleHome,
-            missingComponents: []
-          };
-        }
+      const missingComponents = requiredSdkEntries
+        .filter((segments) => !existsSync(join(possibleHome, ...segments)))
+        .map((segments) => segments.join("/"));
+      if (missingComponents.length === 0) {
+        return {
+          componentHome: join(possibleHome, "default"),
+          home: possibleHome,
+          missingComponents: []
+        };
+      }
 
-        if (
-          !bestPartialSdk
-          || missingComponents.length < bestPartialSdk.missingComponents.length
-        ) {
-          bestPartialSdk = {
-            componentHome,
-            home: possibleHome,
-            missingComponents
-          };
-        }
+      if (
+        !bestPartialSdk
+        || missingComponents.length < bestPartialSdk.missingComponents.length
+      ) {
+        bestPartialSdk = {
+          componentHome: join(possibleHome, "default"),
+          home: possibleHome,
+          missingComponents
+        };
       }
     }
   }
@@ -136,24 +132,31 @@ export function inspectSdkHome(candidates = sdkCandidates()) {
   return bestPartialSdk ?? {
     componentHome: "",
     home: "",
-    missingComponents: requiredSdkComponents
+    missingComponents: requiredSdkEntries.map(
+      (segments) => segments.join("/")
+    )
   };
 }
 
 function readProjectConfig() {
-  const configPath = new URL(
-    "apps/watch-huawei/entry/src/main/config.json",
+  const appConfigPath = new URL(
+    "apps/watch-huawei-wearable/AppScope/app.json5",
+    projectRoot
+  );
+  const moduleConfigPath = new URL(
+    "apps/watch-huawei-wearable/entry/src/main/module.json5",
     projectRoot
   );
   const buildProfilePath = new URL(
-    "apps/watch-huawei/build-profile.json5",
+    "apps/watch-huawei-wearable/build-profile.json5",
     projectRoot
   );
   const entryBuildProfilePath = new URL(
-    "apps/watch-huawei/entry/build-profile.json5",
+    "apps/watch-huawei-wearable/entry/build-profile.json5",
     projectRoot
   );
-  const config = JSON.parse(readFileSync(configPath, "utf8"));
+  const appConfig = JSON.parse(readFileSync(appConfigPath, "utf8"));
+  const moduleConfig = JSON.parse(readFileSync(moduleConfigPath, "utf8"));
   const buildProfile = JSON.parse(readFileSync(buildProfilePath, "utf8"));
   const entryBuildProfile = JSON.parse(
     readFileSync(entryBuildProfilePath, "utf8")
@@ -161,39 +164,32 @@ function readProjectConfig() {
   const product = buildProfile.app.products.find(
     (candidate) => candidate.name === "default"
   );
-  const requiredPageFiles = [
-    "index.js",
-    "index.hml",
-    "index.css"
-  ].map((fileName) => new URL(
-    `apps/watch-huawei/entry/src/main/js/MainAbility/pages/index/${fileName}`,
+  const requiredSourceFiles = [
+    "entryability/EntryAbility.ets",
+    "pages/Index.ets"
+  ].map((relativePath) => new URL(
+    `apps/watch-huawei-wearable/entry/src/main/ets/${relativePath}`,
     projectRoot
   ));
   const prohibitedRuntimeFiles = [
-    "peer-config.js",
-    "wear-engine-manager.js",
-    "sdk/litewearable/wearengine.js"
-  ].map((relativePath) => new URL(
-    `apps/watch-huawei/entry/src/main/js/MainAbility/common/${relativePath}`,
+    "peer-config.ets",
+    "wear-engine-manager.ets",
+    "WearEngine.ets"
+  ].map((fileName) => new URL(
+    `apps/watch-huawei-wearable/entry/src/main/ets/${fileName}`,
     projectRoot
   ));
 
   return {
-    bundleName: config.app.bundleName,
+    bundleName: appConfig.app.bundleName,
     compatibleSdkVersion: product?.compatibleSdkVersion,
-    deviceType: config.module.deviceType,
-    hasCircleScreen: config.module.distroFilter?.screenShape?.value?.includes(
-      "circle"
-    ) ?? false,
-    hasInternetPermission: config.module.reqPermissions?.some(
+    deviceTypes: moduleConfig.module.deviceTypes,
+    hasInternetPermission: moduleConfig.module.requestPermissions?.some(
       (permission) => permission.name === "ohos.permission.INTERNET"
     ) ?? false,
-    hasRequiredPageFiles: requiredPageFiles.every(existsSync),
+    hasRequiredSourceFiles: requiredSourceFiles.every(existsSync),
     hasWearEngineRuntimeFiles: prohibitedRuntimeFiles.some(existsSync),
-    hasWatchResolution: config.module.distroFilter?.screenWindow?.value?.includes(
-      "466*466"
-    ) ?? false,
-    isFaMode: entryBuildProfile.apiType === "faMode",
+    isStageMode: entryBuildProfile.apiType === "stageMode",
     runtimeOS: product?.runtimeOS,
     targetSdkVersion: product?.targetSdkVersion
   };
@@ -221,7 +217,7 @@ export function inspectWatchToolchain() {
       ? pathJava
       : (canRunJava(androidStudioJava) ? androidStudioJava : ""));
   const bundledSdk = devEcoPath
-    ? join(devEcoPath, "Contents", "sdk", "default")
+    ? join(devEcoPath, "Contents", "sdk")
     : "";
   const sdk = inspectSdkHome(sdkCandidates([bundledSdk]));
   const projectConfig = readProjectConfig();
@@ -269,33 +265,28 @@ export function inspectWatchToolchain() {
       detail: projectConfig.bundleName
     },
     {
-      name: "Lite Wearable",
-      ok: projectConfig.deviceType.includes("liteWearable"),
-      detail: projectConfig.deviceType.join(", ")
+      name: "智能穿戴设备类型",
+      ok: projectConfig.deviceTypes.includes("wearable"),
+      detail: projectConfig.deviceTypes.join(", ")
     },
     {
       name: "HarmonyOS 目标版本",
-      ok: projectConfig.targetSdkVersion === "5.0.5(17)"
-        && projectConfig.compatibleSdkVersion === "5.0.5(17)"
+      ok: projectConfig.targetSdkVersion === "6.0.2(22)"
+        && projectConfig.compatibleSdkVersion === "5.0.2(14)"
         && projectConfig.runtimeOS === "HarmonyOS",
-      detail: `${projectConfig.targetSdkVersion} / ${projectConfig.runtimeOS}`
+      detail: `${projectConfig.targetSdkVersion}（兼容 ${projectConfig.compatibleSdkVersion}）`
     },
     {
-      name: "Lite Wearable FA 模型",
-      ok: projectConfig.isFaMode,
-      detail: projectConfig.isFaMode ? "faMode" : "配置错误"
+      name: "ArkTS Stage 模型",
+      ok: projectConfig.isStageMode,
+      detail: projectConfig.isStageMode ? "stageMode" : "配置错误"
     },
     {
-      name: "GT 6 Pro 圆屏",
-      ok: projectConfig.hasCircleScreen && projectConfig.hasWatchResolution,
-      detail: projectConfig.hasCircleScreen && projectConfig.hasWatchResolution
-        ? "circle / 466*466"
-        : "配置错误"
-    },
-    {
-      name: "表端页面文件",
-      ok: projectConfig.hasRequiredPageFiles,
-      detail: projectConfig.hasRequiredPageFiles ? "JS/HML/CSS 完整" : "文件缺失"
+      name: "ArkTS 表端入口",
+      ok: projectConfig.hasRequiredSourceFiles,
+      detail: projectConfig.hasRequiredSourceFiles
+        ? "EntryAbility/Index 完整"
+        : "文件缺失"
     },
     {
       name: "独立运行源码",
@@ -334,8 +325,8 @@ export function printWatchToolchainReport(report) {
 
   if (!report.canBuild) {
     console.error(
-      "\n尚不能构建 HAP：请在 DevEco Studio > Tools > SDK Manager "
-      + "补齐上方列出的 HarmonyOS SDK 组件后重试。"
+      "\n尚不能构建 HAP：请检查 DevEco Studio、智能穿戴工程和 "
+      + "HarmonyOS/OpenHarmony 预集成 SDK 目录。"
     );
     return;
   }
