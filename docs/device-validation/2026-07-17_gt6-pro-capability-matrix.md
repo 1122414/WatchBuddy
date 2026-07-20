@@ -19,7 +19,7 @@
 | 屏幕 | `circle`、`466*466` | 与官方 WATCH GT 6 适配表一致 |
 | 网络 API | `ohos.permission.INTERNET` + `@system.fetch` | 源码和 SDK 支持 HTTPS，实际网络承载仍需真机验证 |
 | 手机业务依赖 | 主工程无 Wear Engine、手机 peer 或 WatchBuddy 手机 App | 符合“没有 WatchBuddy 手机配套 App”边界 |
-| 本机构建 | `npm run build:watch` 生成 6538689 字节 unsigned HAP，SHA-256 `5b126c15…1b24622` | Lite Wearable 编译通过，尚未签名或安装 |
+| 本机构建 | `npm run build:watch:signed` 生成 6720326 字节签名 HAP，SHA-256 `dc1c175e…5afd52` | Lite Wearable 编译、手工签名和静态校验通过，待安装 |
 
 ## 当前连接与安装通道
 
@@ -28,8 +28,8 @@
 | USB 物理连接 | macOS USB 树识别到“一加 13T” | 电脑已连手机，不代表已连手表 |
 | HDC 目标 | `hdc list targets -v` 无输出 | DevEco 当前没有可直接调试的手机或手表目标 |
 | 手机—手表 | 用户确认一加 13T 通过蓝牙连接 GT 6 Pro | 对日常配对有用，但不能把手表转发成 HDC 目标 |
-| 官方 Lite Wearable 调测 | Lite Wearable 不能直接连接 DevEco Studio；需手工签名，并由华为手机上的运动健康和应用调测助手安装 HAP | 无线调试或 USB/HDC 不是 GT 6 Pro 的官方安装路线 |
-| 当前手机兼容性 | 当前连接的是一加 13T；官方说明要求华为手机，并提示调测助手不能下载时使用非 HarmonyOS NEXT 手机 | 当前拓扑尚不满足官方调测前置条件；需要一台兼容华为手机完成安装 |
+| Lite Wearable 调测 | Lite Wearable 不能直接连接 DevEco Studio；需手工签名，并由已配对手机上的华为运动健康和应用调测助手安装 HAP | 无线调试或 USB/HDC 不是 GT 6 Pro 的安装路线 |
+| 当前手机兼容性 | 一加 13T 的应用调测助手已在 Lite Wearable 页面识别 GT 6 Pro，并成功取得用于 AGC 注册的设备标识 | 当前手机可承担开发安装桥接，尚待实际安装 HAP |
 
 应用调测助手和运动健康只是华为规定的开发安装工具，不是 WatchBuddy 手机端。不过，如果运行期
 HTTPS 也必须依靠已配对手机提供系统网络，这仍然不满足“手机关机后在线”的严格独立联网定义。
@@ -43,11 +43,11 @@ eSIM。基于该规格，手机断开后的任意 HTTPS 目前没有可识别的
 | 能力 | 验证方法 | 当前状态 | 失败处理 |
 |---|---|---|---|
 | 离线宠物与 UI | 安装后断开蓝牙，从手表启动、点击宠物、切页并重启 | 源码/测试完成，待真机 | 这是 GT 6 Pro 可继续交付的核心 |
-| 配对状态下 HTTPS | 保持手机配对，手表调用公网 `GET /health` | 待签名、安装和公网端点 | 记录网络是否经系统配对链路 |
+| 配对状态下 HTTPS | 保持手机配对，手表调用公网 `GET /health` | 待安装和公网端点 | 记录网络是否经系统配对链路 |
 | 手机断开后 HTTPS | 关闭手机蓝牙或手机关机后再次调用 `GET /health` | 高风险，官方规格无独立网络承载 | 失败即明确标记 GT 6 Pro 不满足严格在线独立性，不引入手机 App |
 | 无 WatchBuddy 手机 App | 不安装或启动 Android/iOS WatchBuddy | 主工程已满足，待真机流程确认 | 不回退到 Wear Engine |
-| 调试/发布签名 | AGC 手工签名 `com.watchbuddy.watch` Lite Wearable HAP | 待完成 | 不提交证书、私钥或口令 |
-| HAP 安装 | 应用调测助手“Lite Wearable > 应用管理”选择 HAP | 被兼容华为手机前置条件阻塞 | 只让用户本人操作手机 |
+| 调试签名 | AGC debug Profile 绑定 `com.watchbuddy.watch`、开发证书和目标 GT 6 Pro；签名 HAP 已生成 | 已完成，敏感材料均在仓库外 | 不提交证书、私钥、Profile 或口令 |
+| HAP 安装 | 应用调测助手“Lite Wearable > 应用管理”选择 `WatchBuddy-0.1.0-debug-signed.hap` | 待用户本人操作手机 | 安装前明确告知用户，Codex 不操作手机 |
 
 ## MVP 功能验收
 

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build:watch": "node scripts/build-watch-hap.mjs",
+    "build:watch:signed": "node scripts/build-signed-watch-hap.mjs",
     "convert:pet": "python3 tools/watch-pet/convert_codex_pet.py",
     "doctor:watch": "node scripts/check-watch-toolchain.mjs",
     "import:pet": "python3 tools/watch-pet/import_codex_pet.py",

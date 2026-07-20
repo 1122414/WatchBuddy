@@ -86,7 +86,8 @@ WatchBuddy API
 - [x] 按官方 GT 6 设备分类确认 `deviceType: ["liteWearable"]`、JavaScript FA 模型和 466 × 466 圆屏；
 - [x] 将 `apps/watch-huawei` 恢复为 GT 6 Pro 主工程，并保留 ArkTS `wearable` 工程作为实验原型；
 - [x] 构建不含 Wear Engine、内置 73 帧芽芽资源的 Lite Wearable unsigned HAP；
-- [ ] 手工配置签名并通过华为手机上的应用调测助手把 HAP 安装到 GT 6 Pro；
+- [x] 在 AGC 创建应用标识、调试证书与绑定目标设备的 debug Profile，并生成手工签名 HAP；
+- [ ] 通过已验证的一加 13T 应用调测助手把签名 HAP 安装到 GT 6 Pro；
 - [ ] 手表通过 HTTPS `GET /health` 获得服务端响应；
 - [ ] 不启动 WatchBuddy 手机应用时重复 HTTPS 测试；
 - [ ] 断开手机蓝牙后验证 GT 6 Pro 是否仍有可用网络，并记录设备边界；
@@ -127,9 +128,9 @@ WatchBuddy API
 硬门槛：仓库搜索不得再发现表端运行代码导入 Wear Engine 或 peer 配置。
 
 华为官方 Lite Wearable 指南明确把 WATCH GT 6 列为 466 × 466、支持 API 20 的轻量级穿戴设备；
-该设备不能直接连接 DevEco Studio，必须手工签名并借助华为手机上的运动健康和应用调测助手安装。
-因此 `apps/watch-huawei` 是 GT 6 Pro 的正确交付工程，`apps/watch-huawei-wearable` 只保留为已完成
-的 ArkTS 迁移实验，不作为 GT 6 Pro 安装包。
+该设备不能直接连接 DevEco Studio，必须手工签名并借助已配对手机上的华为运动健康和应用调测助手
+安装。当前一加 13T 的应用调测助手已经识别 GT 6 Pro，因此 `apps/watch-huawei` 是正确交付工程；
+`apps/watch-huawei-wearable` 只保留为已完成的 ArkTS 迁移实验，不作为 GT 6 Pro 安装包。
 
 Lite Wearable 主工程已实现内置宠物、`@system.fetch` 注册和状态同步、纯 JavaScript SHA-256、
 应用沙箱中的受控宠物安装、幂等快捷回复、安静模式和记忆控制。网络请求固定使用 HTTPS、8 秒
@@ -225,10 +226,11 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
 
 ### 阶段 5：签名、安装与真机交付
 
-- [ ] 创建/确认 HarmonyOS 手表应用产品，包名为 `com.watchbuddy.watch`；
-- [ ] 手工配置调试或发布签名，敏感材料不提交 Git；
-- [ ] 构建 HAP 并记录文件大小、版本和 SHA-256；
-- [ ] 在兼容华为手机安装运动健康和应用调测助手，并与 GT 6 Pro 配对；
+- [x] 创建 HarmonyOS 手表应用标识，包名为 `com.watchbuddy.watch`；
+- [x] 配置调试证书、设备绑定 debug Profile 和本机手工签名，敏感材料未提交 Git；
+- [x] 构建 `WatchBuddy-0.1.0-debug-signed.hap`：6720326 字节，SHA-256
+  `dc1c175e2a62eb3654043569c415a983ef9f37a8d6c9721f8c4e63c9ea5afd52`；
+- [x] 在一加 13T 安装华为运动健康和应用调测助手、配对 GT 6 Pro，并在 Lite Wearable 页面识别设备；
 - [ ] 由用户在应用调测助手的 Lite Wearable 应用管理中选择 HAP，安装到 GT 6 Pro；
 - [ ] 不启动 WatchBuddy 手机应用时完成注册、对话、回复、记忆与删除；
 - [ ] 断开手机蓝牙后重复网络测试并记录 GT 6 Pro 实际网络边界；
@@ -258,7 +260,7 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
 
 - 同意 DevEco Studio、HarmonyOS SDK 或设备调试协议；
 - 在 AGC 创建 Lite Wearable 应用并确认包名、设备类型、调试设备 UDID 与协议；
-- 在兼容华为手机上安装运动健康和应用调测助手，并完成 GT 6 Pro 配对；
+- 在兼容 Android 手机上安装华为运动健康和应用调测助手，并完成 GT 6 Pro 配对；
 - 在应用调测助手中选择手工签名 HAP，并在手表上确认安装或敏感权限；
 - 选择最终服务部署环境与计费方案。
 
@@ -301,10 +303,15 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
 - `npm run build:watch` 已成功生成 6538689 字节的 `entry-default-unsigned.hap`，SHA-256 为
   `5b126c15d2673eedbf029b615c6ddcefebddbff6c0af7b9e69ae639571b24622`；
 - Lite Wearable 表端使用 `@system.fetch`，公网 HTTPS 和真机联网仍未验证；
-- Lite Wearable 不能直接连接 DevEco Studio，也不能自动签名；官方流程要求手工签名，并通过
-  华为手机上的运动健康和应用调测助手安装 HAP；
+- Lite Wearable 不能直接连接 DevEco Studio，也不能自动签名；需通过已配对手机上的华为运动健康
+  和应用调测助手安装 HAP；当前一加 13T 已在 Lite Wearable 页面识别出目标 GT 6 Pro；
 - 2026-07-20 电脑 USB 只识别到一加 13T，`hdc list targets -v` 无目标；手机蓝牙配对手表不能把
-  GT 6 Pro 转成 HDC 目标，且当前一加手机不满足官方所述华为手机前置条件；
+  GT 6 Pro 转成 HDC 目标，但不影响应用调测助手作为安装桥接；
+- AGC 应用标识、调试证书和绑定目标设备的 debug Profile 已创建；本机私钥、证书、Profile 与口令
+  均保存在仓库外，口令由 macOS 钥匙串管理；
+- `npm run build:watch:signed` 已校验 Lite BIN 签名头、Profile 数字签名、包名、证书、调试设备绑定
+  与 HAP 内嵌 BIN 一致性，并生成 6720326 字节的签名 HAP，SHA-256 为
+  `dc1c175e2a62eb3654043569c415a983ef9f37a8d6c9721f8c4e63c9ea5afd52`；
 - GT 6 Pro 官方规格的数据连接只列 NFC、Bluetooth 和 GNSS，没有列 Wi‑Fi、蜂窝或 eSIM；
   因此手机断开后的 HTTPS 缺少可识别的独立网络承载，严格独立在线目标大概率受硬件限制；
 - ArkTS `apps/watch-huawei-wearable` 已构建过 unsigned HAP 并迁移过部分能力，但只保留为实验原型；
@@ -332,8 +339,8 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
   并校验同源重定向、响应/解压预算、ZIP 路径、文件集合、v2 清单及完整 PNG/WebP 图集；站点分享页
   不能单独作为许可证证据；2026-07-20 复核的站点通用条款禁止再分发，尚待获得一只页面单独开放
   许可或权利人书面授权的站点 v2 宠物后加入目录；
-- Lite Wearable unsigned HAP 已构建；手工签名、应用调测助手安装、HTTPS、后台、语音与传感器
-  仍需直接证据。ArkTS 原型构建记录保留，但不能用于 GT 6 Pro 交付。
+- Lite Wearable signed HAP 已构建并完成静态签名链路校验；应用调测助手安装、HTTPS、后台、语音
+  与传感器仍需直接证据。ArkTS 原型构建记录保留，但不能用于 GT 6 Pro 交付。
 
 ## 9. 宠物资源设计决策
 
