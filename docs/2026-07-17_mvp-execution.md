@@ -124,8 +124,9 @@ WatchBuddy API
 硬门槛：仓库搜索不得再发现表端运行代码导入 Wear Engine 或 peer 配置。
 
 旧 Lite Wearable JS 源码和 Node.js 契约测试已完成，但它不是 GT 6 Pro 的正确交付工程。
-`apps/watch-huawei-wearable` 已按智能穿戴 ArkTS Stage 模型建立并成功生成 HAP；角色、网络、
-存储和受控宠物安装仍需迁移到新工程。此前 `00303168` 是命令行把 `DEVECO_SDK_HOME` 错指向
+`apps/watch-huawei-wearable` 已按智能穿戴 ArkTS Stage 模型建立并成功生成 HAP；内置宠物渲染与
+互动已经迁移，网络、存储和受控宠物安装仍需迁移到新工程。此前 `00303168` 是命令行把
+`DEVECO_SDK_HOME` 错指向
 `Contents/sdk/default` 导致；改为 `Contents/sdk` 后构建成功。
 
 ### 阶段 2A：应用内宠物资源闭环
@@ -144,6 +145,10 @@ WatchBuddy API
 
 硬门槛：默认宠物必须在 WatchBuddy 应用主页的 466 × 466 预览/模拟环境中无裁切、状态映射正确，
 且完整测试通过。没有系统表盘能力证据时，只能称为“应用内宠物”。
+
+智能穿戴 ArkTS 工程现已内置芽芽 73 帧资源，使用逐帧时序播放，支持 800ms 点击防抖、跳跃、
+状态切换、动作完成后回到稳定状态、页面销毁时停止计时器和 35ms 触感反馈。DevEco 已成功把
+全部帧打入 unsigned HAP；流畅度、圆屏边缘和真实振动效果仍需 GT 6 Pro 验证。
 
 ### 阶段 2B：Codex Pet 目录与受控同步
 
@@ -259,7 +264,8 @@ WatchBuddy API
   `com.watchbuddy.watch`，target `6.0.2(22)`、compatible `5.0.2(14)`；
 - 当前电脑已验证 DevEco Studio 6.0.2、OHPM、Hvigor、Java、Node.js 和预集成 SDK；
   `DEVECO_SDK_HOME` 必须指向 `Contents/sdk`，不能指向 `Contents/sdk/default`；
-- `npm run doctor:watch` 已完整通过，`npm run build:watch` 已成功生成智能穿戴 unsigned HAP；
+- `npm run doctor:watch` 已完整通过，`npm run build:watch` 已成功生成包含 73 个芽芽帧的智能穿戴
+  unsigned HAP；
 - 旧 JS 表端已接入注册、状态、快捷回复、记忆和受控宠物安装，且不再导入 Wear Engine；这些能力
   正在迁移到 ArkTS，公网 HTTPS 和真机联网仍未验证；
 - Android APK 已构建安装，但不再属于目标架构；
@@ -268,8 +274,8 @@ WatchBuddy API
 - 本机已有的 `chibi-skadi` 是 1536 × 1872 的旧资源且缺少 v2 标记，不能直接用于默认宠物交付；
 - 原创默认宠物 Sprout（芽芽）已完成 hatch-pet v2 图集、三人方向盲测、最终视觉 QA、授权说明与
   手表资源转换；受控同步使用 73 帧、325871 字节的 256 色透明 PNG 轻量包；
-- 表端源码已用 Sprout PNG 逐帧渲染替换 CSS 占位角色，内置 73 帧为 1237298 字节；状态、轻点、
-  消息、处理中、失败、页面隐藏和记忆页生命周期均有 Node.js 契约测试；
+- 旧 JS 与新 ArkTS 表端源码均已用 Sprout PNG 逐帧渲染替换占位角色；新 ArkTS HAP 已打入 73 帧，
+  状态、轻点、防抖、动作回落和页面销毁生命周期通过静态契约与 DevEco 编译验证；
 - 466 × 466 浏览器预览已验证透明背景、176 × 176 触摸区和消息/回复区无重叠，但不能替代 HAP
   编译或 GT 6 Pro 真机结果；
 - 服务端已提供鉴权后的受控宠物列表、紧凑渲染清单、分页资源摘要与按 ID 下载接口；单帧提供长度、

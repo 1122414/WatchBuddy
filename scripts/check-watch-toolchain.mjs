@@ -8,7 +8,7 @@ import {
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const projectRoot = new URL("../", import.meta.url);
 const devEcoCandidates = [
@@ -72,6 +72,22 @@ function findBundledExecutable(devEcoPath, relativePath) {
 
   const executablePath = join(devEcoPath, relativePath);
   return isExecutable(executablePath) ? executablePath : "";
+}
+
+function countPngFiles(directory) {
+  if (!existsSync(directory)) {
+    return 0;
+  }
+  return readdirSync(directory, { withFileTypes: true }).reduce(
+    (total, entry) => {
+      const entryPath = join(directory, entry.name);
+      if (entry.isDirectory()) {
+        return total + countPngFiles(entryPath);
+      }
+      return total + Number(entry.isFile() && entry.name.endsWith(".png"));
+    },
+    0
+  );
 }
 
 function sdkCandidates(additionalCandidates = []) {
@@ -179,6 +195,15 @@ function readProjectConfig() {
     `apps/watch-huawei-wearable/entry/src/main/ets/${fileName}`,
     projectRoot
   ));
+  const petRuntimePath = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/ets/pet/PetRuntime.ets",
+    projectRoot
+  ));
+  const petResourceRoot = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/resources/rawfile/"
+      + "pets/watchbuddy-sprout",
+    projectRoot
+  ));
 
   return {
     bundleName: appConfig.app.bundleName,
@@ -187,9 +212,14 @@ function readProjectConfig() {
     hasInternetPermission: moduleConfig.module.requestPermissions?.some(
       (permission) => permission.name === "ohos.permission.INTERNET"
     ) ?? false,
+    hasVibratePermission: moduleConfig.module.requestPermissions?.some(
+      (permission) => permission.name === "ohos.permission.VIBRATE"
+    ) ?? false,
+    hasPetRuntime: existsSync(petRuntimePath),
     hasRequiredSourceFiles: requiredSourceFiles.every(existsSync),
     hasWearEngineRuntimeFiles: prohibitedRuntimeFiles.some(existsSync),
     isStageMode: entryBuildProfile.apiType === "stageMode",
+    petFrameCount: countPngFiles(petResourceRoot),
     runtimeOS: product?.runtimeOS,
     targetSdkVersion: product?.targetSdkVersion
   };
@@ -300,6 +330,21 @@ export function inspectWatchToolchain() {
       ok: projectConfig.hasInternetPermission,
       detail: projectConfig.hasInternetPermission
         ? "ohos.permission.INTERNET"
+        : "未声明"
+    },
+    {
+      name: "内置宠物运行时",
+      ok: projectConfig.hasPetRuntime
+        && projectConfig.petFrameCount === 73,
+      detail: projectConfig.hasPetRuntime
+        ? `ArkTS + ${projectConfig.petFrameCount} 帧`
+        : "运行时缺失"
+    },
+    {
+      name: "宠物触感权限",
+      ok: projectConfig.hasVibratePermission,
+      detail: projectConfig.hasVibratePermission
+        ? "ohos.permission.VIBRATE"
         : "未声明"
     }
   ];
