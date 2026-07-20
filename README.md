@@ -111,6 +111,10 @@ npm run validate:pet -- /path/to/watch-pet-output
 `pet.json` 与一张 PNG/WebP 图集，并在写入前校验 v2 清单、图片魔数、尺寸、透明通道、
 必需格和未使用格。输出包含可追溯的 `source-provenance.json`。
 
+截至 2026-07-20，站点通用条款仍写明资源默认仅限个人、非商业使用且不得再分发。
+因此下载按钮或作者署名不等于 WatchBuddy 可通过服务端重新分发该宠物；只有资源页面另行给出
+受支持的开放许可证、作者提供书面许可，或权利人明确授权 WatchBuddy 使用时才能进入目录。
+
 转换器拒绝旧版/伪装 v2、无透明通道、错误网格、空必需格、非透明未使用格、未知授权和已有输出
 目录；当前 v2 契约中的 `row 0 / column 6` 中立帧属于必需格。成功结果包含
 `watch-pet.json`、本地 PNG/WebP 小帧、`conversion-report.json`、`preview-466.png`
