@@ -6,9 +6,21 @@ import {
   HealthResult,
   isValidDeviceId,
   isValidDeviceToken,
+  isValidPetAssetId,
+  isValidPetId,
+  isValidPetVersion,
   parseCompanionStatePayload,
   parseHealthPayload,
-  parseRegistrationPayload
+  parsePetAssetPagePayload,
+  parsePetAssetPayload,
+  parsePetCatalogPayload,
+  parsePetDetailPayload,
+  parseRegistrationPayload,
+  PetAssetDescriptor,
+  PetAssetDownload,
+  PetAssetPage,
+  PetCatalog,
+  PetDetail
 } from './ApiModels';
 
 const MAX_RESPONSE_BYTES: number = 7 * 1024;
@@ -111,6 +123,94 @@ export class WatchBuddyApi {
     return parseCompanionStatePayload(response.body);
   }
 
+  async petCatalog(deviceToken: string): Promise<PetCatalog> {
+    requireDeviceToken(deviceToken);
+    const response: JsonResponse = await this.requestJson(
+      '/v1/pets',
+      http.RequestMethod.GET,
+      '',
+      deviceToken,
+      ''
+    );
+    requireStatus(response, 200);
+    return parsePetCatalogPayload(response.body);
+  }
+
+  async petDetail(
+    deviceToken: string,
+    petId: string
+  ): Promise<PetDetail> {
+    requireDeviceToken(deviceToken);
+    if (!isValidPetId(petId)) {
+      throw new Error('invalid_request');
+    }
+    const response: JsonResponse = await this.requestJson(
+      `/v1/pets/${petId}`,
+      http.RequestMethod.GET,
+      '',
+      deviceToken,
+      ''
+    );
+    requireStatus(response, 200);
+    return parsePetDetailPayload(response.body, petId);
+  }
+
+  async petAssets(
+    deviceToken: string,
+    petId: string,
+    version: string,
+    limit: number,
+    offset: number
+  ): Promise<PetAssetPage> {
+    requireDeviceToken(deviceToken);
+    if (!isValidPetId(petId)
+      || !isValidPetVersion(version)
+      || !Number.isInteger(limit)
+      || limit < 1
+      || limit > 20
+      || !Number.isInteger(offset)
+      || offset < 0
+      || offset > 100000) {
+      throw new Error('invalid_request');
+    }
+    const response: JsonResponse = await this.requestJson(
+      `/v1/pets/${petId}/assets?limit=${limit}&offset=${offset}`,
+      http.RequestMethod.GET,
+      '',
+      deviceToken,
+      ''
+    );
+    requireStatus(response, 200);
+    return parsePetAssetPagePayload(
+      response.body,
+      petId,
+      version,
+      offset
+    );
+  }
+
+  async petAsset(
+    deviceToken: string,
+    petId: string,
+    descriptor: PetAssetDescriptor
+  ): Promise<PetAssetDownload> {
+    requireDeviceToken(deviceToken);
+    if (!isValidPetId(petId)
+      || !descriptor
+      || !isValidPetAssetId(descriptor.id)) {
+      throw new Error('invalid_request');
+    }
+    const response: JsonResponse = await this.requestJson(
+      `/v1/pets/${petId}/assets/${descriptor.id}?encoding=base64`,
+      http.RequestMethod.GET,
+      '',
+      deviceToken,
+      ''
+    );
+    requireStatus(response, 200);
+    return parsePetAssetPayload(response.body, descriptor);
+  }
+
   private async requestJson(
     path: string,
     method: http.RequestMethod,
@@ -149,7 +249,8 @@ export class WatchBuddyApi {
       }
       return new JsonResponse(Number(response.responseCode), response.result);
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof Error
+        && error.message === 'response_too_large') {
         throw error;
       }
       throw new Error('network_error');
@@ -175,6 +276,12 @@ function normalizeBaseUrl(value: string): string {
 function requireStatus(response: JsonResponse, expected: number): void {
   if (response.statusCode !== expected) {
     throw new Error(`http_${response.statusCode}`);
+  }
+}
+
+function requireDeviceToken(deviceToken: string): void {
+  if (!isValidDeviceToken(deviceToken)) {
+    throw new Error('invalid_request');
   }
 }
 

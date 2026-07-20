@@ -3,11 +3,21 @@ import { preferences } from '@kit.ArkData';
 import { util } from '@kit.ArkTS';
 
 import { isCharacterState, isValidDeviceId } from '../network/ApiModels';
+import {
+  isValidPetId,
+  isValidPetVersion
+} from '../network/ApiModels';
 
 const PREFERENCES_NAME: string = 'watchbuddy';
 const DEVICE_ID_KEY: string = 'device_id';
 const REGISTRATION_KEY: string = 'registration_idempotency_key';
 const CHARACTER_STATE_KEY: string = 'character_state';
+const PET_SELECTION_KEY: string = 'pet_selection';
+
+interface PetSelectionPayload {
+  petId: string;
+  version: string;
+}
 
 export class LocalIdentity {
   deviceId: string;
@@ -18,6 +28,20 @@ export class LocalIdentity {
     this.deviceId = deviceId;
     this.registrationKey = registrationKey;
     this.characterState = characterState;
+  }
+}
+
+export class PetSelection {
+  petId: string;
+  version: string;
+
+  constructor(petId: string, version: string) {
+    this.petId = petId;
+    this.version = version;
+  }
+
+  isDownloaded(): boolean {
+    return isValidPetId(this.petId) && isValidPetVersion(this.version);
   }
 }
 
@@ -69,6 +93,45 @@ export class WatchBuddyPreferences {
       throw new Error('invalid_character_state');
     }
     await this.saveString(CHARACTER_STATE_KEY, value);
+  }
+
+  async loadPetSelection(): Promise<PetSelection> {
+    try {
+      const store: preferences.Preferences =
+        await preferences.getPreferences(this.context, PREFERENCES_NAME);
+      const storedSelection: preferences.ValueType =
+        await store.get(PET_SELECTION_KEY, '');
+      if (typeof storedSelection !== 'string'
+        || storedSelection.length < 1
+        || storedSelection.length > 160) {
+        return new PetSelection('', '');
+      }
+      const payload: PetSelectionPayload =
+        JSON.parse(storedSelection) as PetSelectionPayload;
+      if (!payload
+        || !isValidPetId(payload.petId)
+        || !isValidPetVersion(payload.version)) {
+        return new PetSelection('', '');
+      }
+      return new PetSelection(payload.petId, payload.version);
+    } catch (error) {
+      return new PetSelection('', '');
+    }
+  }
+
+  async savePetSelection(selection: PetSelection): Promise<void> {
+    if (!selection.isDownloaded()) {
+      throw new Error('invalid_pet_selection');
+    }
+    const payload: PetSelectionPayload = {
+      petId: selection.petId,
+      version: selection.version
+    };
+    await this.saveString(PET_SELECTION_KEY, JSON.stringify(payload));
+  }
+
+  async clearPetSelection(): Promise<void> {
+    await this.saveString(PET_SELECTION_KEY, '');
   }
 
   private async saveString(key: string, value: string): Promise<void> {

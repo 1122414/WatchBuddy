@@ -49,6 +49,22 @@ const sessionPath = new URL(
   "entry/src/main/ets/runtime/WatchBuddySession.ets",
   wearableRoot
 );
+const apiModelsPath = new URL(
+  "entry/src/main/ets/network/ApiModels.ets",
+  wearableRoot
+);
+const petFilesPath = new URL(
+  "entry/src/main/ets/pet/PetFiles.ets",
+  wearableRoot
+);
+const petInstallerPath = new URL(
+  "entry/src/main/ets/pet/PetInstaller.ets",
+  wearableRoot
+);
+const petIntegrityPath = new URL(
+  "entry/src/main/ets/pet/PetIntegrity.ets",
+  wearableRoot
+);
 
 const EXPECTED_FRAMES = {
   failed: 8,
@@ -176,4 +192,71 @@ test("设备令牌只进入 Asset Store Kit，Preferences 不保存令牌", () =
   assert.match(secretStore, /asset\.SyncType\.NEVER/);
   assert.doesNotMatch(secretStore, /@kit\.ArkData|preferences/);
   assert.doesNotMatch(localPreferences, /deviceToken|device_token|TOKEN/);
+});
+
+
+test("ArkTS 宠物目录只读取受控 API 且执行严格响应校验", () => {
+  const networkClient = readFileSync(networkClientPath, "utf8");
+  const apiModels = readFileSync(apiModelsPath, "utf8");
+  assert.match(networkClient, /'\/v1\/pets'/);
+  assert.match(networkClient, /`\/v1\/pets\/\$\{petId\}`/);
+  assert.match(
+    networkClient,
+    /assets\?limit=\$\{limit\}&offset=\$\{offset\}/
+  );
+  assert.match(networkClient, /\?encoding=base64/);
+  assert.match(apiModels, /payload\.renderer !== 'frame-sequence-v1'/);
+  assert.match(apiModels, /MAX_PET_ASSET_BYTES: number = 7 \* 1024/);
+  assert.match(apiModels, /payload\.source\.format|payload\.format === 'codex-pet-v2'/);
+  assert.match(apiModels, /redistributionAllowed === true/);
+  assert.match(apiModels, /parseStoredPetDescriptors/);
+});
+
+
+test("ArkTS 动态宠物逐帧做 Base64、PNG 和 SHA-256 校验", () => {
+  const integrity = readFileSync(petIntegrityPath, "utf8");
+  assert.match(integrity, /from '@kit\.CryptoArchitectureKit'/);
+  assert.match(integrity, /cryptoFramework\.createMd\('SHA256'\)/);
+  assert.match(integrity, /decoded\.toString\('base64'\) !== value/);
+  assert.match(integrity, /PNG_MAGIC/);
+  assert.match(integrity, /sha256Hex\(bytes\) !== descriptor\.sha256/);
+});
+
+
+test("ArkTS 宠物安装有界重试、缓存预算、原子切换和失败回滚", () => {
+  const installer = readFileSync(petInstallerPath, "utf8");
+  const files = readFileSync(petFilesPath, "utf8");
+  assert.match(installer, /MAX_ACTIVE_PET_BYTES: number = 2 \* 1024 \* 1024/);
+  assert.match(installer, /MAX_TRANSIENT_PET_BYTES: number = 4 \* 1024 \* 1024/);
+  assert.match(installer, /MAX_PET_DOWNLOAD_ATTEMPTS: number = 3/);
+  assert.match(installer, /RETRY_BASE_DELAY_MS: number = 400/);
+  assert.match(installer, /http_429/);
+  assert.match(installer, /http_504/);
+  assert.match(installer, /this\.files\.removeTemporary\(paths\)/);
+  assert.ok(
+    installer.indexOf("this.files.commitInstall(paths)")
+      < installer.indexOf("this.preferences.savePetSelection(selection)")
+  );
+  assert.ok(
+    installer.indexOf("this.preferences.savePetSelection(selection)")
+      < installer.indexOf("this.files.removeVersion(")
+  );
+  assert.match(files, /from '@kit\.CoreFileKit'/);
+  assert.match(files, /fileIo\.renameSync/);
+  assert.match(files, /fileIo\.fsyncSync/);
+  assert.match(files, /\.install-\$\{petId\}-\$\{versionTag\}/);
+});
+
+
+test("圆屏宠物库恢复已安装宠物并保留内置宠物降级", () => {
+  const page = readFileSync(pagePath, "utf8");
+  const runtime = readFileSync(runtimePath, "utf8");
+  assert.match(page, /await this\.session\.loadInstalledPet\(\)/);
+  assert.match(page, /await this\.session\.loadPetCatalog\(\)/);
+  assert.match(page, /await this\.session\.installPet\(/);
+  assert.match(page, /Image\(this\.petFramePath\)/);
+  assert.match(page, /Image\(\$rawfile\(this\.petFramePath\)\)/);
+  assert.match(page, /已保留当前宠物/);
+  assert.match(runtime, /file:\/\/\$\{this\.directory\}/);
+  assert.match(runtime, /createDownloadedPetRuntime/);
 });

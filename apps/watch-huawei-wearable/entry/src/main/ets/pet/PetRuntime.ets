@@ -1,3 +1,8 @@
+import {
+  PetAnimationDefinition,
+  PetDetail
+} from '../network/ApiModels';
+
 const PET_ROOT: string = 'pets/watchbuddy-sprout';
 
 export const DEFAULT_PET_ID: string = 'watchbuddy-sprout';
@@ -37,6 +42,66 @@ export class PetPlayback {
   }
 }
 
+export class PetRuntimeDefinition {
+  id: string;
+  displayName: string;
+  downloaded: boolean;
+  private pet: PetDetail | null;
+  private directory: string;
+
+  constructor(
+    id: string,
+    displayName: string,
+    downloaded: boolean,
+    pet: PetDetail | null,
+    directory: string
+  ) {
+    this.id = id;
+    this.displayName = displayName;
+    this.downloaded = downloaded;
+    this.pet = pet;
+    this.directory = directory;
+  }
+
+  animation(name: string): PetAnimation {
+    if (this.pet === null || !this.downloaded) {
+      return builtInPetAnimation(name);
+    }
+    const definition: PetAnimationDefinition =
+      this.pet.animations.get(name);
+    const frames: Array<string> = [];
+    for (let index: number = 0;
+      index < definition.frames.length;
+      index += 1) {
+      frames.push(
+        `file://${this.directory}/${definition.frames[index]}.png`
+      );
+    }
+    return new PetAnimation(
+      frames,
+      definition.durationsMs,
+      definition.loop
+    );
+  }
+
+  animationForState(state: string): string {
+    if (this.pet === null || !this.downloaded) {
+      return builtInAnimationForState(state);
+    }
+    if (state === 'offline') {
+      return this.pet.stateMap.get('daydreaming');
+    }
+    return this.pet.stateMap.get(state);
+  }
+
+  animationForInteraction(interaction: string): string {
+    if (this.pet === null || !this.downloaded) {
+      return builtInInteractionAnimation(interaction);
+    }
+    return this.pet.interactionMap.get(interaction);
+  }
+}
+
 function framePaths(directory: string, count: number): Array<string> {
   const frames: Array<string> = [];
   for (let index: number = 0; index < count; index += 1) {
@@ -55,8 +120,36 @@ function idleAnimation(): PetAnimation {
 }
 
 export const DEFAULT_PET_FRAME: string = idleAnimation().frames[0];
+export const DEFAULT_PET_RUNTIME: PetRuntimeDefinition =
+  new PetRuntimeDefinition(
+    DEFAULT_PET_ID,
+    '芽芽',
+    false,
+    null,
+    ''
+  );
 
-export function getPetAnimation(name: string): PetAnimation {
+export function createDownloadedPetRuntime(
+  pet: PetDetail,
+  directory: string
+): PetRuntimeDefinition {
+  return new PetRuntimeDefinition(
+    pet.id,
+    pet.displayName,
+    true,
+    pet,
+    directory
+  );
+}
+
+export function getPetAnimation(
+  name: string,
+  runtime: PetRuntimeDefinition = DEFAULT_PET_RUNTIME
+): PetAnimation {
+  return runtime.animation(name);
+}
+
+function builtInPetAnimation(name: string): PetAnimation {
   switch (name) {
     case 'runningRight':
       return new PetAnimation(
@@ -112,6 +205,17 @@ export function getPetAnimation(name: string): PetAnimation {
 }
 
 export function petAnimationForState(state: string): string {
+  return DEFAULT_PET_RUNTIME.animationForState(state);
+}
+
+export function petAnimationForRuntimeState(
+  state: string,
+  runtime: PetRuntimeDefinition
+): string {
+  return runtime.animationForState(state);
+}
+
+function builtInAnimationForState(state: string): string {
   switch (state) {
     case 'daydreaming':
     case 'concerned':
@@ -133,12 +237,26 @@ export function petAnimationForState(state: string): string {
   }
 }
 
-export function petSteadyAnimationForState(state: string): string {
-  const name: string = petAnimationForState(state);
-  return getPetAnimation(name).loop ? name : 'idle';
+export function petSteadyAnimationForState(
+  state: string,
+  runtime: PetRuntimeDefinition = DEFAULT_PET_RUNTIME
+): string {
+  const name: string = runtime.animationForState(state);
+  return getPetAnimation(name, runtime).loop ? name : 'idle';
 }
 
 export function petInteractionAnimation(interaction: string): string {
+  return DEFAULT_PET_RUNTIME.animationForInteraction(interaction);
+}
+
+export function petInteractionAnimationForRuntime(
+  interaction: string,
+  runtime: PetRuntimeDefinition
+): string {
+  return runtime.animationForInteraction(interaction);
+}
+
+function builtInInteractionAnimation(interaction: string): string {
   switch (interaction) {
     case 'tap':
       return 'jumping';
@@ -153,8 +271,11 @@ export function petInteractionAnimation(interaction: string): string {
   }
 }
 
-export function createPetPlayback(name: string): PetPlayback {
-  const animation: PetAnimation = getPetAnimation(name);
+export function createPetPlayback(
+  name: string,
+  runtime: PetRuntimeDefinition = DEFAULT_PET_RUNTIME
+): PetPlayback {
+  const animation: PetAnimation = getPetAnimation(name, runtime);
   const animationName: string = name === 'idle'
     || name === 'runningRight'
     || name === 'runningLeft'
@@ -175,8 +296,12 @@ export function createPetPlayback(name: string): PetPlayback {
   );
 }
 
-export function advancePetPlayback(playback: PetPlayback): PetPlayback {
-  const animation: PetAnimation = getPetAnimation(playback.animationName);
+export function advancePetPlayback(
+  playback: PetPlayback,
+  runtime: PetRuntimeDefinition = DEFAULT_PET_RUNTIME
+): PetPlayback {
+  const animation: PetAnimation =
+    getPetAnimation(playback.animationName, runtime);
   const nextIndex: number = playback.frameIndex + 1;
   if (nextIndex >= animation.frames.length) {
     if (!animation.loop) {

@@ -4,9 +4,15 @@ import { util } from '@kit.ArkTS';
 import { WATCHBUDDY_API_BASE_URL } from '../network/ApiConfig';
 import {
   CompanionSnapshot,
-  DeviceRegistration
+  DeviceRegistration,
+  PetCatalog,
+  PetSummary
 } from '../network/ApiModels';
 import { WatchBuddyApi } from '../network/WatchBuddyApi';
+import {
+  InstalledPetBundle,
+  PetInstaller
+} from '../pet/PetInstaller';
 import { SecureTokenStore } from '../storage/SecureTokenStore';
 import {
   LocalIdentity,
@@ -30,9 +36,15 @@ export class WatchBuddySession {
   private tokenStore: SecureTokenStore = new SecureTokenStore();
   private identity: LocalIdentity | null = null;
   private deviceToken: string = '';
+  private petInstaller: PetInstaller;
 
   constructor(context: common.UIAbilityContext) {
     this.localStore = new WatchBuddyPreferences(context);
+    this.petInstaller = new PetInstaller(
+      context,
+      this.api,
+      this.localStore
+    );
   }
 
   isConfigured(): boolean {
@@ -53,9 +65,7 @@ export class WatchBuddySession {
       await this.restore();
     }
     const identity: LocalIdentity = this.requireIdentity();
-    if (this.deviceToken.length === 0) {
-      await this.register(identity);
-    }
+    await this.ensureRegistered(identity);
     try {
       const snapshot: CompanionSnapshot =
         await this.api.companionState(this.deviceToken);
@@ -72,6 +82,66 @@ export class WatchBuddySession {
       throw new Error(
         error instanceof Error ? error.message : 'network_error'
       );
+    }
+  }
+
+  async loadPetCatalog(): Promise<PetCatalog> {
+    if (!this.api.isConfigured()) {
+      throw new Error('service_not_configured');
+    }
+    if (this.identity === null) {
+      await this.restore();
+    }
+    await this.ensureRegistered(this.requireIdentity());
+    try {
+      return await this.api.petCatalog(this.deviceToken);
+    } catch (error) {
+      await this.handleAuthorizationFailure(error);
+      throw new Error(
+        error instanceof Error ? error.message : 'network_error'
+      );
+    }
+  }
+
+  async loadInstalledPet(): Promise<InstalledPetBundle | null> {
+    return await this.petInstaller.loadInstalled();
+  }
+
+  async installPet(
+    summary: PetSummary,
+    onProgress: (completed: number, total: number) => void
+  ): Promise<InstalledPetBundle> {
+    if (!this.api.isConfigured()) {
+      throw new Error('service_not_configured');
+    }
+    if (this.identity === null) {
+      await this.restore();
+    }
+    await this.ensureRegistered(this.requireIdentity());
+    try {
+      return await this.petInstaller.install(
+        this.deviceToken,
+        summary,
+        onProgress
+      );
+    } catch (error) {
+      await this.handleAuthorizationFailure(error);
+      throw new Error(
+        error instanceof Error ? error.message : 'pet_install_failed'
+      );
+    }
+  }
+
+  private async ensureRegistered(identity: LocalIdentity): Promise<void> {
+    if (this.deviceToken.length === 0) {
+      await this.register(identity);
+    }
+  }
+
+  private async handleAuthorizationFailure(error: Object): Promise<void> {
+    if (error instanceof Error && error.message === 'http_401') {
+      this.deviceToken = '';
+      await this.tokenStore.clear();
     }
   }
 

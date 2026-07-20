@@ -214,11 +214,35 @@ function readProjectConfig() {
       + "storage/SecureTokenStore.ets",
     projectRoot
   ));
+  const petInstallerPath = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/ets/"
+      + "pet/PetInstaller.ets",
+    projectRoot
+  ));
+  const petFilesPath = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/ets/"
+      + "pet/PetFiles.ets",
+    projectRoot
+  ));
+  const petIntegrityPath = fileURLToPath(new URL(
+    "apps/watch-huawei-wearable/entry/src/main/ets/"
+      + "pet/PetIntegrity.ets",
+    projectRoot
+  ));
   const networkClientSource = existsSync(networkClientPath)
     ? readFileSync(networkClientPath, "utf8")
     : "";
   const secureTokenStoreSource = existsSync(secureTokenStorePath)
     ? readFileSync(secureTokenStorePath, "utf8")
+    : "";
+  const petInstallerSource = existsSync(petInstallerPath)
+    ? readFileSync(petInstallerPath, "utf8")
+    : "";
+  const petFilesSource = existsSync(petFilesPath)
+    ? readFileSync(petFilesPath, "utf8")
+    : "";
+  const petIntegritySource = existsSync(petIntegrityPath)
+    ? readFileSync(petIntegrityPath, "utf8")
     : "";
 
   return {
@@ -232,6 +256,14 @@ function readProjectConfig() {
       (permission) => permission.name === "ohos.permission.VIBRATE"
     ) ?? false,
     hasPetRuntime: existsSync(petRuntimePath),
+    hasControlledPetInstaller:
+      petInstallerSource.includes("MAX_PET_DOWNLOAD_ATTEMPTS")
+      && petInstallerSource.includes("savePetSelection")
+      && petInstallerSource.includes("verifyPetAsset")
+      && petFilesSource.includes("@kit.CoreFileKit")
+      && petFilesSource.includes("renameSync")
+      && petIntegritySource.includes("@kit.CryptoArchitectureKit")
+      && petIntegritySource.includes("createMd('SHA256')"),
     hasDirectNetworkRuntime: networkClientSource.includes("@kit.NetworkKit")
       && networkClientSource.includes("http.createHttp()")
       && !networkClientSource.includes("@system.fetch"),
@@ -375,6 +407,13 @@ export function inspectWatchToolchain() {
       detail: projectConfig.hasPetRuntime
         ? `ArkTS + ${projectConfig.petFrameCount} 帧`
         : "运行时缺失"
+    },
+    {
+      name: "受控宠物原子安装",
+      ok: projectConfig.hasControlledPetInstaller,
+      detail: projectConfig.hasControlledPetInstaller
+        ? "分页下载 + SHA-256 + 原子切换 + 回滚"
+        : "ArkTS 安装链路缺失"
     },
     {
       name: "宠物触感权限",
