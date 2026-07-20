@@ -183,6 +183,13 @@ function readProjectConfig() {
     `apps/watch-huawei/entry/src/main/js/MainAbility/pages/index/${fileName}`,
     projectRoot
   ));
+  const requiredIconFiles = [
+    "icon.png",
+    "icon_small.png"
+  ].map((fileName) => new URL(
+    `apps/watch-huawei/entry/src/main/resources/base/media/${fileName}`,
+    projectRoot
+  ));
   const prohibitedRuntimeFiles = [
     "peer-config.js",
     "wear-engine-manager.js",
@@ -290,6 +297,11 @@ function readProjectConfig() {
       && apiContractSource.includes("startsWith('https://')"),
     hasPetTouchRuntime: pageSource.includes("@system.vibrator")
       && pageSource.includes("vibrator.vibrate"),
+    hasLiteWearableIcons:
+      config.module.abilities?.some(
+        (ability) => ability.icon === "$media:icon"
+      ) === true
+      && requiredIconFiles.every(existsSync),
     hasRequiredSourceFiles: requiredPageFiles.every(existsSync),
     hasWearEngineRuntimeFiles: prohibitedRuntimeFiles.some(existsSync),
     isFaMode: entryBuildProfile.apiType === "faMode",
@@ -398,6 +410,13 @@ export function inspectWatchToolchain() {
       detail: projectConfig.hasRequiredSourceFiles
         ? "JS/HML/CSS 完整"
         : "文件缺失"
+    },
+    {
+      name: "Lite Wearable 应用图标",
+      ok: projectConfig.hasLiteWearableIcons,
+      detail: projectConfig.hasLiteWearableIcons
+        ? "icon.png / icon_small.png"
+        : "图标资源或入口引用缺失"
     },
     {
       name: "独立运行源码",
