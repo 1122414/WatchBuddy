@@ -107,15 +107,11 @@ test('HAP 内置 73 帧且与受控手表包逐文件一致', async () => {
   }
 });
 
-test('页面使用真实宠物并在隐藏、销毁和记忆页停止计时器', async () => {
+test('页面离线运行真实宠物且不再要求注册', async () => {
   const pageRoot = path.join(APP_RESOURCE_ROOT, 'pages/index');
-  const [hml, source, fileAdapter] = await Promise.all([
+  const [hml, source] = await Promise.all([
     readFile(path.join(pageRoot, 'index.hml'), 'utf8'),
-    readFile(path.join(pageRoot, 'index.js'), 'utf8'),
-    readFile(path.join(
-      APP_RESOURCE_ROOT,
-      'common/watch-pet-files.js'
-    ), 'utf8')
+    readFile(path.join(pageRoot, 'index.js'), 'utf8')
   ]);
 
   assert.match(
@@ -125,36 +121,22 @@ test('页面使用真实宠物并在隐藏、销毁和记忆页停止计时器',
   assert.doesNotMatch(hml, /class="face"/);
   assert.match(
     source,
-    /onHide\(\) \{\s*this\.visible = false;\s*this\.cancelActiveWork\(\);/
+    /onHide\(\) \{\s*this\.visible = false;\s*this\.stopPetAnimation\(\);/
   );
   assert.match(
     source,
-    /onDestroy\(\) \{\s*this\.visible = false;\s*this\.cancelActiveWork\(\);/
+    /onDestroy\(\) \{\s*this\.visible = false;\s*this\.stopPetAnimation\(\);/
   );
-  assert.match(
-    source,
-    /cancelActiveWork\(\) \{[\s\S]*?this\.stopPetAnimation\(\);\s*\}/
-  );
-  assert.match(
-    source,
-    /showMemories\(\) \{[\s\S]*?this\.stopPetAnimation\(\);/
-  );
-  assert.match(hml, /value="宠物" onclick="showPets"/);
-  assert.match(
-    hml,
-    /value="\{\{quietModeLabel\}\}" onclick="toggleQuietMode"/
-  );
-  assert.match(hml, /class="pet-screen" if="\{\{petScreen\}\}"/);
-  assert.match(
-    source,
-    /cancelActiveWork\(\) \{[\s\S]*?this\.cancelPetInstall\(\);/
-  );
-  assert.match(source, /installPetBundle\(\{/);
-  assert.match(source, /updateSettings\(\s*this\.deviceToken,/);
-  assert.match(source, /this\.quietMode = state\.settings\.quietMode;/);
-  assert.match(source, /serializePetSelection\(selection\)/);
-  assert.match(fileAdapter, /import file from '@system\.file';/);
-  assert.match(fileAdapter, /file\.writeArrayBuffer\(\{/);
-  assert.match(fileAdapter, /file\.readArrayBuffer\(\{/);
-  assert.match(fileAdapter, /file\.move\(\{/);
+  assert.match(hml, /value="挥手" onclick="playWave"/);
+  assert.match(hml, /value="跳跃" onclick="playJump"/);
+  assert.match(hml, /value="休息" onclick="restPet"/);
+  assert.match(hml, /离线陪伴 · 无需注册/);
+  assert.match(source, /runLocalAction\('chatting', petInteractionAnimation\('message'\)\)/);
+  assert.match(source, /runLocalAction\('curious', petInteractionAnimation\('tap'\)\)/);
+  assert.match(source, /vibrator\.vibrate\(\{/);
+  assert.doesNotMatch(source, /registerWatchBuddy/);
+  assert.doesNotMatch(source, /ensureConnected/);
+  assert.doesNotMatch(source, /deviceToken/);
+  assert.doesNotMatch(source, /fetchCompanionState/);
+  assert.doesNotMatch(source, /showMemories|showPets|toggleQuietMode/);
 });

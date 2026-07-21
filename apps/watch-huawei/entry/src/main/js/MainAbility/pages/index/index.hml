@@ -1,70 +1,23 @@
 <div class="root">
-  <div class="container" if="{{mainScreen}}">
-    <div class="status-row" onclick="checkServer">
+  <div class="container">
+    <div class="status-row">
       <text class="status-dot">●</text>
-      <text class="status-label">{{stateLabel}}</text>
-      <text class="connection-label"> · {{connectionLabel}}</text>
+      <text class="pet-name">{{petName}}</text>
+      <text class="state-label"> · {{stateLabel}}</text>
     </div>
 
     <div class="character" onclick="onCharacterTap">
       <image class="pet-frame" src="{{petFramePath}}"></image>
     </div>
 
-    <div class="bubble" if="{{messageVisible}}">
-      <text class="message">{{message}}</text>
+    <text class="hint">{{hint}}</text>
+
+    <div class="actions">
+      <input class="action" type="button" value="挥手" onclick="playWave"></input>
+      <input class="action primary" type="button" value="跳跃" onclick="playJump"></input>
+      <input class="action quiet" type="button" value="休息" onclick="restPet"></input>
     </div>
 
-    <div class="actions" if="{{messageVisible}}">
-      <input class="action primary" type="button" value="{{actionOne}}" onclick="replyOne"></input>
-      <input class="action" type="button" value="{{actionTwo}}" onclick="replyTwo"></input>
-      <input class="action quiet" if="{{actionThree}}" type="button" value="{{actionThree}}" onclick="replyThree"></input>
-      <input class="action quiet" if="{{actionFour}}" type="button" value="{{actionFour}}" onclick="replyFour"></input>
-    </div>
-
-    <text class="hint" if="{{!messageVisible}}">轻点角色同步，轻点状态重试</text>
-    <div class="utility-actions" if="{{!messageVisible}}">
-      <input class="utility-entry" type="button" value="宠物" onclick="showPets"></input>
-      <input class="utility-entry" type="button" value="记忆" onclick="showMemories"></input>
-      <input class="utility-entry quiet-entry" type="button" value="{{quietModeLabel}}" onclick="toggleQuietMode"></input>
-    </div>
-  </div>
-
-  <div class="memory-screen" if="{{memoryScreen}}">
-    <text class="memory-title">{{memoryStatus}}</text>
-
-    <div class="memory-row" if="{{memoryOneVisible}}">
-      <text class="memory-text">{{memoryOne}}</text>
-      <input class="delete-memory" type="button" value="删" onclick="deleteMemoryOne"></input>
-    </div>
-    <div class="memory-row" if="{{memoryTwoVisible}}">
-      <text class="memory-text">{{memoryTwo}}</text>
-      <input class="delete-memory" type="button" value="删" onclick="deleteMemoryTwo"></input>
-    </div>
-    <div class="memory-row" if="{{memoryThreeVisible}}">
-      <text class="memory-text">{{memoryThree}}</text>
-      <input class="delete-memory" type="button" value="删" onclick="deleteMemoryThree"></input>
-    </div>
-
-    <div class="memory-actions">
-      <input class="memory-action danger" type="button" value="清空" onclick="clearAllMemories"></input>
-      <input class="memory-action" type="button" value="返回" onclick="hideMemories"></input>
-    </div>
-  </div>
-
-  <div class="pet-screen" if="{{petScreen}}">
-    <text class="pet-title">{{petCatalogName}}</text>
-    <text class="pet-description">{{petCatalogDescription}}</text>
-    <text class="pet-position">{{petCatalogPosition}}</text>
-    <text class="pet-status">{{petCatalogStatus}}</text>
-
-    <div class="pet-navigation">
-      <input class="pet-nav-action" type="button" value="‹" onclick="previousCatalogPet"></input>
-      <input class="pet-nav-action" type="button" value="›" onclick="nextCatalogPet"></input>
-    </div>
-
-    <div class="pet-actions">
-      <input class="pet-action-primary" type="button" value="{{petCatalogAction}}" onclick="selectCatalogPet"></input>
-      <input class="pet-action" type="button" value="返回" onclick="hidePets"></input>
-    </div>
+    <text class="offline-note">离线陪伴 · 无需注册</text>
   </div>
 </div>

@@ -237,11 +237,6 @@ function readProjectConfig() {
     "apps/watch-huawei/entry/src/main/js/MainAbility/pages/index/index.js",
     projectRoot
   ));
-  const outboxPath = fileURLToPath(new URL(
-    "apps/watch-huawei/entry/src/main/js/MainAbility/common/"
-      + "watch-outbox.js",
-    projectRoot
-  ));
   const networkClientSource = existsSync(networkClientPath)
     ? readFileSync(networkClientPath, "utf8")
     : "";
@@ -259,9 +254,6 @@ function readProjectConfig() {
     : "";
   const pageSource = existsSync(pagePath)
     ? readFileSync(pagePath, "utf8")
-    : "";
-  const outboxSource = existsSync(outboxPath)
-    ? readFileSync(outboxPath, "utf8")
     : "";
 
   return {
@@ -286,12 +278,13 @@ function readProjectConfig() {
       && petFilesSource.includes("remove(")
       && petIntegritySource.includes("sha256Hex")
       && petIntegritySource.includes("PNG_MAGIC"),
-    hasCompanionControls:
-      pageSource.includes("replyToCompanion")
-      && pageSource.includes("toggleQuietMode")
-      && pageSource.includes("clearMemories")
-      && outboxSource.includes("MAX_REPLY_ATTEMPTS")
-      && outboxSource.includes("serializePendingReply"),
+    hasOfflinePetControls:
+      pageSource.includes("playWave")
+      && pageSource.includes("playJump")
+      && pageSource.includes("restPet")
+      && pageSource.includes("runLocalAction")
+      && !pageSource.includes("registerWatchBuddy")
+      && !pageSource.includes("deviceToken"),
     hasDirectNetworkRuntime: networkClientSource.includes("@system.fetch")
       && networkClientSource.includes("fetch.fetch(")
       && apiContractSource.includes("startsWith('https://')"),
@@ -455,11 +448,11 @@ export function inspectWatchToolchain() {
         : "Lite Wearable 安装链路缺失"
     },
     {
-      name: "陪伴回复与记忆控制",
-      ok: projectConfig.hasCompanionControls,
-      detail: projectConfig.hasCompanionControls
-        ? "幂等回复 + 安静模式 + 记忆删除"
-        : "Lite Wearable 陪伴控制缺失"
+      name: "离线宠物控制",
+      ok: projectConfig.hasOfflinePetControls,
+      detail: projectConfig.hasOfflinePetControls
+        ? "挥手 + 跳跃 + 休息，无注册依赖"
+        : "Lite Wearable 离线宠物控制缺失"
     },
     {
       name: "宠物触感运行时",

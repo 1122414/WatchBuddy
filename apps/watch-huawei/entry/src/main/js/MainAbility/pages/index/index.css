@@ -6,7 +6,7 @@
 .container {
   width: 100%;
   height: 100%;
-  padding: 28px 36px 24px;
+  padding: 28px 34px 24px;
   flex-direction: column;
   align-items: center;
   background-color: #0c1018;
@@ -20,66 +20,58 @@
 }
 
 .status-dot {
+  margin-right: 7px;
   color: #7bf2bf;
-  font-size: 16px;
-  margin-right: 8px;
+  font-size: 15px;
 }
 
-.status-label {
-  color: #aab4c5;
-  font-size: 20px;
+.pet-name {
+  color: #f4f7fb;
+  font-size: 19px;
 }
 
-.connection-label {
-  color: #758196;
+.state-label {
+  color: #8d9aae;
   font-size: 16px;
 }
 
 .character {
-  width: 176px;
-  height: 176px;
-  margin-top: 12px;
+  width: 210px;
+  height: 210px;
+  margin-top: 6px;
   justify-content: center;
   align-items: center;
 }
 
 .pet-frame {
-  width: 176px;
-  height: 176px;
+  width: 210px;
+  height: 210px;
 }
 
-.bubble {
-  width: 344px;
-  height: 72px;
+.hint {
+  width: 360px;
+  height: 28px;
   margin-top: 4px;
-  padding: 12px 18px;
-  justify-content: center;
-  align-items: center;
-  border-radius: 24px;
-  background-color: #182131;
-}
-
-.message {
-  color: #f4f7fb;
-  font-size: 23px;
+  color: #aab4c5;
+  font-size: 19px;
   text-align: center;
 }
 
 .actions {
-  width: 360px;
-  height: 88px;
-  margin-top: 8px;
+  width: 370px;
+  height: 52px;
+  margin-top: 12px;
   justify-content: space-between;
   align-items: center;
 }
 
 .action {
-  width: 84px;
-  height: 58px;
-  border-radius: 29px;
+  width: 112px;
+  height: 50px;
+  border-radius: 25px;
   background-color: #263349;
   color: #e9eef6;
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .primary {
@@ -92,178 +84,11 @@
   color: #e3c9ed;
 }
 
-.hint {
-  margin-top: 14px;
-  color: #758196;
-  font-size: 19px;
-}
-
-.utility-actions {
-  width: 360px;
-  height: 48px;
+.offline-note {
+  width: 300px;
+  height: 24px;
   margin-top: 10px;
-  justify-content: space-between;
-}
-
-.utility-entry {
-  width: 110px;
-  height: 48px;
-  border-radius: 24px;
-  background-color: #263349;
-  color: #e9eef6;
-  font-size: 18px;
-}
-
-.quiet-entry {
-  background-color: #352c3b;
-  color: #e3c9ed;
-  font-size: 16px;
-}
-
-.memory-screen {
-  width: 100%;
-  height: 100%;
-  padding: 42px 42px 34px;
-  flex-direction: column;
-  align-items: center;
-  background-color: #0c1018;
-}
-
-.memory-title {
-  height: 42px;
-  color: #aab4c5;
-  font-size: 23px;
+  color: #667287;
+  font-size: 15px;
   text-align: center;
-}
-
-.memory-row {
-  width: 360px;
-  height: 78px;
-  margin-top: 8px;
-  padding-left: 18px;
-  padding-right: 10px;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 22px;
-  background-color: #182131;
-}
-
-.memory-text {
-  width: 270px;
-  color: #f4f7fb;
-  font-size: 18px;
-}
-
-.delete-memory {
-  width: 54px;
-  height: 48px;
-  border-radius: 24px;
-  background-color: #49313a;
-  color: #f4b7c4;
-  font-size: 17px;
-}
-
-.memory-actions {
-  width: 260px;
-  height: 58px;
-  margin-top: 14px;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.memory-action {
-  width: 116px;
-  height: 52px;
-  border-radius: 26px;
-  background-color: #263349;
-  color: #e9eef6;
-  font-size: 18px;
-}
-
-.danger {
-  background-color: #49313a;
-  color: #f4b7c4;
-}
-
-.pet-screen {
-  width: 100%;
-  height: 100%;
-  padding: 48px 44px 34px;
-  flex-direction: column;
-  align-items: center;
-  background-color: #0c1018;
-}
-
-.pet-title {
-  width: 340px;
-  height: 44px;
-  color: #f4f7fb;
-  font-size: 28px;
-  text-align: center;
-}
-
-.pet-description {
-  width: 340px;
-  height: 76px;
-  margin-top: 14px;
-  color: #aab4c5;
-  font-size: 20px;
-  text-align: center;
-}
-
-.pet-position {
-  height: 34px;
-  margin-top: 8px;
-  color: #758196;
-  font-size: 18px;
-}
-
-.pet-status {
-  width: 340px;
-  height: 54px;
-  margin-top: 8px;
-  color: #7bf2bf;
-  font-size: 19px;
-  text-align: center;
-}
-
-.pet-navigation {
-  width: 160px;
-  height: 50px;
-  margin-top: 8px;
-  justify-content: space-between;
-}
-
-.pet-nav-action {
-  width: 68px;
-  height: 48px;
-  border-radius: 24px;
-  background-color: #182131;
-  color: #e9eef6;
-  font-size: 28px;
-}
-
-.pet-actions {
-  width: 326px;
-  height: 56px;
-  margin-top: 12px;
-  justify-content: space-between;
-}
-
-.pet-action {
-  width: 154px;
-  height: 52px;
-  border-radius: 26px;
-  background-color: #263349;
-  color: #e9eef6;
-  font-size: 18px;
-}
-
-.pet-action-primary {
-  width: 154px;
-  height: 52px;
-  border-radius: 26px;
-  background-color: #7bf2bf;
-  color: #101722;
-  font-size: 18px;
 }

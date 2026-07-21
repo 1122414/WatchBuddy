@@ -19,6 +19,7 @@ import {
   inspectWatchToolchain,
   printWatchToolchainReport
 } from "./check-watch-toolchain.mjs";
+import { overlayLocalWatchPet } from "./local-watch-pet-overlay.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const watchProjectRoot = join(repositoryRoot, "apps", "watch-huawei");
@@ -227,6 +228,16 @@ if (!report.canBuild) {
     try {
       const password = readSigningPassword();
       copyProject(watchProjectRoot, temporaryProjectRoot);
+      if (process.env.WATCHBUDDY_LOCAL_PET_BUNDLE) {
+        const localPet = overlayLocalWatchPet(
+          process.env.WATCHBUDDY_LOCAL_PET_BUNDLE,
+          temporaryProjectRoot
+        );
+        console.log(
+          `\n使用本地 Codex Pet：${localPet.displayName}，`
+          + `${localPet.frameCount} 帧，${localPet.totalBytes} 字节`
+        );
+      }
 
       const nodeHome = dirname(dirname(report.paths.nodePath));
       const javaHome = dirname(dirname(report.paths.javaPath));

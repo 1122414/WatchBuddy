@@ -167,6 +167,47 @@ class ConvertCodexPetTest(unittest.TestCase):
             convert_codex_pet(self.options())
         self.assertFalse(self.output.exists())
 
+    def test_private_local_mode_converts_unversioned_v1_without_redistribution(self) -> None:
+        self.write_source(sprite_version=1)
+        manifest_path = self.source / "pet.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        del manifest["spriteVersionNumber"]
+        manifest["id"] = "private-local-pet"
+        manifest_path.write_text(
+            json.dumps(manifest, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+        result = convert_codex_pet(
+            self.options(
+                source_url="",
+                license_url="",
+                license_name="",
+                output_format="png",
+                png_colors=256,
+                include_look_directions=False,
+                private_local_use=True,
+            )
+        )
+        converted = result["manifest"]
+
+        self.assertEqual(len(converted["assets"]), 57)
+        self.assertNotIn("lookDirections", converted)
+        self.assertEqual(converted["source"]["spriteVersionNumber"], 1)
+        self.assertEqual(converted["source"]["format"], "codex-pet-v1-local")
+        self.assertEqual(converted["source"]["sourceUrl"], "local-only")
+        self.assertFalse(
+            converted["source"]["license"]["redistributionAllowed"]
+        )
+        self.assertTrue(
+            all(asset["path"].endswith(".png") for asset in converted["assets"])
+        )
+        self.assertTrue(result["report"]["output"]["privateLocalUse"])
+
+    def test_private_local_mode_requires_png(self) -> None:
+        with self.assertRaisesRegex(ConversionError, "只接受 PNG"):
+            convert_codex_pet(self.options(private_local_use=True))
+
     def test_rejects_nontransparent_unused_cell(self) -> None:
         with Image.open(self.source / "spritesheet.png") as loaded:
             image = loaded.convert("RGBA")

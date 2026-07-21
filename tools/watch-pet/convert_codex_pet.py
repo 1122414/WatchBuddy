@@ -25,6 +25,7 @@ ATLAS_WIDTH = 1536
 ATLAS_HEIGHT = 2288
 CELL_WIDTH = 192
 CELL_HEIGHT = 208
+LEGACY_ATLAS_HEIGHT = CELL_HEIGHT * 9
 MAX_SOURCE_MANIFEST_BYTES = 64 * 1024
 MAX_SOURCE_SPRITESHEET_BYTES = 32 * 1024 * 1024
 MAX_FRAME_BYTES = 64 * 1024
@@ -97,11 +98,11 @@ class ConversionError(ValueError):
 class ConversionOptions:
     source_dir: Path
     output_dir: Path
-    source_url: str
-    author: str
-    license_name: str
-    license_url: str
-    attribution: str
+    source_url: str = ""
+    author: str = ""
+    license_name: str = ""
+    license_url: str = ""
+    attribution: str = ""
     pet_id: str | None = None
     display_name: str | None = None
     description: str | None = None
@@ -111,6 +112,7 @@ class ConversionOptions:
     quality: int = 82
     png_colors: int = 0
     include_look_directions: bool = True
+    private_local_use: bool = False
 
 
 def convert_codex_pet(options: ConversionOptions) -> dict[str, Any]:
@@ -129,7 +131,11 @@ def convert_codex_pet(options: ConversionOptions) -> dict[str, Any]:
         MAX_SOURCE_MANIFEST_BYTES,
         "pet.json",
     )
-    source_manifest = parse_source_manifest(source_manifest_bytes)
+    source_manifest = parse_source_manifest(
+        source_manifest_bytes,
+        allow_legacy_v1=options.private_local_use,
+    )
+    source_version = source_manifest["spriteVersionNumber"]
     spritesheet_path = resolve_spritesheet(source_dir, source_manifest)
     spritesheet_bytes = read_limited(
         spritesheet_path,
@@ -149,13 +155,13 @@ def convert_codex_pet(options: ConversionOptions) -> dict[str, Any]:
     source_manifest_sha256 = sha256(source_manifest_bytes)
     source_spritesheet_sha256 = sha256(spritesheet_bytes)
     source_package_sha256 = sha256(
-        b"watchbuddy-codex-pet-v2\0"
+        f"watchbuddy-codex-pet-v{source_version}\0".encode("utf-8")
         + source_manifest_bytes
         + b"\0"
         + spritesheet_bytes
     )
 
-    image = load_and_validate_atlas(spritesheet_bytes)
+    image = load_and_validate_atlas(spritesheet_bytes, source_version)
     frame_height = round(options.frame_width * CELL_HEIGHT / CELL_WIDTH)
     output_dir.parent.mkdir(parents=True, exist_ok=True)
     temporary_dir = Path(
@@ -174,6 +180,7 @@ def convert_codex_pet(options: ConversionOptions) -> dict[str, Any]:
             description=description,
             frame_height=frame_height,
             source_package_sha256=source_package_sha256,
+            source_version=source_version,
         )
         manifest_path = temporary_dir / "watch-pet.json"
         write_json(manifest_path, manifest)
@@ -208,7 +215,10 @@ def convert_codex_pet(options: ConversionOptions) -> dict[str, Any]:
                 "frameHeight": frame_height,
                 "format": options.output_format,
                 "pngColors": options.png_colors or None,
-                "includesLookDirections": options.include_look_directions,
+                "includesLookDirections": (
+                    options.include_look_directions and source_version == 2
+                ),
+                "privateLocalUse": options.private_local_use,
             },
         }
         write_json(temporary_dir / "conversion-report.json", report)
@@ -226,13 +236,17 @@ def convert_codex_pet(options: ConversionOptions) -> dict[str, Any]:
 
 
 def validate_options(options: ConversionOptions) -> None:
-    validate_https_url(options.source_url, "source_url")
-    validate_https_url(options.license_url, "license_url")
-    validate_text(options.author, 1, 80, "author")
-    validate_text(options.license_name, 1, 64, "license_name")
-    validate_text(options.attribution, 1, 240, "attribution")
-    if options.license_name.strip().lower() in UNKNOWN_LICENSES:
-        raise ConversionError("license_name 不能是未知或未授权")
+    if options.private_local_use:
+        if options.output_format != "png":
+            raise ConversionError("本地私有构建只接受 PNG 输出")
+    else:
+        validate_https_url(options.source_url, "source_url")
+        validate_https_url(options.license_url, "license_url")
+        validate_text(options.author, 1, 80, "author")
+        validate_text(options.license_name, 1, 64, "license_name")
+        validate_text(options.attribution, 1, 240, "attribution")
+        if options.license_name.strip().lower() in UNKNOWN_LICENSES:
+            raise ConversionError("license_name 不能是未知或未授权")
     if not 32 <= options.frame_width <= CELL_WIDTH:
         raise ConversionError("frame_width 必须为 32 到 192")
     frame_height = round(options.frame_width * CELL_HEIGHT / CELL_WIDTH)
@@ -250,7 +264,11 @@ def validate_options(options: ConversionOptions) -> None:
         raise ConversionError("png_colors 只适用于 PNG 输出")
 
 
-def parse_source_manifest(raw: bytes) -> dict[str, Any]:
+def parse_source_manifest(
+    raw: bytes,
+    *,
+    allow_legacy_v1: bool = False,
+) -> dict[str, Any]:
     try:
         value = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -261,13 +279,17 @@ def parse_source_manifest(raw: bytes) -> dict[str, Any]:
         "id",
         "displayName",
         "description",
-        "spriteVersionNumber",
         "spritesheetPath",
     ):
         if key not in value:
             raise ConversionError(f"pet.json 缺少字段 {key}")
+    if "spriteVersionNumber" not in value:
+        if not allow_legacy_v1:
+            raise ConversionError("pet.json 缺少字段 spriteVersionNumber")
+        value["spriteVersionNumber"] = 1
     if value["spriteVersionNumber"] != 2:
-        raise ConversionError("只接受 spriteVersionNumber: 2 的 Codex Pet")
+        if not allow_legacy_v1 or value["spriteVersionNumber"] != 1:
+            raise ConversionError("只接受 spriteVersionNumber: 2 的 Codex Pet")
     if not isinstance(value["id"], str) or not PET_ID_PATTERN.fullmatch(value["id"]):
         raise ConversionError("pet.json id 无效")
     validate_text(value["displayName"], 1, 80, "pet.json displayName")
@@ -289,7 +311,7 @@ def resolve_spritesheet(source_dir: Path, manifest: dict[str, Any]) -> Path:
     return resolved
 
 
-def load_and_validate_atlas(raw: bytes) -> Image.Image:
+def load_and_validate_atlas(raw: bytes, source_version: int = 2) -> Image.Image:
     Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
     with warnings.catch_warnings():
         warnings.simplefilter("error", DecompressionBombWarning)
@@ -307,11 +329,13 @@ def load_and_validate_atlas(raw: bytes) -> Image.Image:
     if getattr(source, "n_frames", 1) != 1:
         source.close()
         raise ConversionError("图集必须是单帧图片")
-    if source.size != (ATLAS_WIDTH, ATLAS_HEIGHT):
+    expected_height = ATLAS_HEIGHT if source_version == 2 else LEGACY_ATLAS_HEIGHT
+    if source.size != (ATLAS_WIDTH, expected_height):
         size = source.size
         source.close()
         raise ConversionError(
-            f"v2 图集必须为 {ATLAS_WIDTH}x{ATLAS_HEIGHT}，实际为 {size[0]}x{size[1]}"
+            f"v{source_version} 图集必须为 {ATLAS_WIDTH}x{expected_height}，"
+            f"实际为 {size[0]}x{size[1]}"
         )
     if "A" not in source.getbands():
         source.close()
@@ -319,20 +343,22 @@ def load_and_validate_atlas(raw: bytes) -> Image.Image:
 
     image = source.convert("RGBA")
     source.close()
-    validate_atlas_cells(image)
+    validate_atlas_cells(image, source_version)
     return image
 
 
-def validate_atlas_cells(image: Image.Image) -> None:
+def validate_atlas_cells(image: Image.Image, source_version: int) -> None:
     used_by_row = {
         row: set(range(count))
         for _, _, row, count, _, _ in STANDARD_ROWS
     }
-    used_by_row[NEUTRAL_CELL[0]].add(NEUTRAL_CELL[1])
-    used_by_row[9] = set(range(8))
-    used_by_row[10] = set(range(8))
+    if source_version == 2:
+        used_by_row[NEUTRAL_CELL[0]].add(NEUTRAL_CELL[1])
+        used_by_row[9] = set(range(8))
+        used_by_row[10] = set(range(8))
 
-    for row in range(11):
+    row_count = 11 if source_version == 2 else 9
+    for row in range(row_count):
         used_columns = used_by_row[row]
         for column in range(8):
             alpha = crop_cell(image, row, column).getchannel("A")
@@ -355,6 +381,7 @@ def build_bundle(
     description: str,
     frame_height: int,
     source_package_sha256: str,
+    source_version: int,
 ) -> dict[str, Any]:
     assets: list[dict[str, Any]] = []
     animations: dict[str, Any] = {}
@@ -383,7 +410,7 @@ def build_bundle(
         }
 
     look_directions = None
-    if options.include_look_directions:
+    if options.include_look_directions and source_version == 2:
         look_directions = {}
         for index, direction in enumerate(LOOK_DIRECTIONS):
             row = 9 if index < 8 else 10
@@ -410,13 +437,25 @@ def build_bundle(
             f"转换后资源总大小 {total_bytes} 超过 {MAX_TOTAL_BYTES}"
         )
 
-    manifest: dict[str, Any] = {
-        "schemaVersion": 1,
-        "id": pet_id,
-        "displayName": display_name,
-        "description": description,
-        "renderer": "frame-sequence-v1",
-        "source": {
+    if options.private_local_use:
+        source = {
+            "format": f"codex-pet-v{source_version}-local",
+            "spriteVersionNumber": source_version,
+            "sourceUrl": "local-only",
+            "author": options.author or "Unknown local Codex package",
+            "license": {
+                "name": "Local use only; redistribution permission unknown",
+                "url": "",
+                "redistributionAllowed": False,
+            },
+            "attribution": (
+                options.attribution
+                or "Private local build input; do not redistribute."
+            ),
+            "sha256": source_package_sha256,
+        }
+    else:
+        source = {
             "format": "codex-pet-v2",
             "spriteVersionNumber": 2,
             "sourceUrl": options.source_url,
@@ -428,7 +467,15 @@ def build_bundle(
             },
             "attribution": options.attribution,
             "sha256": source_package_sha256,
-        },
+        }
+
+    manifest: dict[str, Any] = {
+        "schemaVersion": 1,
+        "id": pet_id,
+        "displayName": display_name,
+        "description": description,
+        "renderer": "frame-sequence-v1",
+        "source": source,
         "frame": {
             "width": options.frame_width,
             "height": frame_height,
@@ -648,15 +695,15 @@ def sha256(raw: bytes) -> str:
 
 def parse_args() -> ConversionOptions:
     parser = argparse.ArgumentParser(
-        description="将通过校验的 Codex Pet v2 转换为 WatchBuddy 手表资源",
+        description="将通过校验的 Codex Pet 转换为 WatchBuddy 手表资源",
     )
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--source-url", required=True)
-    parser.add_argument("--author", required=True)
-    parser.add_argument("--license-name", required=True)
-    parser.add_argument("--license-url", required=True)
-    parser.add_argument("--attribution", required=True)
+    parser.add_argument("--source-url", default="")
+    parser.add_argument("--author", default="")
+    parser.add_argument("--license-name", default="")
+    parser.add_argument("--license-url", default="")
+    parser.add_argument("--attribution", default="")
     parser.add_argument("--pet-id")
     parser.add_argument("--display-name")
     parser.add_argument("--description")
@@ -675,6 +722,14 @@ def parse_args() -> ConversionOptions:
         action="store_true",
         help="不把 v2 的 16 个注视方向写入手表资源",
     )
+    parser.add_argument(
+        "--local-private-use",
+        action="store_true",
+        help=(
+            "接受本机旧版 Codex Pet，仅生成不可再分发的临时构建资源；"
+            "必须输出 PNG"
+        ),
+    )
     args = parser.parse_args()
     return ConversionOptions(
         source_dir=args.source_dir,
@@ -692,7 +747,10 @@ def parse_args() -> ConversionOptions:
         output_format=args.format,
         quality=args.quality,
         png_colors=args.png_colors,
-        include_look_directions=not args.omit_look_directions,
+        include_look_directions=(
+            not args.omit_look_directions and not args.local_private_use
+        ),
+        private_local_use=args.local_private_use,
     )
 
 
