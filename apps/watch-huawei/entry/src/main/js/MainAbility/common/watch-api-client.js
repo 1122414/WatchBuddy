@@ -256,7 +256,10 @@ function executeRequest(createRequest, inspectResponse, options) {
     },
     fail(data, code) {
       console.error(`[WatchBuddy] request failed: ${code}`);
-      finish(onFailure, 'network_error');
+      const reason = typeof code === 'number' && Number.isFinite(code)
+        ? `network_error_${code}`
+        : 'network_error';
+      finish(onFailure, reason);
     }
   };
   if (request.data !== undefined) {

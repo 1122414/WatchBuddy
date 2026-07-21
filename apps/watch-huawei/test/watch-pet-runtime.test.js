@@ -140,11 +140,14 @@ test('页面保留真实宠物并通过后台身份接入 DeepSeek', async () =>
   assert.match(hml, /value="聊聊" onclick="playWave"/);
   assert.match(hml, /value="鼓励" onclick="playJump"/);
   assert.match(hml, /value="晚安" onclick="restPet"/);
-  assert.match(hml, /AI 回复由 DeepSeek 生成/);
+  assert.match(hml, /在线 DeepSeek \/ 离线本地回应/);
   assert.doesNotMatch(hml, /离线陪伴 · 无需注册/);
   assert.match(source, /registerWatchBuddy\(\{/);
   assert.match(source, /replyToCompanion\(/);
   assert.match(source, /result\.data\.companionReply/);
+  assert.match(source, /completeOfflinePrompt\(prompt, reason\)/);
+  assert.match(source, /当前是本地回应，网络恢复后再连接 DeepSeek/);
+  assert.match(source, /reason\.startsWith\('network_error_'\)/);
   assert.match(source, /serializeIdentity\(\{/);
   assert.match(source, /reason === 'http_409' && !this\.registrationRecoveryAttempted/);
   assert.match(source, /timeoutMs: 12000/);

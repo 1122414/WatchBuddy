@@ -180,10 +180,20 @@ npm run build:watch:signed
 签名脚本从 macOS 钥匙串读取本机口令，签名材料保存在仓库外的用户目录；它会校验 Lite BIN
 签名头、Profile 数字签名、包名、证书、调试设备绑定以及 HAP 内嵌 BIN 一致性。
 
-当前 0.4.1 使用已在 GT 6 Pro 上通过安装验证的 API 17 基线，不声明 `distroFilter` 或
+个人本地 Codex Pet 可通过仓库外或 `.local/` 中的已转换 `watch-pet.json` 资源包覆盖到临时工程：
+
+```bash
+WATCHBUDDY_LOCAL_PET_BUNDLE=/absolute/path/to/watch-pet npm run build:watch:signed
+```
+
+本地覆盖会重新校验 57 个标准动画帧的路径、PNG 尺寸、大小和 SHA-256，只进入本机 HAP；
+未取得再分发许可的角色素材不得提交到仓库或加入服务端宠物目录。
+
+当前 0.4.2 使用已在 GT 6 Pro 上通过安装验证的 API 17 基线，不声明 `distroFilter` 或
 `ohos.permission.INTERNET`。0.4.0 恢复显式联网权限后，应用调测助手返回错误 46
-（`module.abilities.permissions` 字段不合法）；因此 0.4.1 保留 `@system.fetch`、DeepSeek 互动和
-公网 API 地址，但把“无显式联网权限能否请求 HTTPS”作为真机探测项，不能在探测前描述为在线版。
+（`module.abilities.permissions` 字段不合法）；0.4.1 虽安装成功，但真机无法连接公网服务。
+因此 0.4.2 保留 `@system.fetch` 作为后续探测，连接失败时明确切换到本地文字回应和离线宠物，
+不把本地模板描述为 DeepSeek 输出。
 
 启动最小 WatchBuddy API：
 

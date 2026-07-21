@@ -18,6 +18,6 @@
       <input class="action quiet" type="button" value="晚安" onclick="restPet"></input>
     </div>
 
-    <text class="connection-note">{{connectionLabel}} · AI 回复由 DeepSeek 生成</text>
+    <text class="connection-note">{{connectionLabel}} · 在线 DeepSeek / 离线本地回应</text>
   </div>
 </div>

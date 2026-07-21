@@ -53,6 +53,7 @@ export default {
     this.registrationKey = '';
     this.activeRequest = null;
     this.aiRequestActive = false;
+    this.networkUnavailable = false;
     this.registrationRecoveryAttempted = false;
     this.queuedPrompt = null;
     this.petTimer = null;
@@ -65,6 +66,7 @@ export default {
 
   onShow() {
     this.visible = true;
+    this.networkUnavailable = false;
     this.playPetStateEntry();
     this.ensureConnected();
   },
@@ -180,6 +182,7 @@ export default {
     }, this.registrationKey, {
       onSuccess: function(result) {
         this.activeRequest = null;
+        this.networkUnavailable = false;
         this.deviceToken = result.data.deviceToken;
         this.registrationKey = '';
         this.registrationRecoveryAttempted = false;
@@ -200,8 +203,13 @@ export default {
           this.registerDevice();
           return;
         }
+        this.networkUnavailable = true;
+        if (this.queuedPrompt) {
+          this.completeOfflinePrompt(this.queuedPrompt, reason);
+          return;
+        }
         this.connectionLabel = this.connectionLabelForFailure(reason);
-        this.hint = '暂时连不上服务，宠物动画仍可使用';
+        this.hint = 'GT 6 当前无网络，按钮仍可离线互动';
         this.startPetAnimation(petInteractionAnimation('failure'), true);
       }.bind(this)
     });
@@ -215,6 +223,7 @@ export default {
     this.activeRequest = fetchCompanionState(this.deviceToken, {
       onSuccess: function(result) {
         this.activeRequest = null;
+        this.networkUnavailable = false;
         this.connectionLabel = 'DeepSeek 在线';
         this.applyState(result.data.characterState);
         this.hint = result.data.nudge
@@ -230,8 +239,9 @@ export default {
           this.registerDevice();
           return;
         }
+        this.networkUnavailable = true;
         this.connectionLabel = this.connectionLabelForFailure(reason);
-        this.hint = '网络不可用时，宠物动画仍能使用';
+        this.hint = 'GT 6 当前无网络，按钮仍可离线互动';
         this.startPetAnimation(petInteractionAnimation('failure'), true);
       }.bind(this)
     });
@@ -301,6 +311,10 @@ export default {
     this.applyState(state);
     this.startPetAnimation(animationName, true);
     this.vibrate();
+    if (this.networkUnavailable) {
+      this.completeOfflinePrompt(prompt, 'network_error');
+      return;
+    }
     this.hint = '正在等待 DeepSeek 回应…';
     if (!this.identityReady || !this.deviceToken) {
       this.queuedPrompt = prompt;
@@ -332,6 +346,7 @@ export default {
         onSuccess: function(result) {
           this.activeRequest = null;
           this.aiRequestActive = false;
+          this.networkUnavailable = false;
           const reply = result.data.companionReply;
           this.connectionLabel = reply.fallback
             ? 'AI 暂时离线'
@@ -350,12 +365,29 @@ export default {
             this.registerDevice();
             return;
           }
-          this.connectionLabel = this.connectionLabelForFailure(reason);
-          this.hint = '这次没连上，再点一次试试';
-          this.startPetAnimation(petInteractionAnimation('failure'), true);
+          this.networkUnavailable = true;
+          this.completeOfflinePrompt(prompt, reason);
         }.bind(this)
       }
     );
+  },
+
+  completeOfflinePrompt(prompt, reason) {
+    this.queuedPrompt = null;
+    this.aiRequestActive = false;
+    this.connectionLabel = this.connectionLabelForFailure(reason);
+    this.hint = this.offlineReplyFor(prompt.state);
+    this.startPetAnimation(prompt.animationName, true);
+  },
+
+  offlineReplyFor(state) {
+    if (state === 'curious') {
+      return '慢一点也没关系，你今天已经在向前走了。';
+    }
+    if (state === 'sleeping') {
+      return '晚安，把今天轻轻放下，我会安静陪着你。';
+    }
+    return '我在这里。当前是本地回应，网络恢复后再连接 DeepSeek。';
   },
 
   runLocalAction(state, animationName) {
@@ -438,6 +470,10 @@ export default {
   },
 
   connectionLabelForFailure(reason) {
+    if (typeof reason === 'string'
+      && reason.startsWith('network_error_')) {
+      return `离线 E${reason.slice('network_error_'.length)}`;
+    }
     if (reason === 'timeout') {
       return '服务超时';
     }

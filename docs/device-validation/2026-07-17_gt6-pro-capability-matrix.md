@@ -16,10 +16,10 @@
 | 实验工程 | `apps/watch-huawei-wearable` | 保留 ArkTS 迁移原型，不作为 GT 6 Pro 安装包，不删除 |
 | 包名 | `com.watchbuddy.watch` | 保持不变 |
 | 设备类型 | `deviceType: ["liteWearable"]` | 与官方设备分类一致 |
-| 屏幕 | 页面按 466 × 466 圆屏设计；0.1.1 不声明 `distroFilter` | 保留圆屏 UI，避免调测助手错误 40 |
-| 网络 API | 0.4.0 显式声明 `ohos.permission.INTERNET` 后安装报错误 46；0.4.1 保留 `@system.fetch` 但不显式声明权限 | 先恢复可安装基线，再以真机请求结果判断系统是否允许 HTTPS |
+| 屏幕 | 页面按 466 × 466 圆屏设计；0.4.2 不声明 `distroFilter` | 保留圆屏 UI，避免调测助手错误 40 |
+| 网络 API | 0.4.0 显式声明 `ohos.permission.INTERNET` 后安装报错误 46；0.4.1 不声明权限可安装，但真机无法连接服务 | 0.4.2 保留探测代码并提供明确的本地离线回应，不冒充 DeepSeek 输出 |
 | 手机业务依赖 | 主工程无 Wear Engine、手机 peer 或 WatchBuddy 手机 App | 符合“没有 WatchBuddy 手机配套 App”边界 |
-| 本机构建 | `npm run build:watch:signed` 生成 3438361 字节的 0.4.1 签名 HAP，SHA-256 `b7dd5d94…51fcfab` | 已确认包内无显式联网权限且保留 `@system.fetch`，待真机安装与 HTTPS 探测 |
+| 本机构建 | 本地 Chibi Skadi 覆盖生成 2799774 字节的 0.4.2 签名 HAP，SHA-256 `008ff156…3348e6` | 包内确认包含本地宠物帧、排除 Sprout 首帧、无显式联网权限 |
 
 ## 最近验证的连接与安装通道
 
@@ -49,14 +49,14 @@ eSIM。基于该规格，手机断开后的任意 HTTPS 目前没有可识别的
 | 无 WatchBuddy 手机 App | 不安装或启动 Android/iOS WatchBuddy | 主工程已满足，待真机流程确认 | 不回退到 Wear Engine |
 | 调试签名 | AGC debug Profile 绑定 `com.watchbuddy.watch`、开发证书和目标 GT 6 Pro；0.1.1 签名 HAP 已生成 | 已完成，敏感材料均在仓库外 | 不提交证书、私钥、Profile 或口令 |
 | 最小探针安装 | 应用调测助手安装 112 KiB、API 17、无权限和过滤器的探针 | 安装成功 | 证明签名、Profile、设备注册和安装桥接有效 |
-| 完整 HAP 安装 | 应用调测助手选择 `WatchBuddy-0.4.1-debug-signed.hap` | 已构建，尚未复制到手机 | 用户明确允许后再复制并安装，先确认不再出现错误 46 |
+| 完整 HAP 安装 | 应用调测助手安装 `WatchBuddy-0.4.1-debug-signed.hap` | 安装成功；服务连接失败；默认构建显示 Sprout | 0.4.2 使用本地 Chibi Skadi 覆盖并增加离线文字互动 |
 
 ## MVP 功能验收
 
 | 能力 | 当前实现 | 真机证据要求 |
 |---|---|---|
 | 角色主页 | Lite Wearable JS/HML/CSS，466 × 466 圆屏 | 无裁切、状态可辨识 |
-| 内置宠物 | 芽芽 73 帧、状态映射、800 ms 防连点、振动 | 离线可见，切页/销毁停止动画 |
+| 内置宠物 | 公共构建为芽芽 73 帧；私人 0.4.2 HAP 为 Chibi Skadi 57 帧；状态映射、800 ms 防连点、振动 | 离线可见，切页/销毁停止动画 |
 | 服务端注册与状态 | `@system.fetch` HTTPS、8 秒超时、7 KiB 响应限制 | 配对和断开场景分别记录 |
 | 对话与快捷回复 | 幂等发件箱、最多三次有界重试 | 手表显示服务端回应且不重复提交 |
 | 安静模式与记忆 | 开关、最近三条、单删、二次确认清空 | 设置和删除端到端生效 |
@@ -67,6 +67,7 @@ eSIM。基于该规格，手机断开后的任意 HTTPS 目前没有可识别的
 ## 宠物来源边界
 
 - 原创 Sprout（芽芽）已完成 Codex Pet v2 图集、73 帧手表转换、来源和哈希记录；
+- Chibi Skadi 只有私人本地使用标记且再分发许可未知；它仅进入用户本机签名 HAP，不提交仓库或服务端目录；
 - `codex-pets.net` 通用条款不足以授权 WatchBuddy 再分发，必须取得单独开放许可或权利人书面授权；
 - 手表不直接下载、解释或执行第三方原始宠物包；所有资源先在构建期或服务端受控转换；
 - 动态安装虽已在 Lite Wearable 源码和 Node.js 测试中实现，但尚未在 GT 6 Pro 上证明文件 API、
