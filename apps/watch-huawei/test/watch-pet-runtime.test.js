@@ -155,10 +155,5 @@ test('页面保留真实宠物并通过后台身份接入 DeepSeek', async () =>
     /https:\/\/watchbuddy\.47-239-238-27\.sslip\.io/
   );
   assert.doesNotMatch(apiConfig, /DEEPSEEK_API_KEY|sk-[A-Za-z0-9]/);
-  assert.equal(
-    appConfig.module.reqPermissions.some(
-      (permission) => permission.name === 'ohos.permission.INTERNET'
-    ),
-    true
-  );
+  assert.equal(appConfig.module.reqPermissions, undefined);
 });

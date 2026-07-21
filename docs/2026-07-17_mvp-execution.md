@@ -310,15 +310,16 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
   因此当前安装诊断基线使用 API 17，GT 6 Pro 主路线仍是 Lite Wearable；
 - 主工程为 `apps/watch-huawei`，设备类型 `liteWearable`、JavaScript FA 模型、包名
   `com.watchbuddy.watch`、页面按 466 × 466 圆屏设计、target/compatible `5.0.5(17)`；
-  当前 0.1.1 诊断包不声明 `distroFilter` 或 `ohos.permission.INTERNET`；
+  当前 0.4.1 诊断包不声明 `distroFilter` 或 `ohos.permission.INTERNET`；0.4.0 恢复显式联网权限后，
+  应用调测助手返回错误 46（`module.abilities.permissions` 字段不合法）；
 - 当前电脑已验证 DevEco Studio 6.0.2、OHPM、Hvigor、Java、Node.js 和预集成 SDK；
   `DEVECO_SDK_HOME` 使用 `Contents/sdk`；
 - `npm run doctor:watch` 已检查 Lite Wearable FA、API 17、无过滤器/网络权限、73 帧芽芽、
   独立运行、受控安装、回复、安静模式和记忆控制；
 - 历史 API 20 完整包为 6.72 MB；API 17 最小探针安装成功后，0.1.1 将 73 帧资源降为
   96 × 104，并把签名 HAP 降至 3539448 字节；
-- Lite Wearable 表端源码保留 `@system.fetch`，但当前 0.1.1 HAP 未声明网络权限，只能进行
-  离线安装与宠物交互验收；公网 HTTPS 必须在单独恢复权限后验证；
+- Lite Wearable 表端源码保留 `@system.fetch`、公网 WatchBuddy API 和 DeepSeek 互动，但当前
+  0.4.1 HAP 未显式声明网络权限；先验证可安装，再通过真机请求结果判断该设备是否允许系统转发 HTTPS；
 - Lite Wearable 不能直接连接 DevEco Studio，也不能自动签名；需通过已配对手机上的华为运动健康
   和应用调测助手安装 HAP；旧手机已完成最小探针验证，用户正在更换手机，当前禁止复制或安装；
 - 手机蓝牙配对手表不能把 GT 6 Pro 转成 HDC 目标，但不影响应用调测助手作为安装桥接；

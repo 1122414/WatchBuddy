@@ -2,7 +2,7 @@
 
 > 初始日期：2026-07-17
 >
-> 最近校准：2026-07-20
+> 最近校准：2026-07-21
 >
 > 判定原则：区分“WatchBuddy 没有手机配套 App”和“手表不依赖任何手机联网”两项能力，不把前者冒充后者。
 
@@ -17,9 +17,9 @@
 | 包名 | `com.watchbuddy.watch` | 保持不变 |
 | 设备类型 | `deviceType: ["liteWearable"]` | 与官方设备分类一致 |
 | 屏幕 | 页面按 466 × 466 圆屏设计；0.1.1 不声明 `distroFilter` | 保留圆屏 UI，避免调测助手错误 40 |
-| 网络 API | 源码保留 `@system.fetch`；0.1.1 不声明 `ohos.permission.INTERNET` | 当前 HAP 只验收离线安装和宠物，联网权限后续单独验证 |
+| 网络 API | 0.4.0 显式声明 `ohos.permission.INTERNET` 后安装报错误 46；0.4.1 保留 `@system.fetch` 但不显式声明权限 | 先恢复可安装基线，再以真机请求结果判断系统是否允许 HTTPS |
 | 手机业务依赖 | 主工程无 Wear Engine、手机 peer 或 WatchBuddy 手机 App | 符合“没有 WatchBuddy 手机配套 App”边界 |
-| 本机构建 | `npm run build:watch:signed` 生成 3539448 字节的 0.1.1 签名 HAP，SHA-256 `8e14d2fb…59816f9` | Lite Wearable 编译、手工签名和静态校验通过，待完整包安装 |
+| 本机构建 | `npm run build:watch:signed` 生成 3438361 字节的 0.4.1 签名 HAP，SHA-256 `b7dd5d94…51fcfab` | 已确认包内无显式联网权限且保留 `@system.fetch`，待真机安装与 HTTPS 探测 |
 
 ## 最近验证的连接与安装通道
 
@@ -49,7 +49,7 @@ eSIM。基于该规格，手机断开后的任意 HTTPS 目前没有可识别的
 | 无 WatchBuddy 手机 App | 不安装或启动 Android/iOS WatchBuddy | 主工程已满足，待真机流程确认 | 不回退到 Wear Engine |
 | 调试签名 | AGC debug Profile 绑定 `com.watchbuddy.watch`、开发证书和目标 GT 6 Pro；0.1.1 签名 HAP 已生成 | 已完成，敏感材料均在仓库外 | 不提交证书、私钥、Profile 或口令 |
 | 最小探针安装 | 应用调测助手安装 112 KiB、API 17、无权限和过滤器的探针 | 安装成功 | 证明签名、Profile、设备注册和安装桥接有效 |
-| 完整 HAP 安装 | 应用调测助手选择 `WatchBuddy-0.1.1-debug-signed.hap` | 尚未复制到新手机 | 用户明确允许后再操作，先验收离线宠物 |
+| 完整 HAP 安装 | 应用调测助手选择 `WatchBuddy-0.4.1-debug-signed.hap` | 已构建，尚未复制到手机 | 用户明确允许后再复制并安装，先确认不再出现错误 46 |
 
 ## MVP 功能验收
 

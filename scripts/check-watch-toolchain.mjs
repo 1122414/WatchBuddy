@@ -419,11 +419,11 @@ export function inspectWatchToolchain() {
         : "无 Wear Engine/手机 peer"
     },
     {
-      name: "独立 HTTPS 联网权限",
-      ok: projectConfig.hasInternetPermission,
+      name: "GT 6 权限安装基线",
+      ok: !projectConfig.hasInternetPermission,
       detail: projectConfig.hasInternetPermission
-        ? "ohos.permission.INTERNET"
-        : "未声明，无法请求 WatchBuddy API"
+        ? "不应声明 ohos.permission.INTERNET（调测助手错误 46）"
+        : "未显式声明（保留 @system.fetch 真机探测）"
     },
     {
       name: "手表直连网络",

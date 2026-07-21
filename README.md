@@ -178,13 +178,12 @@ npm run build:watch:signed
 ```
 
 签名脚本从 macOS 钥匙串读取本机口令，签名材料保存在仓库外的用户目录；它会校验 Lite BIN
-签名头、Profile 数字签名、包名、证书、调试设备绑定以及 HAP 内嵌 BIN 一致性。当前离线安装
-诊断产物为 `~/Downloads/WatchBuddy-0.1.1-debug-signed.hap`，3539448 字节，SHA-256 为
-`8e14d2fbd2335603727813e66a664e9c686c53961d2c159fc08d5ec3459816f9`。
+签名头、Profile 数字签名、包名、证书、调试设备绑定以及 HAP 内嵌 BIN 一致性。
 
-0.1.1 使用已在 GT 6 Pro 上通过最小探针验证的 API 17 基线，不声明 `distroFilter` 或
-`ohos.permission.INTERNET`。网络、回复、记忆和远程宠物源码仍保留，但这个 HAP 只能验收
-离线主页、内置宠物和交互；恢复联网权限必须作为后续独立变量验证，不能把本包描述为在线版。
+当前 0.4.1 使用已在 GT 6 Pro 上通过安装验证的 API 17 基线，不声明 `distroFilter` 或
+`ohos.permission.INTERNET`。0.4.0 恢复显式联网权限后，应用调测助手返回错误 46
+（`module.abilities.permissions` 字段不合法）；因此 0.4.1 保留 `@system.fetch`、DeepSeek 互动和
+公网 API 地址，但把“无显式联网权限能否请求 HTTPS”作为真机探测项，不能在探测前描述为在线版。
 
 启动最小 WatchBuddy API：
 
