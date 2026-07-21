@@ -18,6 +18,10 @@ import {
   stateForLocalTime,
   validateNudge
 } from "../../../packages/companion-core/src/index.js";
+import {
+  FALLBACK_COMPANION_TEXT,
+  MAX_COMPANION_REPLY_CHARACTERS
+} from "./ai-adapter.js";
 
 const DEVICE_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 const MAX_REPLY_CHARACTERS = 64;
@@ -237,6 +241,7 @@ function snapshotDevice(device) {
 }
 
 export class WatchBuddyService {
+  #companionResponder;
   #devicesById = new Map();
   #devicesByTokenHash = new Map();
   #idFactory;
@@ -245,11 +250,17 @@ export class WatchBuddyService {
   #tokenFactory;
 
   constructor({
+    companionResponder = null,
     idFactory = () => randomUUID(),
     now = () => Date.now(),
     stateStore = null,
     tokenFactory = () => randomBytes(TOKEN_BYTES).toString("base64url")
   } = {}) {
+    if (companionResponder !== null
+      && typeof companionResponder?.respond !== "function") {
+      throw new TypeError("companionResponder 必须实现 respond");
+    }
+    this.#companionResponder = companionResponder;
     this.#idFactory = idFactory;
     this.#now = now;
     this.#stateStore = stateStore;
@@ -560,6 +571,49 @@ export class WatchBuddyService {
     };
     this.#persist();
     return result;
+  }
+
+  async replyWithCompanion(device, input) {
+    const result = this.reply(device, input);
+    if (typeof input.text !== "string") {
+      return result;
+    }
+
+    let companionReply = {
+      fallback: true,
+      text: FALLBACK_COMPANION_TEXT
+    };
+    if (this.#companionResponder) {
+      try {
+        const generated = await this.#companionResponder.respond({
+          deviceId: device.deviceId,
+          locale: device.locale,
+          text: result.reply.text
+        });
+        if (generated
+          && typeof generated.fallback === "boolean"
+          && typeof generated.text === "string"
+          && generated.text.trim() === generated.text
+          && generated.text.length > 0
+          && codePointLength(generated.text)
+            <= MAX_COMPANION_REPLY_CHARACTERS) {
+          companionReply = {
+            fallback: generated.fallback,
+            text: generated.text
+          };
+        }
+      } catch (error) {
+        companionReply = {
+          fallback: true,
+          text: FALLBACK_COMPANION_TEXT
+        };
+      }
+    }
+
+    return {
+      ...result,
+      companionReply
+    };
   }
 
   listMemories(device) {

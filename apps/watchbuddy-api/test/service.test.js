@@ -9,6 +9,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { JsonStateStore } from "../src/json-state-store.js";
+import { FALLBACK_COMPANION_TEXT } from "../src/ai-adapter.js";
 import { WatchBuddyService } from "../src/service.js";
 
 const NOW = Date.parse("2026-07-18T03:00:00.000Z");
@@ -351,6 +352,62 @@ test("文字回复可以创建、列出和删除记忆", () => {
     text: "第二条"
   });
   assert.equal(service.clearMemories(device), 2);
+});
+
+test("文字回复接入陪伴模型并在异常时安全降级", async () => {
+  const responderCalls = [];
+  const service = new WatchBuddyService({
+    companionResponder: {
+      async respond(input) {
+        responderCalls.push(input);
+        return {
+          fallback: false,
+          text: "我在这里，继续说给我听吧。"
+        };
+      }
+    },
+    now: () => NOW,
+    tokenFactory: () => TOKEN
+  });
+  const registration = register(service);
+  const device = service.authenticate(registration.deviceToken);
+
+  const generated = await service.replyWithCompanion(device, {
+    text: "今天有点累"
+  });
+
+  assert.deepEqual(generated.companionReply, {
+    fallback: false,
+    text: "我在这里，继续说给我听吧。"
+  });
+  assert.deepEqual(responderCalls, [{
+    deviceId: "gt6pro_test_01",
+    locale: "zh-CN",
+    text: "今天有点累"
+  }]);
+
+  const failingService = new WatchBuddyService({
+    companionResponder: {
+      async respond() {
+        throw new Error("internal-model-error");
+      }
+    },
+    now: () => NOW,
+    tokenFactory: () => TOKEN
+  });
+  const failingRegistration = register(failingService);
+  const failingDevice = failingService.authenticate(
+    failingRegistration.deviceToken
+  );
+  const fallback = await failingService.replyWithCompanion(failingDevice, {
+    text: "还能听见吗"
+  });
+
+  assert.deepEqual(fallback.companionReply, {
+    fallback: true,
+    text: FALLBACK_COMPANION_TEXT
+  });
+  assert.equal(JSON.stringify(fallback).includes("internal-model-error"), false);
 });
 
 test("拒绝非法注册、超长文字和混合回复", () => {

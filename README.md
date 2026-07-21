@@ -204,8 +204,14 @@ npm run start:api
 注册和回复写操作要求 `Idempotency-Key`，设备接口使用 Bearer 令牌。请求和响应均限制在
 Lite Wearable 单包 7 KB 以内，记忆列表每页最多 20 条。本地开发默认使用内存状态；配置
 `WATCHBUDDY_STATE_FILE` 后，服务会用 `0600` 原子 JSON 文件保存设备令牌摘要、陪伴状态、
-设置与记忆并在重启后恢复。明文设备令牌不会写入文件。该存储只支持单实例，AI 适配器仍属于
-后续阶段。
+设置与记忆并在重启后恢复。明文设备令牌不会写入文件。该存储只支持单实例。
+
+服务端文字回复已经接入 OpenAI Responses API 适配器。配置 `OPENAI_API_KEY` 后默认使用
+`gpt-5.6-terra` 与 `low` 推理强度；可用 `WATCHBUDDY_OPENAI_MODEL` 和
+`WATCHBUDDY_OPENAI_TIMEOUT_MS` 覆盖模型及 8 秒默认超时。请求使用 `store: false`，设备 ID
+只以 SHA-256 后的 `safety_identifier` 发送，模型输出限制为 38 个字符。未配置密钥、超时或
+上游响应异常时只返回固定陪伴模板，不向手表或日志泄露内部错误。当前离线诊断 HAP 尚未调用该
+链路，不能据此声称 GT 6 Pro 已完成 AI 联网验证。
 
 本地进程默认监听 `127.0.0.1:8787`；真机验证前仍需部署到受信任的公网 HTTPS 地址，
 不能把本地 HTTP 结果当作 GT 6 Pro 独立联网证据。

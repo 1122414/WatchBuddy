@@ -6,6 +6,7 @@ import {
   createWatchBuddyServer,
   startWatchBuddyServer
 } from "../src/server.js";
+import { FALLBACK_COMPANION_TEXT } from "../src/ai-adapter.js";
 import { WatchBuddyService } from "../src/service.js";
 
 async function listen(server) {
@@ -164,6 +165,10 @@ test("仅用 HTTP 完成注册、状态、回复、记忆和撤销闭环", async
   const memoryReply = await memoryReplyResponse.json();
   assert.equal(memoryReplyResponse.status, 200);
   assert.equal(memoryReply.memory.summary, "今天完成了手表直连服务");
+  assert.deepEqual(memoryReply.companionReply, {
+    fallback: true,
+    text: FALLBACK_COMPANION_TEXT
+  });
 
   const memoriesResponse = await fetch(`${baseUrl}/v1/memories`, {
     headers: { authorization }
@@ -489,6 +494,60 @@ test("幂等键会重放相同回复并拒绝不同请求复用", async (t) => {
   });
   assert.equal(conflict.status, 409);
   assert.equal((await conflict.json()).error, "idempotency_conflict");
+});
+
+test("并发重放文字回复只生成一次陪伴回应", async (t) => {
+  let callCount = 0;
+  let releaseResponse;
+  let markStarted;
+  const started = new Promise((resolve) => {
+    markStarted = resolve;
+  });
+  const pendingResponse = new Promise((resolve) => {
+    releaseResponse = resolve;
+  });
+  const service = new WatchBuddyService({
+    companionResponder: {
+      async respond() {
+        callCount += 1;
+        markStarted();
+        return pendingResponse;
+      }
+    }
+  });
+  const server = createWatchBuddyServer({ service });
+  t.after(() => close(server));
+  const baseUrl = await listen(server);
+  const registration = await registerDevice(baseUrl, {
+    idempotencyKey: "register-ai-idempotency"
+  });
+  const request = () => fetch(`${baseUrl}/v1/companion/reply`, {
+    body: JSON.stringify({ text: "同一条并发回复" }),
+    headers: {
+      authorization: `Bearer ${registration.body.deviceToken}`,
+      "content-type": "application/json",
+      "idempotency-key": "reply-ai-idempotency"
+    },
+    method: "POST"
+  });
+
+  const firstPromise = request();
+  await started;
+  const secondPromise = request();
+  releaseResponse({
+    fallback: false,
+    text: "我只回应这一次，但会一直记得。"
+  });
+  const [first, second] = await Promise.all([firstPromise, secondPromise]);
+  const [firstBody, secondBody] = await Promise.all([
+    first.json(),
+    second.json()
+  ]);
+
+  assert.equal(first.status, 200);
+  assert.equal(second.status, 200);
+  assert.equal(callCount, 1);
+  assert.deepEqual(secondBody, firstBody);
 });
 
 test("已注册设备只有持有当前令牌才能轮换令牌", async (t) => {

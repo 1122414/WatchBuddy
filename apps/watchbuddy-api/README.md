@@ -3,6 +3,34 @@
 WatchBuddy API 面向手表独立应用。除健康检查与设备注册外，接口都要求设备注册后获得的
 Bearer 令牌。
 
+## AI 陪伴回复
+
+`POST /v1/companion/reply` 的文字回复会附带 `companionReply`：
+
+```json
+{
+  "text": "我在这里，继续说给我听吧。",
+  "fallback": false
+}
+```
+
+服务端使用 OpenAI Responses API，默认模型为 `gpt-5.6-terra`、推理强度为 `low`，适合手表
+短回复的延迟与成本边界。请求设置 `store: false`，设备 ID 只以 SHA-256 后的稳定
+`safety_identifier` 发送；密钥、请求正文、模型输出和上游错误均不写入结构化日志。输出必须是
+不超过 38 个字符的单句纯文本。
+
+只有配置 `OPENAI_API_KEY` 才会请求模型；未配置密钥、8 秒超时、上游错误、非 JSON、未完成或
+超长输出都会返回同一个固定模板，API 不向手表暴露内部错误。可选配置：
+
+| 环境变量 | 默认值 | 用途 |
+|---|---:|---|
+| `OPENAI_API_KEY` | 空 | 服务端 OpenAI API 密钥，不得写入 HAP 或 Git |
+| `WATCHBUDDY_OPENAI_MODEL` | `gpt-5.6-terra` | 覆盖陪伴回复模型 |
+| `WATCHBUDDY_OPENAI_TIMEOUT_MS` | `8000` | 模型请求超时，允许 1–60000 毫秒 |
+
+自动化测试使用本地模拟响应，不消费真实 API 配额。当前离线诊断 HAP 尚未调用这条文字对话链路；
+必须先完成阶段 0 的 GT 6 Pro 独立 HTTPS 真机门槛，才可称为手表端 AI 已连通。
+
 ## 陪伴设置
 
 | 接口 | 用途 |

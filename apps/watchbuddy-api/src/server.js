@@ -6,6 +6,11 @@ import http from "node:http";
 import { pathToFileURL } from "node:url";
 
 import { defaultPetCatalog } from "./pet-catalog.js";
+import {
+  createOpenAiCompanionResponder,
+  DEFAULT_COMPANION_MODEL,
+  DEFAULT_COMPANION_TIMEOUT_MS
+} from "./ai-adapter.js";
 import { JsonStateStore } from "./json-state-store.js";
 import { WatchBuddyService } from "./service.js";
 
@@ -69,6 +74,13 @@ class IdempotencyStore {
     });
     if (this.#entries.size > this.#maxEntries) {
       this.#entries.delete(this.#entries.keys().next().value);
+    }
+    if (result && typeof result.catch === "function") {
+      void result.catch(() => {
+        if (this.#entries.get(cacheKey)?.result === result) {
+          this.#entries.delete(cacheKey);
+        }
+      });
     }
     return result;
   }
@@ -425,11 +437,11 @@ export function createWatchBuddyServer({
       if (url.pathname === "/v1/companion/reply") {
         const input = await readJson(request);
         const idempotencyKey = requireIdempotencyKey(request);
-        const result = idempotencyStore.run(
+        const result = await idempotencyStore.run(
           `reply:${device.deviceId}`,
           idempotencyKey,
           input,
-          () => service.reply(device, input)
+          () => service.replyWithCompanion(device, input)
         );
         statusCode = 200;
         sendJson(response, statusCode, result, responseHeaders);
@@ -626,6 +638,14 @@ export function createWatchBuddyServer({
 }
 
 export async function startWatchBuddyServer({
+  aiApiKey = process.env.OPENAI_API_KEY ?? "",
+  aiModel = process.env.WATCHBUDDY_OPENAI_MODEL
+    ?? DEFAULT_COMPANION_MODEL,
+  aiTimeoutMs = Number.parseInt(
+    process.env.WATCHBUDDY_OPENAI_TIMEOUT_MS
+      ?? `${DEFAULT_COMPANION_TIMEOUT_MS}`,
+    10
+  ),
   host = process.env.HOST ?? DEFAULT_HOST,
   logger = createJsonLogger(),
   port = Number.parseInt(process.env.PORT ?? `${DEFAULT_PORT}`, 10),
@@ -635,11 +655,17 @@ export async function startWatchBuddyServer({
     throw new TypeError("PORT 必须是 0 到 65535 之间的整数");
   }
 
-  const service = stateFile
-    ? new WatchBuddyService({
-      stateStore: new JsonStateStore(stateFile)
+  const serviceOptions = {
+    companionResponder: createOpenAiCompanionResponder({
+      apiKey: aiApiKey,
+      model: aiModel,
+      timeoutMs: aiTimeoutMs
     })
-    : new WatchBuddyService();
+  };
+  if (stateFile) {
+    serviceOptions.stateStore = new JsonStateStore(stateFile);
+  }
+  const service = new WatchBuddyService(serviceOptions);
   const server = createWatchBuddyServer({ logger, service });
 
   await new Promise((resolve, reject) => {
