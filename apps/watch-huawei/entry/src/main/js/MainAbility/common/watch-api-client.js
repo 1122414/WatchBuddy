@@ -163,7 +163,10 @@ export function replyToCompanion(
       input,
       idempotencyKey
     ),
-    inspectReplyResponse,
+    (response) => inspectReplyResponse(
+      response,
+      input && typeof input.text === 'string'
+    ),
     options
   );
 }

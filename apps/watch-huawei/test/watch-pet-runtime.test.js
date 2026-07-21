@@ -107,12 +107,18 @@ test('HAP 内置 73 帧且与受控手表包逐文件一致', async () => {
   }
 });
 
-test('页面离线运行真实宠物且不再要求注册', async () => {
+test('页面保留真实宠物并通过后台身份接入 DeepSeek', async () => {
   const pageRoot = path.join(APP_RESOURCE_ROOT, 'pages/index');
-  const [hml, source] = await Promise.all([
+  const [hml, source, apiConfig, appConfigText] = await Promise.all([
     readFile(path.join(pageRoot, 'index.hml'), 'utf8'),
-    readFile(path.join(pageRoot, 'index.js'), 'utf8')
+    readFile(path.join(pageRoot, 'index.js'), 'utf8'),
+    readFile(path.join(APP_RESOURCE_ROOT, 'common/api-config.js'), 'utf8'),
+    readFile(path.join(
+      REPOSITORY_ROOT,
+      'apps/watch-huawei/entry/src/main/config.json'
+    ), 'utf8')
   ]);
+  const appConfig = JSON.parse(appConfigText);
 
   assert.match(
     hml,
@@ -121,22 +127,38 @@ test('页面离线运行真实宠物且不再要求注册', async () => {
   assert.doesNotMatch(hml, /class="face"/);
   assert.match(
     source,
-    /onHide\(\) \{\s*this\.visible = false;\s*this\.stopPetAnimation\(\);/
+    /onHide\(\) \{\s*this\.visible = false;\s*this\.cancelActiveWork\(\);/
   );
   assert.match(
     source,
-    /onDestroy\(\) \{\s*this\.visible = false;\s*this\.stopPetAnimation\(\);/
+    /onDestroy\(\) \{\s*this\.visible = false;\s*this\.cancelActiveWork\(\);/
   );
-  assert.match(hml, /value="挥手" onclick="playWave"/);
-  assert.match(hml, /value="跳跃" onclick="playJump"/);
-  assert.match(hml, /value="休息" onclick="restPet"/);
-  assert.match(hml, /离线陪伴 · 无需注册/);
-  assert.match(source, /runLocalAction\('chatting', petInteractionAnimation\('message'\)\)/);
-  assert.match(source, /runLocalAction\('curious', petInteractionAnimation\('tap'\)\)/);
+  assert.match(
+    source,
+    /cancelActiveWork\(\) \{[\s\S]*?this\.cancelRequest\(\);[\s\S]*?this\.stopPetAnimation\(\);/
+  );
+  assert.match(hml, /value="聊聊" onclick="playWave"/);
+  assert.match(hml, /value="鼓励" onclick="playJump"/);
+  assert.match(hml, /value="晚安" onclick="restPet"/);
+  assert.match(hml, /AI 回复由 DeepSeek 生成/);
+  assert.doesNotMatch(hml, /离线陪伴 · 无需注册/);
+  assert.match(source, /registerWatchBuddy\(\{/);
+  assert.match(source, /replyToCompanion\(/);
+  assert.match(source, /result\.data\.companionReply/);
+  assert.match(source, /serializeIdentity\(\{/);
+  assert.match(source, /reason === 'http_409' && !this\.registrationRecoveryAttempted/);
+  assert.match(source, /timeoutMs: 12000/);
   assert.match(source, /vibrator\.vibrate\(\{/);
-  assert.doesNotMatch(source, /registerWatchBuddy/);
-  assert.doesNotMatch(source, /ensureConnected/);
-  assert.doesNotMatch(source, /deviceToken/);
-  assert.doesNotMatch(source, /fetchCompanionState/);
-  assert.doesNotMatch(source, /showMemories|showPets|toggleQuietMode/);
+  assert.doesNotMatch(source, /DEEPSEEK_API_KEY|sk-[A-Za-z0-9]/);
+  assert.match(
+    apiConfig,
+    /https:\/\/watchbuddy\.47-239-238-27\.sslip\.io/
+  );
+  assert.doesNotMatch(apiConfig, /DEEPSEEK_API_KEY|sk-[A-Za-z0-9]/);
+  assert.equal(
+    appConfig.module.reqPermissions.some(
+      (permission) => permission.name === 'ohos.permission.INTERNET'
+    ),
+    true
+  );
 });

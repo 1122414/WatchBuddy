@@ -13,11 +13,11 @@
     <text class="hint">{{hint}}</text>
 
     <div class="actions">
-      <input class="action" type="button" value="挥手" onclick="playWave"></input>
-      <input class="action primary" type="button" value="跳跃" onclick="playJump"></input>
-      <input class="action quiet" type="button" value="休息" onclick="restPet"></input>
+      <input class="action" type="button" value="聊聊" onclick="playWave"></input>
+      <input class="action primary" type="button" value="鼓励" onclick="playJump"></input>
+      <input class="action quiet" type="button" value="晚安" onclick="restPet"></input>
     </div>
 
-    <text class="offline-note">离线陪伴 · 无需注册</text>
+    <text class="connection-note">{{connectionLabel}} · AI 回复由 DeepSeek 生成</text>
   </div>
 </div>

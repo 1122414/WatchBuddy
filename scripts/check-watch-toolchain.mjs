@@ -278,13 +278,13 @@ function readProjectConfig() {
       && petFilesSource.includes("remove(")
       && petIntegritySource.includes("sha256Hex")
       && petIntegritySource.includes("PNG_MAGIC"),
-    hasOfflinePetControls:
+    hasPetControls:
       pageSource.includes("playWave")
       && pageSource.includes("playJump")
       && pageSource.includes("restPet")
       && pageSource.includes("runLocalAction")
-      && !pageSource.includes("registerWatchBuddy")
-      && !pageSource.includes("deviceToken"),
+      && pageSource.includes("registerWatchBuddy")
+      && pageSource.includes("replyToCompanion"),
     hasDirectNetworkRuntime: networkClientSource.includes("@system.fetch")
       && networkClientSource.includes("fetch.fetch(")
       && apiContractSource.includes("startsWith('https://')"),
@@ -419,11 +419,11 @@ export function inspectWatchToolchain() {
         : "无 Wear Engine/手机 peer"
     },
     {
-      name: "离线安装权限基线",
-      ok: !projectConfig.hasInternetPermission,
+      name: "独立 HTTPS 联网权限",
+      ok: projectConfig.hasInternetPermission,
       detail: projectConfig.hasInternetPermission
-        ? "诊断基线不应声明 ohos.permission.INTERNET"
-        : "未声明（网络源码保留，当前包离线）"
+        ? "ohos.permission.INTERNET"
+        : "未声明，无法请求 WatchBuddy API"
     },
     {
       name: "手表直连网络",
@@ -448,11 +448,11 @@ export function inspectWatchToolchain() {
         : "Lite Wearable 安装链路缺失"
     },
     {
-      name: "离线宠物控制",
-      ok: projectConfig.hasOfflinePetControls,
-      detail: projectConfig.hasOfflinePetControls
-        ? "挥手 + 跳跃 + 休息，无注册依赖"
-        : "Lite Wearable 离线宠物控制缺失"
+      name: "宠物 AI 交互控制",
+      ok: projectConfig.hasPetControls,
+      detail: projectConfig.hasPetControls
+        ? "Codex Pet 动画 + 后台注册 + DeepSeek 回复"
+        : "Lite Wearable AI 交互控制缺失"
     },
     {
       name: "宠物触感运行时",

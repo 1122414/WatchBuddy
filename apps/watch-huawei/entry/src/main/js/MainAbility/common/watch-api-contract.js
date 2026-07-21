@@ -377,7 +377,7 @@ export function inspectSettingsResponse(response) {
   };
 }
 
-export function inspectReplyResponse(response) {
+export function inspectReplyResponse(response, requireCompanionReply = false) {
   const result = inspectJsonResponse(response, 200);
   if (!result.ok) {
     return result;
@@ -388,13 +388,29 @@ export function inspectReplyResponse(response) {
     || CHARACTER_STATES.indexOf(payload.characterState) < 0
     || !Number.isSafeInteger(payload.nextCheckAt)
     || !payload.reply
-    || typeof payload.reply !== 'object') {
+    || typeof payload.reply !== 'object'
+    || (requireCompanionReply
+      && !isValidCompanionReply(payload.companionReply))
+    || (payload.companionReply !== undefined
+      && !isValidCompanionReply(payload.companionReply))) {
     return invalid('invalid_response');
   }
   return {
     ok: true,
     data: payload
   };
+}
+
+function isValidCompanionReply(value) {
+  return value
+    && typeof value === 'object'
+    && typeof value.fallback === 'boolean'
+    && typeof value.text === 'string'
+    && value.text.trim() === value.text
+    && Array.from(value.text).length >= 1
+    && Array.from(value.text).length <= 38
+    && !value.text.includes('\n')
+    && !value.text.includes('\r');
 }
 
 export function inspectPetCatalogResponse(response) {

@@ -330,6 +330,59 @@ test("校验注册、状态与回复响应", () => {
       }
     }
   }).ok, true);
+
+  const companionReply = inspectReplyResponse({
+    code: 200,
+    data: {
+      accepted: true,
+      characterState: "chatting",
+      memory: null,
+      nextCheckAt: NOW + 300_000,
+      reply: {
+        respondedAt: NOW,
+        text: "陪我聊一句吧"
+      },
+      companionReply: {
+        fallback: false,
+        text: "我在，今天想从哪一小段聊起？"
+      }
+    }
+  }, true);
+  assert.equal(companionReply.ok, true);
+  assert.equal(
+    companionReply.data.companionReply.text,
+    "我在，今天想从哪一小段聊起？"
+  );
+
+  assert.equal(inspectReplyResponse({
+    code: 200,
+    data: {
+      accepted: true,
+      characterState: "chatting",
+      nextCheckAt: NOW + 300_000,
+      reply: {
+        respondedAt: NOW,
+        text: "陪我聊一句吧"
+      }
+    }
+  }, true).reason, "invalid_response");
+
+  assert.equal(inspectReplyResponse({
+    code: 200,
+    data: {
+      accepted: true,
+      characterState: "chatting",
+      nextCheckAt: NOW + 300_000,
+      reply: {
+        respondedAt: NOW,
+        text: "陪我聊一句吧"
+      },
+      companionReply: {
+        fallback: false,
+        text: "第一行\n第二行"
+      }
+    }
+  }, true).reason, "invalid_response");
 });
 
 test("接受主动策略阻断后的空消息状态", () => {

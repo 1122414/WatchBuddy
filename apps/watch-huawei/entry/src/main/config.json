@@ -3,8 +3,8 @@
     "bundleName": "com.watchbuddy.watch",
     "vendor": "WatchBuddy",
     "version": {
-      "code": 1000014,
-      "name": "0.3.0"
+      "code": 1000015,
+      "name": "0.4.0"
     }
   },
   "deviceConfig": {},
@@ -17,6 +17,11 @@
       "moduleName": "entry",
       "moduleType": "entry"
     },
+    "reqPermissions": [
+      {
+        "name": "ohos.permission.INTERNET"
+      }
+    ],
     "abilities": [
       {
         "name": ".MainAbility",

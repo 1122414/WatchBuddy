@@ -2,6 +2,15 @@ import storage from '@system.storage';
 import vibrator from '@system.vibrator';
 
 import {
+  fetchCompanionState,
+  registerWatchBuddy,
+  replyToCompanion
+} from '../../common/watch-api-client.js';
+import {
+  deserializeIdentity,
+  serializeIdentity
+} from '../../common/watch-storage-contract.js';
+import {
   advancePetPlayback,
   canTriggerPetTap,
   createPetPlayback,
@@ -12,47 +21,62 @@ import {
   petSteadyAnimationForState
 } from '../../common/watch-pet-runtime.js';
 
+const IDENTITY_STORAGE_KEY = 'wb_identity';
 const STATE_STORAGE_KEY = 'watchbuddy_offline_state';
 
 const STATE_LABELS = {
   sleeping: '安静休息',
   idle: '陪着你',
+  daydreaming: '发呆',
   watching: '看着你',
   curious: '开心跳跃',
-  chatting: '向你挥手'
+  concerned: '关心你',
+  chatting: '正在聊天',
+  giving_space: '安静陪伴'
 };
 
 export default {
   data: {
     petName: '我的 Codex Pet',
     stateLabel: '陪着你',
+    connectionLabel: '正在连接',
     petFramePath: DEFAULT_PET_FRAME,
-    hint: '轻点宠物，它会回应你'
+    hint: '正在连接 DeepSeek…'
   },
 
   onInit() {
     this.visible = false;
     this.state = 'idle';
+    this.identityReady = false;
+    this.deviceId = '';
+    this.deviceToken = '';
+    this.registrationKey = '';
+    this.activeRequest = null;
+    this.aiRequestActive = false;
+    this.registrationRecoveryAttempted = false;
+    this.queuedPrompt = null;
     this.petTimer = null;
     this.petPlayback = null;
     this.petActionActive = false;
     this.lastPetTapAt = 0;
     this.restoreState();
+    this.restoreIdentity();
   },
 
   onShow() {
     this.visible = true;
     this.playPetStateEntry();
+    this.ensureConnected();
   },
 
   onHide() {
     this.visible = false;
-    this.stopPetAnimation();
+    this.cancelActiveWork();
   },
 
   onDestroy() {
     this.visible = false;
-    this.stopPetAnimation();
+    this.cancelActiveWork();
   },
 
   restoreState() {
@@ -67,6 +91,148 @@ export default {
       }.bind(this),
       fail: function() {
         this.applyTimeState();
+      }.bind(this)
+    });
+  },
+
+  restoreIdentity() {
+    storage.get({
+      key: IDENTITY_STORAGE_KEY,
+      success: function(value) {
+        try {
+          const identity = deserializeIdentity(value);
+          this.deviceId = identity.deviceId;
+          this.deviceToken = identity.deviceToken;
+          this.registrationKey = identity.registrationKey;
+        } catch (error) {
+          this.resetIdentity();
+        }
+        this.finishIdentityRestore();
+      }.bind(this),
+      fail: function() {
+        this.resetIdentity();
+        this.finishIdentityRestore();
+      }.bind(this)
+    });
+  },
+
+  finishIdentityRestore() {
+    this.identityReady = true;
+    this.persistIdentity();
+    this.ensureConnected();
+  },
+
+  resetIdentity() {
+    this.deviceId = this.createLocalId('gt6pro');
+    this.deviceToken = '';
+    this.registrationKey = this.createLocalId('register');
+  },
+
+  persistIdentity() {
+    let value;
+    try {
+      value = serializeIdentity({
+        deviceId: this.deviceId,
+        deviceToken: this.deviceToken,
+        registrationKey: this.registrationKey
+      });
+    } catch (error) {
+      console.error('[WatchBuddy] failed to serialize identity');
+      return;
+    }
+    storage.set({
+      key: IDENTITY_STORAGE_KEY,
+      value,
+      fail() {
+        console.error('[WatchBuddy] failed to persist identity');
+      }
+    });
+  },
+
+  ensureConnected() {
+    if (!this.visible || !this.identityReady || this.activeRequest) {
+      return;
+    }
+    if (!this.deviceToken) {
+      this.registerDevice();
+      return;
+    }
+    if (this.queuedPrompt) {
+      this.flushQueuedPrompt();
+      return;
+    }
+    this.syncCompanionState();
+  },
+
+  registerDevice() {
+    if (this.activeRequest || !this.identityReady) {
+      return;
+    }
+    this.connectionLabel = '首次连接';
+    if (!this.queuedPrompt) {
+      this.hint = '正在安全连接陪伴服务…';
+    }
+    this.startPetAnimation(petInteractionAnimation('loading'), true);
+    this.activeRequest = registerWatchBuddy({
+      deviceId: this.deviceId,
+      locale: 'zh-CN',
+      timezoneOffsetMinutes: -new Date().getTimezoneOffset()
+    }, this.registrationKey, {
+      onSuccess: function(result) {
+        this.activeRequest = null;
+        this.deviceToken = result.data.deviceToken;
+        this.registrationKey = '';
+        this.registrationRecoveryAttempted = false;
+        this.persistIdentity();
+        this.connectionLabel = 'DeepSeek 在线';
+        if (this.queuedPrompt) {
+          this.flushQueuedPrompt();
+          return;
+        }
+        this.syncCompanionState();
+      }.bind(this),
+      onFailure: function(reason) {
+        this.activeRequest = null;
+        if (reason === 'http_409' && !this.registrationRecoveryAttempted) {
+          this.registrationRecoveryAttempted = true;
+          this.resetIdentity();
+          this.persistIdentity();
+          this.registerDevice();
+          return;
+        }
+        this.connectionLabel = this.connectionLabelForFailure(reason);
+        this.hint = '暂时连不上服务，宠物动画仍可使用';
+        this.startPetAnimation(petInteractionAnimation('failure'), true);
+      }.bind(this)
+    });
+  },
+
+  syncCompanionState() {
+    if (!this.deviceToken || this.activeRequest) {
+      return;
+    }
+    this.connectionLabel = '正在同步';
+    this.activeRequest = fetchCompanionState(this.deviceToken, {
+      onSuccess: function(result) {
+        this.activeRequest = null;
+        this.connectionLabel = 'DeepSeek 在线';
+        this.applyState(result.data.characterState);
+        this.hint = result.data.nudge
+          ? result.data.nudge.message
+          : 'AI 已连接，想说点什么？';
+        this.startPetSteadyAnimation();
+      }.bind(this),
+      onFailure: function(reason) {
+        this.activeRequest = null;
+        if (reason === 'http_401') {
+          this.resetIdentity();
+          this.persistIdentity();
+          this.registerDevice();
+          return;
+        }
+        this.connectionLabel = this.connectionLabelForFailure(reason);
+        this.hint = '网络不可用时，宠物动画仍能使用';
+        this.startPetAnimation(petInteractionAnimation('failure'), true);
       }.bind(this)
     });
   },
@@ -94,21 +260,102 @@ export default {
       return;
     }
     this.lastPetTapAt = now;
+    this.hint = '我在这里，点“聊聊”让我回应你';
     this.runLocalAction('curious', petInteractionAnimation('tap'));
   },
 
   playWave() {
-    this.runLocalAction('chatting', petInteractionAnimation('message'));
+    this.requestAiReply(
+      '陪我聊一句吧',
+      'chatting',
+      petInteractionAnimation('message')
+    );
   },
 
   playJump() {
-    this.runLocalAction('curious', petInteractionAnimation('tap'));
+    this.requestAiReply(
+      '请给我一句简短鼓励',
+      'curious',
+      petInteractionAnimation('tap')
+    );
   },
 
   restPet() {
-    this.applyState('sleeping');
-    this.startPetAnimation(petSteadyAnimationForState('sleeping'), false);
+    this.requestAiReply(
+      '我准备休息了，和我说句晚安吧',
+      'sleeping',
+      petInteractionAnimation('message')
+    );
+  },
+
+  requestAiReply(text, state, animationName) {
+    if (this.aiRequestActive) {
+      this.hint = '还在想上一句话…';
+      return;
+    }
+    const prompt = {
+      animationName,
+      state,
+      text
+    };
+    this.applyState(state);
+    this.startPetAnimation(animationName, true);
     this.vibrate();
+    this.hint = '正在等待 DeepSeek 回应…';
+    if (!this.identityReady || !this.deviceToken) {
+      this.queuedPrompt = prompt;
+      this.ensureConnected();
+      return;
+    }
+    this.submitAiPrompt(prompt);
+  },
+
+  flushQueuedPrompt() {
+    if (!this.deviceToken || !this.queuedPrompt) {
+      return;
+    }
+    const prompt = this.queuedPrompt;
+    this.queuedPrompt = null;
+    this.submitAiPrompt(prompt);
+  },
+
+  submitAiPrompt(prompt) {
+    this.cancelRequest();
+    this.aiRequestActive = true;
+    this.connectionLabel = 'DeepSeek 思考中';
+    this.activeRequest = replyToCompanion(
+      this.deviceToken,
+      { text: prompt.text },
+      this.createLocalId('reply'),
+      {
+        timeoutMs: 12000,
+        onSuccess: function(result) {
+          this.activeRequest = null;
+          this.aiRequestActive = false;
+          const reply = result.data.companionReply;
+          this.connectionLabel = reply.fallback
+            ? 'AI 暂时离线'
+            : 'DeepSeek 在线';
+          this.hint = reply.text;
+          this.applyState(result.data.characterState);
+          this.startPetAnimation(petInteractionAnimation('message'), true);
+        }.bind(this),
+        onFailure: function(reason) {
+          this.activeRequest = null;
+          this.aiRequestActive = false;
+          if (reason === 'http_401') {
+            this.queuedPrompt = prompt;
+            this.resetIdentity();
+            this.persistIdentity();
+            this.registerDevice();
+            return;
+          }
+          this.connectionLabel = this.connectionLabelForFailure(reason);
+          this.hint = '这次没连上，再点一次试试';
+          this.startPetAnimation(petInteractionAnimation('failure'), true);
+        }.bind(this)
+      }
+    );
   },
 
   runLocalAction(state, animationName) {
@@ -164,6 +411,19 @@ export default {
     }.bind(this), delay);
   },
 
+  cancelActiveWork() {
+    this.cancelRequest();
+    this.aiRequestActive = false;
+    this.stopPetAnimation();
+  },
+
+  cancelRequest() {
+    if (this.activeRequest) {
+      this.activeRequest.cancel();
+      this.activeRequest = null;
+    }
+  },
+
   stopPetAnimation() {
     this.cancelPetTimer();
     this.petPlayback = null;
@@ -175,6 +435,30 @@ export default {
       clearTimeout(this.petTimer);
       this.petTimer = null;
     }
+  },
+
+  connectionLabelForFailure(reason) {
+    if (reason === 'timeout') {
+      return '服务超时';
+    }
+    if (reason === 'http_401') {
+      return '正在重新连接';
+    }
+    if (reason === 'invalid_response'
+      || reason === 'invalid_json'
+      || reason === 'response_too_large') {
+      return '响应异常';
+    }
+    return '服务离线';
+  },
+
+  createLocalId(prefix) {
+    const time = Date.now().toString(36);
+    let random = Math.floor(Math.random() * 0x100000000).toString(36);
+    while (random.length < 7) {
+      random = `0${random}`;
+    }
+    return `${prefix}-${time}-${random}`;
   },
 
   vibrate() {
