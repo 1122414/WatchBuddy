@@ -14,21 +14,36 @@ Bearer 令牌。
 }
 ```
 
-服务端使用 OpenAI Responses API，默认模型为 `gpt-5.6-terra`、推理强度为 `low`，适合手表
-短回复的延迟与成本边界。请求设置 `store: false`，设备 ID 只以 SHA-256 后的稳定
-`safety_identifier` 发送；密钥、请求正文、模型输出和上游错误均不写入结构化日志。输出必须是
-不超过 38 个字符的单句纯文本。
+服务端支持 OpenAI Responses API 和 DeepSeek Chat Completions API。默认保持 OpenAI
+`gpt-5.6-terra` 与 `low` 推理强度；设置 `WATCHBUDDY_AI_PROVIDER=deepseek` 后改用
+`deepseek-v4-flash` 非思考模式，适合手表短回复的延迟边界。两种提供商都只接收不超过 64 个字符
+的用户文字，输出必须是经过服务端校验、不超过 38 个字符的单句纯文本。
 
-只有配置 `OPENAI_API_KEY` 才会请求模型；未配置密钥、8 秒超时、上游错误、非 JSON、未完成或
-超长输出都会返回同一个固定模板，API 不向手表暴露内部错误。可选配置：
+OpenAI 请求设置 `store: false`，设备 ID 仅以 SHA-256 后的 `safety_identifier` 发送；DeepSeek
+同样只接收 SHA-256 后的 `user_id`。密钥、请求正文、模型输出和上游错误均不写入结构化日志。
+只有所选提供商配置了对应密钥才会请求模型；未配置密钥、8 秒超时、上游错误、非 JSON、未完成、
+内容过滤、截断或超长输出都会返回同一个固定模板，API 不向手表暴露内部错误。
 
 | 环境变量 | 默认值 | 用途 |
 |---|---:|---|
+| `WATCHBUDDY_AI_PROVIDER` | `openai` | 选择 `openai` 或 `deepseek` |
 | `OPENAI_API_KEY` | 空 | 服务端 OpenAI API 密钥，不得写入 HAP 或 Git |
-| `WATCHBUDDY_OPENAI_MODEL` | `gpt-5.6-terra` | 覆盖陪伴回复模型 |
-| `WATCHBUDDY_OPENAI_TIMEOUT_MS` | `8000` | 模型请求超时，允许 1–60000 毫秒 |
+| `DEEPSEEK_API_KEY` | 空 | 服务端 DeepSeek API 密钥，不得写入 HAP 或 Git |
+| `WATCHBUDDY_OPENAI_MODEL` | `gpt-5.6-terra` | 覆盖 OpenAI 模型 |
+| `WATCHBUDDY_DEEPSEEK_MODEL` | `deepseek-v4-flash` | 覆盖 DeepSeek 模型 |
+| `WATCHBUDDY_OPENAI_TIMEOUT_MS` | `8000` | OpenAI 超时，允许 1–60000 毫秒 |
+| `WATCHBUDDY_DEEPSEEK_TIMEOUT_MS` | `8000` | DeepSeek 超时，允许 1–60000 毫秒 |
 
-自动化测试使用本地模拟响应，不消费真实 API 配额。当前离线诊断 HAP 尚未调用这条文字对话链路；
+启用 DeepSeek 时，把新密钥注入服务器的秘密环境变量，并设置：
+
+```sh
+WATCHBUDDY_AI_PROVIDER=deepseek npm run start:api
+```
+
+不要把密钥直接写在命令、源码、`.env`、HAP 或 Git 中；生产环境应使用部署平台的秘密管理功能。
+
+自动化测试使用本地模拟响应，不消费 OpenAI 或 DeepSeek 的真实 API 配额。当前离线诊断 HAP
+尚未调用这条文字对话链路；
 必须先完成阶段 0 的 GT 6 Pro 独立 HTTPS 真机门槛，才可称为手表端 AI 已连通。
 
 ## 陪伴设置

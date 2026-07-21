@@ -213,12 +213,14 @@ Lite Wearable 客户端会校验消息协议版本、消息类型、状态、来
 仍需配置真实 HTTPS 地址后做服务端与 GT 6 Pro 端到端验证。服务端持久文件使用临时写入、
 `fsync` 和原子改名，权限为 `0600`，仅保存令牌摘要；当前实现明确限制为单实例。
 
-服务端文字回复现已接入 OpenAI Responses API 适配器：默认使用 `gpt-5.6-terra` 与 `low`
-推理强度，8 秒超时，输出限制为 38 个字符的单句纯文本，并设置 `store: false`。设备 ID 先做
-SHA-256，再作为稳定的 `safety_identifier` 发送；API 密钥只从服务端环境变量读取。未配置密钥、
-超时、上游错误、非 JSON、未完成或超长响应均返回固定模板，响应与结构化日志不包含内部错误。
-该链路已经通过模拟 Responses API、HTTP 路由和并发幂等测试，尚未使用真实 API 密钥做线上调用，
-也没有改变当前离线诊断 HAP；GT 6 Pro 端到端 AI 仍受阶段 0 独立 HTTPS 门槛约束。
+服务端文字回复现已接入 OpenAI Responses API 与 DeepSeek Chat Completions API 两种适配器。
+默认保持 `gpt-5.6-terra` 与 `low` 推理强度；显式选择 DeepSeek 后使用
+`deepseek-v4-flash` 非思考模式。两者均为 8 秒超时，输出限制为 38 个字符的单句纯文本。设备 ID
+先做 SHA-256，再作为 OpenAI `safety_identifier` 或 DeepSeek `user_id` 发送；对应 API 密钥
+只从服务端环境变量读取。未配置密钥、超时、上游错误、非 JSON、未完成、截断或超长响应均返回
+固定模板，响应与结构化日志不包含内部错误。该链路已经通过两种模拟 API、HTTP 路由和并发幂等
+测试，尚未使用真实 API 密钥做线上调用，也没有改变当前离线诊断 HAP；GT 6 Pro 端到端 AI 仍受
+阶段 0 独立 HTTPS 门槛约束。
 
 ### 阶段 4：主动提醒、语音与状态感知 Spike
 

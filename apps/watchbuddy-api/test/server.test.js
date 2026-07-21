@@ -734,4 +734,11 @@ test("启动入口校验端口范围", async () => {
     startWatchBuddyServer({ port: 70_000 }),
     /PORT 必须/
   );
+  await assert.rejects(
+    startWatchBuddyServer({
+      aiProvider: "unknown",
+      port: 0
+    }),
+    /只支持 openai 或 deepseek/
+  );
 });

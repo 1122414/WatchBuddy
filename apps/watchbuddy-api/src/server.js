@@ -7,8 +7,10 @@ import { pathToFileURL } from "node:url";
 
 import { defaultPetCatalog } from "./pet-catalog.js";
 import {
-  createOpenAiCompanionResponder,
+  createCompanionResponder,
   DEFAULT_COMPANION_MODEL,
+  DEFAULT_COMPANION_PROVIDER,
+  DEFAULT_DEEPSEEK_COMPANION_MODEL,
   DEFAULT_COMPANION_TIMEOUT_MS
 } from "./ai-adapter.js";
 import { JsonStateStore } from "./json-state-store.js";
@@ -638,11 +640,20 @@ export function createWatchBuddyServer({
 }
 
 export async function startWatchBuddyServer({
-  aiApiKey = process.env.OPENAI_API_KEY ?? "",
-  aiModel = process.env.WATCHBUDDY_OPENAI_MODEL
-    ?? DEFAULT_COMPANION_MODEL,
+  aiProvider = process.env.WATCHBUDDY_AI_PROVIDER
+    ?? DEFAULT_COMPANION_PROVIDER,
+  aiApiKey = aiProvider === "deepseek"
+    ? process.env.DEEPSEEK_API_KEY ?? ""
+    : process.env.OPENAI_API_KEY ?? "",
+  aiModel = aiProvider === "deepseek"
+    ? process.env.WATCHBUDDY_DEEPSEEK_MODEL
+      ?? DEFAULT_DEEPSEEK_COMPANION_MODEL
+    : process.env.WATCHBUDDY_OPENAI_MODEL
+      ?? DEFAULT_COMPANION_MODEL,
   aiTimeoutMs = Number.parseInt(
-    process.env.WATCHBUDDY_OPENAI_TIMEOUT_MS
+    (aiProvider === "deepseek"
+      ? process.env.WATCHBUDDY_DEEPSEEK_TIMEOUT_MS
+      : process.env.WATCHBUDDY_OPENAI_TIMEOUT_MS)
       ?? `${DEFAULT_COMPANION_TIMEOUT_MS}`,
     10
   ),
@@ -656,9 +667,10 @@ export async function startWatchBuddyServer({
   }
 
   const serviceOptions = {
-    companionResponder: createOpenAiCompanionResponder({
+    companionResponder: createCompanionResponder({
       apiKey: aiApiKey,
       model: aiModel,
+      provider: aiProvider,
       timeoutMs: aiTimeoutMs
     })
   };
