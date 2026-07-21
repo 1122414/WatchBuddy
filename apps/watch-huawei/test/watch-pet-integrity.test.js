@@ -33,6 +33,8 @@ test('纯 JavaScript SHA-256 与 Base64 解码符合标准向量', () => {
     [...new TextEncoder().encode('WatchBuddy')]
   );
   assert.throws(() => decodeBase64('A==='), /Base64/);
+  assert.throws(() => decodeBase64('AA=A'), /Base64/);
+  assert.throws(() => decodeBase64('AA?='), /Base64/);
 });
 
 test('真实轻量 PNG 下载后校验长度、魔数和 SHA-256', async () => {

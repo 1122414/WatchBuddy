@@ -1,7 +1,9 @@
-const ASSET_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
-const HASH_PATTERN = /^[a-f0-9]{64}$/;
-const VERSION_PATTERN = /^sha256-[a-f0-9]{16}$/;
-const BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/;
+import {
+  isValidPetAssetId,
+  isValidPetVersion,
+  isValidSha256
+} from './watch-api-contract.js';
+
 const MAX_PET_ASSET_BYTES = 7 * 1024;
 const PNG_MAGIC = [137, 80, 78, 71, 13, 10, 26, 10];
 const SHA256_CONSTANTS = [
@@ -27,7 +29,7 @@ export function decodeBase64(value) {
   if (typeof value !== 'string'
     || value.length < 4
     || value.length % 4 !== 0
-    || !BASE64_PATTERN.test(value)) {
+    || !isValidBase64(value)) {
     throw new TypeError('宠物资源 Base64 无效');
   }
   const firstPadding = value.indexOf('=');
@@ -195,11 +197,11 @@ export function verifyDownloadedPetAsset(payload, descriptor) {
     || payload.encoding !== 'base64'
     || payload.bytes !== descriptor.bytes
     || payload.sha256 !== descriptor.sha256
-    || !ASSET_ID_PATTERN.test(payload.id || '')
+    || !isValidPetAssetId(payload.id)
     || !Number.isInteger(payload.bytes)
     || payload.bytes < 1
     || payload.bytes > MAX_PET_ASSET_BYTES
-    || !HASH_PATTERN.test(payload.sha256 || '')) {
+    || !isValidSha256(payload.sha256)) {
     throw new TypeError('宠物资源描述不一致');
   }
   const bytes = decodeBase64(payload.data);
@@ -211,12 +213,12 @@ export function verifyStoredPetAsset(bytes, descriptor) {
   const assetId = descriptor && (descriptor.id || descriptor.assetId);
   if (!(bytes instanceof Uint8Array)
     || !descriptor
-    || !ASSET_ID_PATTERN.test(assetId || '')
+    || !isValidPetAssetId(assetId)
     || descriptor.mediaType !== 'image/png'
     || !Number.isInteger(descriptor.bytes)
     || descriptor.bytes < 1
     || descriptor.bytes > MAX_PET_ASSET_BYTES
-    || !HASH_PATTERN.test(descriptor.sha256 || '')
+    || !isValidSha256(descriptor.sha256)
     || bytes.length !== descriptor.bytes) {
     throw new TypeError('宠物资源长度校验失败');
   }
@@ -233,7 +235,7 @@ export function verifyStoredPetAsset(bytes, descriptor) {
 
 export function petAssetUri(version, assetId, temporary = false) {
   const tag = versionTag(version);
-  if (!ASSET_ID_PATTERN.test(assetId || '')) {
+  if (!isValidPetAssetId(assetId)) {
     throw new TypeError('宠物资源 ID 无效');
   }
   return checkedUri(
@@ -249,7 +251,7 @@ export function petManifestUri(version, temporary = false) {
 }
 
 function versionTag(version) {
-  if (!VERSION_PATTERN.test(version || '')) {
+  if (!isValidPetVersion(version)) {
     throw new TypeError('宠物版本无效');
   }
   return version.slice('sha256-'.length);
@@ -260,6 +262,26 @@ function checkedUri(uri) {
     throw new TypeError('宠物文件 URI 超过 Lite Wearable 上限');
   }
   return uri;
+}
+
+function isValidBase64(value) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const firstPadding = value.indexOf('=');
+  const contentEnd = firstPadding < 0 ? value.length : firstPadding;
+  if (value.length - contentEnd > 2) {
+    return false;
+  }
+  for (let index = 0; index < contentEnd; index += 1) {
+    if (alphabet.indexOf(value[index]) < 0) {
+      return false;
+    }
+  }
+  for (let index = contentEnd; index < value.length; index += 1) {
+    if (value[index] !== '=') {
+      return false;
+    }
+  }
+  return true;
 }
 
 function rotateRight(value, bits) {

@@ -13,13 +13,6 @@ const CHARACTER_STATES = [
   'chatting',
   'giving_space'
 ];
-const DEVICE_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
-const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{8,128}$/;
-const PET_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,47}$/;
-const PET_ASSET_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
-const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const PET_VERSION_PATTERN = /^sha256-[a-f0-9]{16}$/;
-const TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,64}$/;
 const PET_ANIMATION_NAMES = [
   'idle',
   'runningRight',
@@ -31,6 +24,37 @@ const PET_ANIMATION_NAMES = [
   'running',
   'review'
 ];
+
+export function isValidDeviceId(value) {
+  return isValidAsciiToken(value, 8, 64, '_-');
+}
+
+export function isValidIdempotencyKey(value) {
+  return isValidAsciiToken(value, 8, 128, '._:-');
+}
+
+export function isValidPetId(value) {
+  return isValidPetIdentifier(value, 48);
+}
+
+export function isValidPetAssetId(value) {
+  return isValidPetIdentifier(value, 64);
+}
+
+export function isValidSha256(value) {
+  return isLowerHexString(value, 64);
+}
+
+export function isValidPetVersion(value) {
+  return typeof value === 'string'
+    && value.length === 23
+    && value.startsWith('sha256-')
+    && isLowerHexString(value.slice(7), 16);
+}
+
+export function isValidDeviceToken(value) {
+  return isValidAsciiToken(value, 32, 64, '_-');
+}
 
 export function utf8ByteLength(value) {
   const text = String(value);
@@ -82,7 +106,7 @@ export function createRegistrationRequest(
   idempotencyKey,
   currentDeviceToken
 ) {
-  if (!input || !DEVICE_ID_PATTERN.test(input.deviceId || '')) {
+  if (!input || !isValidDeviceId(input.deviceId)) {
     throw new TypeError('deviceId 无效');
   }
   if (!Number.isInteger(input.timezoneOffsetMinutes)
@@ -203,7 +227,7 @@ export function createPetAssetRequest(
   assetId
 ) {
   requirePetId(petId);
-  if (!PET_ASSET_ID_PATTERN.test(assetId || '')) {
+  if (!isValidPetAssetId(assetId)) {
     throw new TypeError('宠物资源 ID 无效');
   }
   return createRequest(
@@ -289,8 +313,8 @@ export function inspectRegistrationResponse(response) {
   }
   const payload = result.data;
   if (!payload
-    || !DEVICE_ID_PATTERN.test(payload.deviceId || '')
-    || !TOKEN_PATTERN.test(payload.deviceToken || '')
+    || !isValidDeviceId(payload.deviceId)
+    || !isValidDeviceToken(payload.deviceToken)
     || !Number.isSafeInteger(payload.registeredAt)) {
     return invalid('invalid_response');
   }
@@ -540,13 +564,13 @@ function createRequest(
   };
 
   if (deviceToken) {
-    if (!TOKEN_PATTERN.test(deviceToken)) {
+    if (!isValidDeviceToken(deviceToken)) {
       throw new TypeError('设备令牌无效');
     }
     header.Authorization = `Bearer ${deviceToken}`;
   }
   if (idempotencyKey) {
-    if (!IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
+    if (!isValidIdempotencyKey(idempotencyKey)) {
       throw new TypeError('Idempotency-Key 无效');
     }
     header['Idempotency-Key'] = idempotencyKey;
@@ -575,13 +599,13 @@ function createRequest(
 }
 
 function requirePetId(petId) {
-  if (!PET_ID_PATTERN.test(petId || '')) {
+  if (!isValidPetId(petId)) {
     throw new TypeError('宠物 ID 无效');
   }
 }
 
 function requirePetVersion(version) {
-  if (!PET_VERSION_PATTERN.test(version || '')) {
+  if (!isValidPetVersion(version)) {
     throw new TypeError('宠物版本无效');
   }
 }
@@ -621,7 +645,7 @@ function inspectJsonResponse(response, expectedCode) {
 function isValidPetSummary(pet) {
   if (!pet
     || typeof pet !== 'object'
-    || !PET_ID_PATTERN.test(pet.id || '')
+    || !isValidPetId(pet.id)
     || typeof pet.displayName !== 'string'
     || pet.displayName.length < 1
     || Array.from(pet.displayName).length > 32
@@ -629,8 +653,8 @@ function isValidPetSummary(pet) {
     || pet.description.length < 1
     || Array.from(pet.description).length > 160
     || pet.renderer !== 'frame-sequence-v1'
-    || !PET_VERSION_PATTERN.test(pet.version || '')
-    || !SHA256_PATTERN.test(pet.manifestSha256 || '')
+    || !isValidPetVersion(pet.version)
+    || !isValidSha256(pet.manifestSha256)
     || pet.version !== `sha256-${pet.manifestSha256.slice(0, 16)}`
     || !Number.isInteger(pet.assetCount)
     || pet.assetCount < 1
@@ -654,7 +678,7 @@ export function isValidPetDetail(pet) {
       (name) => isValidPetAnimation(pet.animations[name])
     )
     || Object.keys(pet.animations).length !== PET_ANIMATION_NAMES.length
-    || !PET_ASSET_ID_PATTERN.test(pet.fallbackFrame || '')
+    || !isValidPetAssetId(pet.fallbackFrame)
     || !isValidPetMapping(pet.stateMap, CHARACTER_STATES)
     || !isValidPetMapping(
       pet.interactionMap,
@@ -676,7 +700,7 @@ export function isValidPetDetail(pet) {
       || typeof pet.lookDirections !== 'object'
       || Object.keys(pet.lookDirections).length > 16
       || !Object.keys(pet.lookDirections).every(
-        (key) => PET_ASSET_ID_PATTERN.test(pet.lookDirections[key] || '')
+        (key) => isValidPetAssetId(pet.lookDirections[key])
       ))) {
     return false;
   }
@@ -717,7 +741,7 @@ function isValidPetAnimation(animation) {
     && animation.frames.length >= 1
     && animation.frames.length <= 8
     && animation.frames.every(
-      (assetId) => PET_ASSET_ID_PATTERN.test(assetId || '')
+      (assetId) => isValidPetAssetId(assetId)
     )
     && Array.isArray(animation.durationsMs)
     && animation.durationsMs.length === animation.frames.length
@@ -746,7 +770,7 @@ function isValidPetSource(source) {
     && source.author.length >= 1
     && source.author.length <= 80
     && isHttpsUrl(source.sourceUrl)
-    && SHA256_PATTERN.test(source.sha256 || '')
+    && isValidSha256(source.sha256)
     && source.license
     && typeof source.license.name === 'string'
     && source.license.name.length >= 1
@@ -758,9 +782,7 @@ function isValidPetSource(source) {
 }
 
 function isValidPetAssetDescriptor(asset, petId) {
-  if (!asset || !PET_ASSET_ID_PATTERN.test(
-    asset.id || asset.assetId || ''
-  )) {
+  if (!asset || !isValidPetAssetId(asset.id || asset.assetId)) {
     return false;
   }
   const assetId = asset.id || asset.assetId;
@@ -768,17 +790,80 @@ function isValidPetAssetDescriptor(asset, petId) {
     && Number.isInteger(asset.bytes)
     && asset.bytes > 0
     && asset.bytes <= MAX_FETCH_PACKET_BYTES
-    && SHA256_PATTERN.test(asset.sha256 || '')
+    && isValidSha256(asset.sha256)
     && asset.url === `/v1/pets/${petId}/assets/${assetId}`
     && asset.base64Url
       === `/v1/pets/${petId}/assets/${assetId}?encoding=base64`;
 }
 
 function isHttpsUrl(value) {
-  return typeof value === 'string'
-    && value.length <= 512
-    && /^https:\/\/[^/?#]+(?:[/?#]|$)/.test(value)
-    && value.indexOf('@') < 0;
+  if (typeof value !== 'string'
+    || value.length > 512
+    || !value.startsWith('https://')
+    || value.indexOf('@') >= 0) {
+    return false;
+  }
+  const authorityStart = 'https://'.length;
+  for (let index = authorityStart; index < value.length; index += 1) {
+    const character = value[index];
+    if (character === '/' || character === '?' || character === '#') {
+      return index > authorityStart;
+    }
+  }
+  return value.length > authorityStart;
+}
+
+function isValidAsciiToken(value, minLength, maxLength, extraCharacters) {
+  if (typeof value !== 'string'
+    || value.length < minLength
+    || value.length > maxLength) {
+    return false;
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    const isDigit = code >= 48 && code <= 57;
+    const isUppercase = code >= 65 && code <= 90;
+    const isLowercase = code >= 97 && code <= 122;
+    if (!isDigit
+      && !isUppercase
+      && !isLowercase
+      && extraCharacters.indexOf(value[index]) < 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isValidPetIdentifier(value, maxLength) {
+  if (typeof value !== 'string'
+    || value.length < 1
+    || value.length > maxLength) {
+    return false;
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    const isDigit = code >= 48 && code <= 57;
+    const isLowercase = code >= 97 && code <= 122;
+    if (!isDigit && !isLowercase && (index === 0 || code !== 45)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isLowerHexString(value, length) {
+  if (typeof value !== 'string' || value.length !== length) {
+    return false;
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    const isDigit = code >= 48 && code <= 57;
+    const isLowerHex = code >= 97 && code <= 102;
+    if (!isDigit && !isLowerHex) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function hasUniqueStrings(values) {

@@ -1,4 +1,8 @@
-import { utf8ByteLength } from './watch-api-contract.js';
+import {
+  isValidPetId,
+  isValidPetVersion,
+  utf8ByteLength
+} from './watch-api-contract.js';
 
 export const MAX_STORAGE_VALUE_BYTES = 127;
 
@@ -40,8 +44,8 @@ export function deserializeIdentity(value) {
 
 export function serializePetSelection(selection) {
   if (!selection
-    || !/^[a-z0-9][a-z0-9-]{0,47}$/.test(selection.petId || '')
-    || !/^sha256-[a-f0-9]{16}$/.test(selection.version || '')) {
+    || !isValidPetId(selection.petId)
+    || !isValidPetVersion(selection.version)) {
     throw new TypeError('宠物选择指针无效');
   }
   return ensureStorageValue(JSON.stringify({

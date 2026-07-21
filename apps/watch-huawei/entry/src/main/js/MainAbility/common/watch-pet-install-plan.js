@@ -1,5 +1,6 @@
 import {
   isValidPetDetail,
+  isValidSha256,
   MAX_FETCH_PACKET_BYTES,
   utf8ByteLength
 } from './watch-api-contract.js';
@@ -144,7 +145,7 @@ function isValidDescriptor(descriptor, pet) {
     && descriptor.bytes > 0
     && descriptor.bytes <= MAX_FETCH_PACKET_BYTES
     && typeof descriptor.sha256 === 'string'
-    && /^[a-f0-9]{64}$/.test(descriptor.sha256)
+    && isValidSha256(descriptor.sha256)
     && descriptor.url === `/v1/pets/${pet.id}/assets/${descriptor.id}`
     && descriptor.base64Url
       === `/v1/pets/${pet.id}/assets/${descriptor.id}?encoding=base64`;

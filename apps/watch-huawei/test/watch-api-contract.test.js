@@ -27,6 +27,13 @@ import {
   inspectRegistrationResponse,
   inspectReplyResponse,
   inspectSettingsResponse,
+  isValidDeviceId,
+  isValidDeviceToken,
+  isValidIdempotencyKey,
+  isValidPetAssetId,
+  isValidPetId,
+  isValidPetVersion,
+  isValidSha256,
   MAX_FETCH_HEADER_BYTES,
   MAX_FETCH_PACKET_BYTES,
   normalizeApiBaseUrl,
@@ -39,6 +46,24 @@ import {
 const BASE_URL = "https://api.example.com";
 const DEVICE_TOKEN = "device_token_123456789012345678901234567890";
 const NOW = 1_750_000_000_000;
+
+test("逐字符校验保持表端标识符约束且不依赖正则", () => {
+  assert.equal(isValidDeviceId("gt6pro_01"), true);
+  assert.equal(isValidDeviceId("gt6/01"), false);
+  assert.equal(isValidDeviceToken("a".repeat(32)), true);
+  assert.equal(isValidDeviceToken("a".repeat(31)), false);
+  assert.equal(isValidIdempotencyKey("reply:test.01"), true);
+  assert.equal(isValidIdempotencyKey("reply/test/01"), false);
+  assert.equal(isValidPetId("watchbuddy-sprout"), true);
+  assert.equal(isValidPetId("-watchbuddy"), false);
+  assert.equal(isValidPetId("WatchBuddy"), false);
+  assert.equal(isValidPetAssetId(`a${"b".repeat(63)}`), true);
+  assert.equal(isValidPetAssetId(`a${"b".repeat(64)}`), false);
+  assert.equal(isValidSha256("abcdef0123456789".repeat(4)), true);
+  assert.equal(isValidSha256("ABCDEF0123456789".repeat(4)), false);
+  assert.equal(isValidPetVersion("sha256-abcdef0123456789"), true);
+  assert.equal(isValidPetVersion("sha256-ABCDEF0123456789"), false);
+});
 
 function nudge() {
   return {
